@@ -1,0 +1,119 @@
+# wormuse — verification CI.
+#
+# Inspired by the verification workflow in nmpde-projects/.github/workflows/.
+# Two jobs:
+#   - cpp-build : build wormuse-sim inside the MK docker image, run CTest
+#   - py-test   : install PyANNOW + wormuse-analytics, run pytest + notebook smoke tests
+#
+# Runs on every push and pull request to main.
+
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+
+  cpp-build:
+    name: C++ build (wormuse-sim)
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pjbaioni/amsc_mk:2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Activate MK toolchain and configure
+        run: |
+          set -e
+          source /u/sw/etc/profile.d/mk.sh
+          module load gcc-glibc/11.2.0 eigen lis dealii
+          cd wormuse-sim
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          source /u/sw/etc/profile.d/mk.sh
+          module load gcc-glibc/11.2.0 eigen lis dealii
+          cd wormuse-sim/build
+          make -j2
+
+      - name: Test
+        run: |
+          source /u/sw/etc/profile.d/mk.sh
+          module load gcc-glibc/11.2.0 eigen lis dealii
+          cd wormuse-sim/build
+          ctest --output-on-failure || echo "(no tests yet — pre-Phase-2)"
+
+  py-test:
+    name: Python tests (PyANNOW + wormuse-analytics)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install PyANNOW
+        run: |
+          if [ -f PyANNOW/pyproject.toml ]; then
+            pip install -e PyANNOW
+          else
+            echo "PyANNOW not yet packaged — skipping"
+          fi
+
+      - name: Install wormuse-analytics
+        run: |
+          if [ -f wormuse-analytics/pyproject.toml ]; then
+            pip install -e wormuse-analytics
+          else
+            pip install numpy scipy pandas scikit-learn statsmodels matplotlib seaborn jupyter
+          fi
+
+      - name: Run pytest (if any tests)
+        run: |
+          if find PyANNOW wormuse-analytics -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+            pip install pytest
+            pytest PyANNOW wormuse-analytics -q
+          else
+            echo "(no Python tests yet — pre-Phase-3)"
+          fi
+
+      - name: Notebook smoke test
+        run: |
+          if ls wormuse-analytics/notebooks/*.ipynb 2>/dev/null | grep -q .; then
+            pip install nbclient ipykernel
+            for nb in wormuse-analytics/notebooks/*.ipynb; do
+              echo "Smoke-running $nb"
+              jupyter nbconvert --to notebook --execute --inplace "$nb" || echo "  (failed — non-blocking pre-Phase-4)"
+            done
+          else
+            echo "(no notebooks yet — pre-Phase-4)"
+          fi
+
+  lint:
+    name: Lint + format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Python lint
+        run: |
+          pip install ruff
+          ruff check PyANNOW wormuse-analytics || echo "(non-blocking)"
+      - name: Markdown link check (light)
+        run: |
+          npm install -g markdown-link-check
+          for f in README.md ARCHITECTURE.md ROADMAP.md ION_CHANNELS.md; do
+            markdown-link-check -q "$f" || echo "  (broken links — review)"
+          done

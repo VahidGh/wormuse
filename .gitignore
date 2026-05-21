@@ -1,0 +1,67 @@
+# C++ build
+build/
+build-*/
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.exe
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Large outputs (regenerable)
+shared/examples/dataset_*/
+ui/static/data/
+*.wav
+*.mid
+*.mp4
+*.gif
+
+# Data caches (not the small examples we commit)
+*.h5
+*.hdf5
+*.npy
+!shared/examples/small_*.npy
+
+# Logs
+*.log
+logs/
+
+# Local secrets / config
+.env
+.env.local
+*.local.yaml
+
+# Render outputs
+render-out/

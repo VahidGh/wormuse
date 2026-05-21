@@ -1,0 +1,44 @@
+# wormuse-analytics — AppStat-style notebooks for wormuse
+#
+# Phase 0 stub. Dependencies mirror the AppStat 2026 labs (Lab I–VI).
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wormuse-analytics"
+version = "0.1.0"
+description = "AppStat-flavored analysis notebooks for wormuse"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { text = "MIT" }
+
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+    "plotly>=5.18",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+    "scikit-image>=0.22",
+    "statsmodels>=0.14",
+    "umap-learn>=0.5",
+    "tqdm>=4.65",
+    "jupyter>=1.0",
+    "ipywidgets>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "ruff>=0.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

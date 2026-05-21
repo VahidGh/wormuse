@@ -1,0 +1,70 @@
+# wormuse — local development environment.
+#
+# Two containers used in tandem:
+#   - amsc-mk    : the MK toolchain (g++ / mpic++ / cmake / dealii / lis / eigen).
+#                  Builds and runs wormuse-sim (C++).
+#   - openworm   : pre-built OpenWorm image with Sibernetic + C302.
+#                  Runs the worm body + nervous-system simulation.
+#
+# Both mount the repo root at /work and shared/ at /shared so they exchange data
+# via the host filesystem (the cheapest, most reliable IPC).
+#
+# Usage (one-off):
+#   docker compose run --rm amsc-mk bash      # interactive AMSC build env
+#   docker compose run --rm openworm bash     # interactive OpenWorm env
+#   docker compose up                         # both containers idle (for orchestration scripts)
+
+services:
+
+  amsc-mk:
+    image: quay.io/pjbaioni/amsc_mk:2025
+    container_name: wormuse-amsc-mk
+    working_dir: /work/wormuse-sim
+    volumes:
+      - .:/work
+      - ./shared:/shared
+    environment:
+      - WORMUSE_REPO=/work
+      - WORMUSE_SHARED=/shared
+    # Keep the container alive so we can `exec` into it on demand.
+    command: ["bash", "-c", "echo 'wormuse amsc-mk ready'; sleep infinity"]
+    tty: true
+    stdin_open: true
+    # Default activation reminder (run inside the container, NOT here):
+    #   source /u/sw/etc/profile.d/mk.sh
+    #   module load gcc-glibc/11.2.0 eigen lis dealii
+
+  openworm:
+    image: openworm/openworm:latest
+    container_name: wormuse-openworm
+    working_dir: /home/ow
+    volumes:
+      - .:/work
+      - ./shared:/shared
+    environment:
+      - C302_HOME=/home/ow/c302/c302
+      - SIBERNETIC_HOME=/home/ow/sibernetic
+      - PYTHONPATH=:/home/ow/c302:/home/ow/sibernetic
+      - WORMUSE_REPO=/work
+      - WORMUSE_SHARED=/shared
+    command: ["bash", "-c", "echo 'wormuse openworm ready'; sleep infinity"]
+    tty: true
+    stdin_open: true
+    # Sibernetic uses OpenCL; on macOS without GPU passthrough it will run on CPU
+    # OpenCL fallback (slower but functional). For GPU passthrough see docs/.
+
+  # Optional JupyterLab for AppStat notebooks and PyANNOW exploration.
+  # Commented out by default — user prefers their own local Python env.
+  #
+  # jupyter:
+  #   image: jupyter/scipy-notebook:latest
+  #   container_name: wormuse-jupyter
+  #   working_dir: /work
+  #   volumes:
+  #     - .:/work
+  #     - ./shared:/shared
+  #   ports:
+  #     - "8888:8888"
+  #   command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+# No volumes section — all state lives on the host under ./shared/ and the sub-projects.

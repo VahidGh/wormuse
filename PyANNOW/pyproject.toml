@@ -1,0 +1,61 @@
+# PyANNOW — PINN-tuned worm-music composer
+#
+# Phase 0 stub. Dependencies match the NAML labs (JAX/Flax/Optax stack).
+# Adjust pins as the project matures.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyannow"
+version = "0.1.0"
+description = "PINN-tuned worm-music composer for wormuse"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { text = "MIT" }
+authors = [
+    { name = "Vahid Ghayoomie" },
+]
+
+dependencies = [
+    # Core scientific stack (per NAML labs)
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+
+    # JAX-based ML (the course's stack — Lab04 onward)
+    "jax>=0.4.20",
+    "jaxlib>=0.4.20",
+    "flax>=0.8",
+    "optax>=0.2",
+
+    # Notebook + tooling
+    "jupyter>=1.0",
+    "tqdm>=4.65",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "ruff>=0.5",
+    "mypy>=1.7",
+]
+gpu = [
+    # For NVIDIA GPU: install via the JAX docs instead — pip extras don't quite
+    # cover CUDA installation cleanly. Placeholder kept for documentation.
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
