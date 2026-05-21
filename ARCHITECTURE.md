@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the modules of **wormuse**, how they communicate, and where data lives.
+This document describes the modules of **wormuse**, how they communicate, and where data lives. For the *physics* of why the worm-to-piano pipeline is coherent (not just convenient), read [docs/SCIENTIFIC_FOUNDATION.md](./docs/SCIENTIFIC_FOUNDATION.md) — the implementation files in the sub-projects reference equation numbers from that document (e.g. "implements equation A.2 with the θ-method from B.3").
 
 ---
 

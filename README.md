@@ -58,7 +58,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full description and [ROADMAP.m
 
 ## Ion channels — the centerpiece
 
-The Hodgkin-Huxley gating variables `(m_∞, h_∞, τ_m, τ_h)` of the worm's neurons are learned by a **Physics-Informed Neural Network**. The user's existing ion-channel PINN research (channelworm + SC-PINN) is the academic anchor. The UI exposes these parameters as live controls: change a single ion-channel parameter → the music morphs in tempo and timbre. See [ION_CHANNELS.md](./ION_CHANNELS.md).
+The Hodgkin-Huxley gating variables `(m_∞, h_∞, τ_m, τ_h)` of the worm's neurons are learned by a **Physics-Informed Neural Network**. The user's existing ion-channel PINN research (channelworm + SC-PINN) is the academic anchor. The UI exposes these parameters as live controls: change a single ion-channel parameter → the music morphs in tempo and timbre. See [ION_CHANNELS.md](./ION_CHANNELS.md) for the design and [docs/SCIENTIFIC_FOUNDATION.md](./docs/SCIENTIFIC_FOUNDATION.md) for the full mathematics on both sides of the pipeline.
 
 ## Repository layout
 
@@ -67,7 +67,8 @@ wormuse/
 ├── README.md                ← this file
 ├── ARCHITECTURE.md          ← module breakdown, data flow
 ├── ROADMAP.md               ← 8-phase implementation plan
-├── ION_CHANNELS.md          ← the PINN centerpiece
+├── ION_CHANNELS.md          ← the PINN centerpiece (design view)
+├── docs/SCIENTIFIC_FOUNDATION.md  ← biology↔piano physics derivation + references
 ├── LICENSE                  ← MIT
 ├── docker-compose.yml       ← AMSC MK + OpenWorm + JupyterLab
 ├── .github/workflows/       ← verification + scalability CI

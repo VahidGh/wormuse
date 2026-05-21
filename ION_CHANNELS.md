@@ -2,6 +2,8 @@
 
 > The whole project pivots on this: **ion channels tune the worm's neural firing, the firing triggers the piano, and the piano makes music.** A Physics-Informed Neural Network (PINN) learns the channel kinetics that make the worm musical.
 
+> **Full mathematical derivation:** see [docs/SCIENTIFIC_FOUNDATION.md](./docs/SCIENTIFIC_FOUNDATION.md). This file is the design view (what to build, what the UI exposes); the foundation doc is the physics view (why the chain works at all, with equation numbers used throughout the codebase).
+
 ---
 
 ## Why this is the centerpiece
