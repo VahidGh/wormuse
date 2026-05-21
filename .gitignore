@@ -48,6 +48,9 @@ ui/static/data/
 *.mp4
 *.gif
 
+# Demo notebook outputs directory — PNG/WAV are baked into the .ipynb itself
+docs/demo_outputs/
+
 # Data caches (not the small examples we commit)
 *.h5
 *.hdf5

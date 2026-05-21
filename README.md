@@ -3,13 +3,13 @@
 > **A *C. elegans*–driven musical simulator.**
 > The 302-neuron nervous system, simulated by OpenWorm (Sibernetic + C302), is wired into a physical piano model. Each neuron firing triggers a hammer; muscle contractions modulate timing and dynamics. **Ion channels are the tuning fork** — a physics-informed neural network learns the kinetics that make the worm's activity musically coherent. Move the worm → hear the melody.
 
-Wormuse is the spiritual successor to [polimuse](https://github.com/.../polimuse), but with the worm as the composer rather than a robot pianist. It is designed as a thesis-grade integration of three Politecnico di Milano courses:
+Wormuse is a robot pianist, but with the worm as the composer. It is designed as a project integrating some of Politecnico di Milano courses:
 
-| Course | Sub-project | Focus |
-|---|---|---|
-| **Advanced Methods for Scientific Computing (AMSC)** | [`wormuse-sim/`](./wormuse-sim/) | C++ simulator core: OpenWorm wrapper + piano FEM + neuron→MIDI bridge |
-| **Numerical Analysis for Machine Learning (NAML)** | [`PyANNOW/`](./PyANNOW/) | JAX/Flax/Optax composer **conditioned on a PINN-tuned ion channel model** |
-| **Applied Statistics (AppStat)** | [`wormuse-analytics/`](./wormuse-analytics/) | Python notebooks: PCA / clustering / regression / classification on the worm-music data |
+| Course                                                     | Sub-project                                 | Focus                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Advanced Methods for Scientific Computing (AMSC)** | [`wormuse-sim/`](./wormuse-sim/)             | C++ simulator core: OpenWorm wrapper + piano FEM + neuron→MIDI bridge                  |
+| **Numerical Analysis for Machine Learning (NAML)**   | [`PyANNOW/`](./PyANNOW/)                     | JAX/Flax/Optax composer**conditioned on a PINN-tuned ion channel model**          |
+| **Applied Statistics (AppStat)**                     | [`wormuse-analytics/`](./wormuse-analytics/) | Python notebooks: PCA / clustering / regression / classification on the worm-music data |
 
 Plus cross-cutting use of Numerical Linear Algebra (NLA), Numerical Methods for PDEs (NMPDE), Parallel Computing (PC), and Software Engineering for HPC (SE4HPC).
 
