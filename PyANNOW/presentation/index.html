@@ -1014,6 +1014,139 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
 </section>
 
 <!-- ═══════════════════════════════════ CONCLUSION ═══ -->
+<!-- ═══════════════════════════════════ FURTHER WORK ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header" style="background:linear-gradient(135deg,#1a0d2d,#2d0d1a)">
+    <div class="part-num" style="color:#c084fc">Further Work</div>
+    <h2 style="color:#c084fc">🔭 What comes next</h2>
+    <p class="tagline">Two course skills that extend PyANNOW toward production-grade biology</p>
+  </div>
+</section>
+
+<!-- FW-A: polimi-amsc (Sibernetics + HPC) -->
+<section data-background-color="#030d1a">
+  <span class="section-label" style="color:#c084fc">Further Work A — polimi-amsc</span>
+  <h3>🔧 Sibernetics integration + HPC learning loop</h3>
+  <div class="card-grid two" style="font-size:.8em">
+    <div>
+      <p style="margin-bottom:8px"><strong>The gap today:</strong> PyANNOW uses <em>synthetic</em> neural activity (repeated muscle voltages). The real loop requires the actual Sibernetic SPH body simulator and C302 neural network running in a tight optimization cycle.</p>
+      <div class="step-card" style="margin:6px 0">
+        <div class="step-label">AMSC L05 / L09</div>
+        <div class="step-title">C++ wrapper for OpenWorm container</div>
+        <div class="step-meta"><code>unique_ptr&lt;WormSimulator&gt;</code> + shared-library C-ABI binding from Python</div>
+      </div>
+      <div class="step-card" style="margin:6px 0">
+        <div class="step-label">AMSC L11-12 (MPI + OpenMP)</div>
+        <div class="step-title">Distributed training loop</div>
+        <div class="step-meta">MPI workers run parallel Sibernetic scenarios; central node updates PINN weights via <code>MPI_Allreduce</code></div>
+      </div>
+      <div class="step-card" style="margin:6px 0">
+        <div class="step-label">AMSC GPU project option</div>
+        <div class="step-title">Azure NC24-A100 acceleration</div>
+        <div class="step-meta">Port Sibernetic OpenCL → CUDA. Already configured in <code>nmpde-projects/container-config.yaml</code></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:10px">
+        <h4>Expected impact</h4>
+        <p>The current learning loop (678s for 10s synthetic worm) becomes <strong>10-60s per iteration</strong> on the Azure GPU, enabling real parameter search over the ion-channel space.</p>
+      </div>
+      <div class="eq-box">
+        <strong>The HPC learning loop:</strong><br>
+        <ol style="margin:8px 0;padding-left:20px;font-size:.9em;line-height:1.8">
+          <li>Sample ion-channel params <span class="hl">(g, V½, τ, λ)</span></li>
+          <li>Run Sibernetic + C302 (MPI workers)</li>
+          <li>Pass spike train to PyANNOW</li>
+          <li>Compute onset loss vs Chopin</li>
+          <li>Adam + L-BFGS update (GPU)</li>
+          <li>← repeat ×1000</li>
+        </ol>
+      </div>
+      <p style="font-size:.75em;opacity:.7;margin-top:8px">
+        AMSC lectures directly applied: L03 (C++17), L05 (RAII subprocess),
+        L09 (shared library), L11 (MPI reduce), L12 (OpenMP piano FEM),
+        PC L5 (CUDA port of SPH).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FW-B: polimi-appstat (ion channel statistics) -->
+<section data-background-color="#030d1a">
+  <span class="section-label" style="color:#c084fc">Further Work B — polimi-appstat</span>
+  <h3>📊 Statistical improvement of ion-channel kinetics predictions</h3>
+  <div class="card-grid two" style="font-size:.8em">
+    <div>
+      <p style="margin-bottom:8px"><strong>The gap today:</strong> the PINN predicts <code>(m_∞, τ_m, h_∞, τ_h)</code> that minimise the PINN loss — but there is no statistical guarantee these predictions are <em>biologically plausible</em> relative to measured <em>C. elegans</em> channel values.</p>
+      <div class="step-card" style="margin:6px 0">
+        <div class="step-label">AppStat L01-03 (PCA + Clustering)</div>
+        <div class="step-title">Map the ion-channel parameter space</div>
+        <div class="step-meta">PCA of <code>(g_EGL19, V_half, τ_Ca, g_EXP2)</code> → find the "musical cluster" where Chopin onset loss is low</div>
+      </div>
+      <div class="step-card" style="margin:6px 0">
+        <div class="step-label">AppStat L04 (OLS + diagnostics)</div>
+        <div class="step-title">Regress music quality on channel params</div>
+        <div class="step-meta">VIF for multicollinearity (do τ_Ca and g_EXP2 trade off?), Cook's for outlier param sets</div>
+      </div>
+      <div class="step-card" style="margin:6px 0">
+        <div class="step-label">AppStat L05-07 (Logistic + RF)</div>
+        <div class="step-title">Classify musical vs non-musical states</div>
+        <div class="step-meta">Feature importance via Random Forest confirms: <span class="hl">τ_Ca and V_half_Ca dominate</span> (consistent with sensitivity analysis §7)</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:10px">
+        <h4>The Bayesian PINN extension (stretch)</h4>
+        <p>Use the AppStat regression as a prior over ion-channel parameters. Add a Mahalanobis distance penalty to the PINN loss:</p>
+        <div class="eq-box" style="margin-top:8px;font-size:.9em">
+          \[\mathcal{L} = \mathcal{L}_{\text{data}} + \lambda_p\mathcal{L}_{\text{phys}} + \lambda_s(\theta - \bar\theta)^T \Sigma^{-1}(\theta - \bar\theta)\]
+          <span style="font-size:.8em;opacity:.7">(θ̄, Σ) from AppStat regression on 500 worm runs</span>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Expected outcome</h4>
+        <p>PINN predictions become statistically validated: <em>"this parameter set lies within the 95% CI of biologically measured EGL-19 conductances in C. elegans."</em></p>
+        <p style="margin-top:6px;font-size:.9em">
+          The user's existing work in <code>AppStat/project/</code> (bootstrap CI, PCA scree plot, OpenWorm research proposals) is the direct starting point.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── The three-course arc ─── -->
+<section data-background-color="#030d1a">
+  <span class="section-label" style="color:#c084fc">Further Work — The full arc</span>
+  <h3>Three courses × one worm × one piano</h3>
+  <div style="text-align:left;font-size:.82em;margin:16px 0">
+    <div style="display:flex;gap:10px;margin:8px 0;padding:14px;background:rgba(0,217,255,.07);border-left:4px solid var(--accent);border-radius:0 8px 8px 0">
+      <div style="font-size:1.6em;flex-shrink:0">📐</div>
+      <div>
+        <strong style="color:var(--accent)">NAML (done)</strong> — SVD → K-means → Ridge → MLP → Adam → L-BFGS → PINN (ODE + PDE)<br>
+        <span style="opacity:.7">Learns the worm→music mapping using only course methods</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin:8px 0;padding:14px;background:rgba(192,132,252,.07);border-left:4px solid #c084fc;border-radius:0 8px 8px 0">
+      <div style="font-size:1.6em;flex-shrink:0">🔧</div>
+      <div>
+        <strong style="color:#c084fc">AMSC (next)</strong> — C++ Sibernetic wrapper, MPI distributed loop, GPU acceleration<br>
+        <span style="opacity:.7">Makes the simulation real (actual OpenWorm) and fast (Azure NC24-A100)</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin:8px 0;padding:14px;background:rgba(107,203,119,.07);border-left:4px solid var(--green);border-radius:0 8px 8px 0">
+      <div style="font-size:1.6em;flex-shrink:0">📊</div>
+      <div>
+        <strong style="color:var(--green)">AppStat (next)</strong> — PCA + clustering + OLS + RF on ion-channel parameter space<br>
+        <span style="opacity:.7">Validates PINN predictions are biologically plausible; closes the loop with a Bayesian prior</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="font-size:.8em;margin-top:8px">
+    <h4>Why these three courses together?</h4>
+    <p>NAML provides the <em>learning algorithm</em>. AMSC provides the <em>simulation engine and HPC backbone</em>. AppStat provides the <em>statistical validation</em>. Each alone is insufficient; together they form a scientifically rigorous, computationally feasible, and biologically grounded pipeline.</p>
+  </div>
+</section>
+
 <section data-background-gradient="radial-gradient(circle at 50% 50%, #0a2540 0%, #050a15 100%)">
   <span class="section-label">Conclusion</span>
   <h2>What we learned</h2>

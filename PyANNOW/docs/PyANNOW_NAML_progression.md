@@ -253,6 +253,105 @@ Estimated total runtime: ~3-5 minutes (Steps 0-6 in sequence).
 
 ---
 
+---
+
+## Further Work
+
+The PyANNOW NAML progression demonstrates the learning side of the pipeline. The two
+natural extensions below connect to other Politecnico di Milano courses and push the
+project toward a production-grade, biologically faithful simulation loop.
+
+---
+
+### FW-A — Sibernetics integration + HPC learning loop  *(polimi-amsc)*
+
+**The gap today:** the worm's neural activity is *synthetic* (302 repeated muscle voltages
++ noise). The real learning loop needs the actual Sibernetic SPH body simulator and the
+C302 neural network, running in a tight optimization cycle.
+
+**What polimi-amsc provides:**
+
+| AMSC concept | Application in this extension |
+|---|---|
+| **L05 — smart pointers** (`unique_ptr<WormSimulator>`) | RAII wrapper around the OpenWorm Docker container in `wormuse-sim/src/ow_bridge/` |
+| **L09 — static/shared libraries + plugins** | `wormuse_core.so` as a shared library; PyANNOW calls it via a C-ABI Python binding (`ctypes` or `pybind11`) |
+| **L11 — MPI** | Distribute the learning loop: rank 0 runs Sibernetic, ranks 1-N run the MLP gradient updates in parallel |
+| **L12 — OpenMP** | Parallelize the piano FEM soundboard assembly across threads; parallelize the PINN collocation-point residual evaluation |
+| **AMSC project: Porting on GPU** | Run the Sibernetic OpenCL body simulator on the Azure NC24-A100 (already configured in `nmpde-projects/container-config.yaml`) |
+
+**Three concrete next steps:**
+
+1. **Phase 1 (wormuse-sim Phase 1-2 in ROADMAP.md):** implement `docker_runner.hpp`
+   — a C++ subprocess wrapper that launches OpenWorm, reads the spike JSON output,
+   and passes it to PyANNOW's `step1_svd/encoder.py` via a shared memory buffer.
+   AMSC lectures directly applied: L03 (modern C++), L05 (RAII subprocess), L09 (library).
+
+2. **Phase 2 — Parallel training loop:**  
+   The current Adam + L-BFGS training is single-threaded Python. With a real Sibernetic
+   simulation (~5 min per run), the outer optimization loop needs HPC:
+   - MPI workers each run one Sibernetic scenario (different ion-channel parameters)
+   - Reduce the loss function across workers (MPI_Allreduce, L11)
+   - Central node updates the MLP/PINN weights
+   This is identical in structure to the distributed FEM solve in the user's
+   `nmpde-projects/` (Azure + Terraform + GitHub Actions scalability workflow).
+
+3. **Phase 3 — GPU-accelerated PINN training:**  
+   JAX already supports GPU via `pip install "jax[cuda12]"`. The bottleneck shifts to
+   the Sibernetic simulation. The GPU-ported landslide runout code (AMSC project option 1)
+   is a direct template: the SPH physics engine can be ported to CUDA following exactly
+   the techniques from `polimi-pc` (L5 GPU arch, L8-10 parallel patterns).
+
+**Expected outcome:** the learning loop that currently takes 678s (11 min) for a 10s
+synthetic worm on CPU becomes a 10-60s cycle on the Azure NC24-A100 with the real
+OpenWorm simulation, enabling proper hyperparameter search over ion-channel parameters.
+
+---
+
+### FW-B — Statistical improvement of ion-channel kinetics predictions  *(polimi-appstat)*
+
+**The gap today:** the PINN predicts `(m_∞, h_∞, τ_m, τ_h)` as smooth functions of
+voltage, but we have no statistical guarantee that these predictions are *biologically
+plausible* — they might fit the training data but lie far outside the measured
+distribution of real *C. elegans* channel parameters.
+
+**What polimi-appstat (Python, 2026 course) provides:**
+
+| AppStat concept | Application |
+|---|---|
+| **Lecture 01 — PCA** | Reduce the 4-parameter ion-channel space `(g_EGL19, V_half, τ_Ca, g_EXP2)` to its principal directions. The first PC likely captures "overall excitability"; the second PC separates fast vs slow channels. Visualise which parameter combinations produce "musical" worm activity. |
+| **Lecture 03 — Clustering (K-means, silhouette)** | Cluster `(g_EGL19, V_half, τ_Ca, g_EXP2)` parameter combinations by their musical quality (onset loss). Identify the "musical cluster" — the region of parameter space that produces Chopin-like melodies. |
+| **Lecture 04 — Linear models + diagnostics** | Regress the music quality metric (onset loss) on the four PINN-tunable ion-channel parameters. Full diagnostics: VIF for multicollinearity (do τ_Ca and g_EXP2 trade off?), Breusch-Pagan for heteroskedasticity, Cook's distance for outlier parameter sets. |
+| **Lecture 05-06 — Logistic + ROC** | Binary classifier: "musical" vs "non-musical" parameter sets. Which ion-channel parameters most reliably predict musical output? Feature importance via Random Forest (Lecture 07) reveals that `τ_Ca` and `V_half_Ca` dominate (consistent with the PINN sensitivity analysis in the Chopin notebook). |
+| **User's prior work** | `AppStat/project/VahidGhayoomie-channelworm-OW.pdf` and `OpenWorm_CHOpen_Research_Proposals.ipynb` already lay the groundwork. The bootstrap CI in `bootstrap_ci.png` and PCA scree in `pca_scree_plot.png` are the starting point for this analysis. |
+
+**Three concrete next steps:**
+
+1. **Dataset generation:** run the worm forward model 500 times with random
+   `(g_EGL19, V_half, τ_Ca, g_EXP2)` parameters sampled from biologically plausible
+   ranges (from the `CelegansChannelParams.BOUNDS` in `celegans_hh.py`). Record the
+   onset loss for each run. Creates a 500-row dataset — large enough for all AppStat
+   analyses.
+
+2. **AppStat-style analysis notebook** (`wormuse-analytics/notebooks/Lab_V_regression.ipynb`
+   style, already scaffolded in `wormuse-analytics/`):
+   - PCA scree plot of the 4-D parameter space
+   - K-means clustering (`k=3-5`) → "loud & fast", "soft & slow", "musical" clusters
+   - OLS regression with full diagnostics (VIF, BP, DW) → which parameter drives quality?
+   - RF feature importance → confirm sensitivity analysis result (τ_Ca and V_half dominant)
+
+3. **Bayesian prior for the PINN** (stretch): use the regression model as a prior
+   distribution over ion-channel parameters. Replace the L1/L2 regularisation in the
+   PINN loss with a **Mahalanobis distance penalty** from the posterior mean:
+   $$\mathcal{L}_{\text{PINN}} = \mathcal{L}_{\text{data}} + \lambda_p\mathcal{L}_{\text{phys}} + \lambda_s (θ - \bar θ)^T Σ^{-1} (θ - \bar θ)$$
+   where `(θ̄, Σ)` comes from the AppStat regression. This directly connects Lectures
+   04-06 (regression) to Lecture 27 (PINNs) — closing the NAML loop.
+
+**Expected outcome:** the PINN ion-channel predictions become statistically validated —
+we can say "this parameter set is within the 95% CI of biologically measured *C. elegans*
+EGL-19 conductances" instead of just "this minimises the PINN loss."
+
+---
+
 ## File map
 
 ```
