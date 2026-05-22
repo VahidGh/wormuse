@@ -30,7 +30,7 @@ cells += [md(
     "**PyANNOW notebook 02 — Chopin worm optimizer**\n",
     "> *Starting from random neural activity, optimize the C. elegans ion-channel "
     "parameters to make the worm's body movements generate a melody as close as "
-    "possible to Chopin's Prelude in D♭ (Op. 28 No. 15 — \"Raindrop\").*\n",
+    "possible to Chopin's Nocturne in C# minor (Op. 28 No. 15 — \"Raindrop\").*\n",
     "## What this notebook shows\n",
     "| Section | Question |\n"
     "|---|---|\n"
@@ -74,13 +74,13 @@ cells += [md("## 0. Setup"), code(
     "plt.rcParams.update({'figure.figsize': (11, 4), 'axes.grid': True, 'grid.alpha': 0.3})\n"
     "OUTDIR = Path('demo_outputs')\n"
     "OUTDIR.mkdir(exist_ok=True)\n"
-    "MIDI_PATH = Path('../shared/examples/frederic-chopin-nocturne-no20.mid')\n"
+    "MIDI_PATH = Path('../shared/examples/chopin_nocturne_op_posth_csharp_minor.mid')\n"
     "print('imports OK')"
 )]
 
 # ─── Section 1: Target ────────────────────────────────────────────────────────
 cells += [md(
-    "## 1. The target — Chopin Prelude in D♭ (\"Raindrop\")\n",
+    "## 1. The target — Chopin Nocturne in C# minor (\"Raindrop\")\n",
     "We parse the MIDI file with `mido`, extract all note onset times, and visualise "
     "the piano roll.  This is the **target note sequence** our worm must match.\n",
     "The piece is ~4.7 minutes, 52 BPM, with ~2.7 notes per second."
@@ -97,7 +97,7 @@ cells += [md(
     "ax[0].imshow(roll, aspect='auto', origin='lower', cmap='Blues',\n"
     "             extent=[0, 30, pitches[0], pitches[-1]])\n"
     "ax[0].set(xlabel='time (s)', ylabel='MIDI pitch',\n"
-    "          title='Piano roll — Chopin Prelude D♭ (first 30s)')\n"
+    "          title='Piano roll — Chopin Nocturne C# minor (first 30s)')\n"
     "\n"
     "# Inter-onset interval histogram\n"
     "iois = np.diff(t_on_all)\n"
@@ -176,7 +176,7 @@ cells += [md(
     "receive enough ACh drive to trigger an EGL-19 Ca²⁺ action potential "
     "— this is the **ion-channel gate**.\n",
     "Each Ca²⁺ AP maps to one piano note:\n"
-    "- **Pitch** = muscle-group index → D♭ major pentatonic note (matching the key of Chopin)\n"
+    "- **Pitch** = muscle-group index → C# minor pentatonic note (matching the key of Chopin)\n"
     "- **Velocity** = peak depolarisation above threshold → force amplitude (rescaled)\n"
     "- **Onset time** = time of peak V within each locomotion cycle\n",
     "The drive frequency `f_drive` is the single most important timing parameter: "

@@ -45,6 +45,7 @@ shared/examples/dataset_*/
 ui/static/data/
 *.wav
 *.mid
+!shared/examples/*.mid
 *.mp4
 *.gif
 

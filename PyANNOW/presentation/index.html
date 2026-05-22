@@ -1024,7 +1024,7 @@ display(Audio(audio_worm, rate=fs))</code></pre>
     <div class="card" style="text-align:center">
       <h4>🎼 Chopin (synthesised)</h4>
       <p>Original MIDI → same piano model → same string physics</p>
-      <p style="font-size:.8em;opacity:.7;margin-top:8px">Prelude in D♭ Major, first 15 seconds. 40 notes, 2.67 notes/s.</p>
+      <p style="font-size:.8em;opacity:.7;margin-top:8px">Nocturne in C# minor Major, first 15 seconds. 40 notes, 2.67 notes/s.</p>
       <p style="margin-top:12px"><em>(Play in the notebook: demo_outputs/chopin_synth.wav)</em></p>
       <pre style="font-size:.6em;text-align:left;margin-top:10px"><code class="language-python">chopin_events, _ = parse_midi(MIDI_PATH)
 audio_chopin, fs = synthesise_melody(chopin_events)
@@ -1210,7 +1210,7 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
   <p style="font-size:.75em;opacity:.5">
     Built with: Python · JAX · Flax · Optax · NumPy · scikit-learn · Reveal.js<br>
     Physics: Chabassier (2014) piano model · OpenWorm Sibernetic + C302<br>
-    Music: Chopin Prelude in D♭ Op. 28 No. 15 ("Raindrop") · MIDI public domain
+    Music: Chopin Nocturne in C# minor Op. 28 No. 15 (Op. posth.) · MIDI public domain
   </p>
 </section>
 

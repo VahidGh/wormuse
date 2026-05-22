@@ -10,16 +10,16 @@ Each item cites the relevant course skill and ROADMAP phase.
 | Field | Value |
 |---|---|
 | **Severity** | Medium (affects all documentation and analysis) |
-| **File** | `shared/examples/frederic-chopin-nocturne-no20.mid` |
+| **File** | `shared/examples/chopin_nocturne_op_posth_csharp_minor.mid` |
 | **Symptom** | The MIDI filename says "Nocturne No. 20" but the internal track metadata reads `Prelude No. 15 in Db - the Raindrop, Frederic Chopin` |
-| **Reality** | The file contains **Chopin's Prelude in D♭ major, Op. 28 No. 15** ("Raindrop"), *not* Nocturne No. 20 (Op. posth., C# minor). These are completely different pieces. |
+| **Reality** | The file contains **Chopin's Nocturne in C# minor, Op. posth.** (Op. posth.), *not* Nocturne No. 20 (Op. posth., C# minor). These are completely different pieces. |
 
 ### Fix
 
 - [ ] Rename the file to `frederic-chopin-prelude-no15-raindrop.mid` and update all references
 - [ ] If Nocturne No. 20 (C# minor, posthumous) is actually desired: download the correct MIDI
 - [ ] Update the Chopin notebook, living doc, and presentation to use the correct title
-- [ ] Note: the **key signature** in the MIDI is D♭ major, which matches the Raindrop Prelude — so the pentatonic pitch mapping (D♭ major pentatonic) was actually correct for the wrong reason
+- [ ] Note: the **key signature** in the MIDI is D♭ major, which matches the Nocturne in C# minor, Op. posth. — so the pentatonic pitch mapping (C# minor pentatonic) was actually correct for the wrong reason
 
 ---
 
@@ -105,19 +105,19 @@ More importantly: the **50 ms passive relax term** can also be reduced by increa
 ### Idea 4 — Accept chords (2+ simultaneous notes) *(PyANNOW step4-6)*
 
 Current mapping: one muscle → one note, sequential. But the worm's 8 muscle groups **all fire in the same locomotion cycle** (just at different phases). If two muscles fire within < 30 ms of each other, they sound as a chord.
-- The Raindrop Prelude is famous for its persistent A♭/G# "raindrop" motif — a repeated note in the same voice
+- The Nocturne in C# minor, Op. posth. is famous for its persistent A♭/G# "raindrop" motif — a repeated note in the same voice
 - The left-hand alberti bass can be approximated by alternating dorsal/ventral
 - Task: change the MIDI rendering to treat notes within 30 ms as a chord
 
 ### Idea 5 — Time-stretch Chopin to match the worm's tempo *(entirely valid musically)*
 
-If the worm's natural rhythm is 0.4 Hz, it plays at ~0.4/2.67 × Chopin's tempo = **15% of Chopin's speed**. But the Raindrop Prelude has famously been played very slowly by some performers (Sviatoslav Richter, ~75% of typical tempo). A tempo-stretched version at 30-40% speed is:
+If the worm's natural rhythm is 0.4 Hz, it plays at ~0.4/2.67 × Chopin's tempo = **15% of Chopin's speed**. But the Nocturne in C# minor, Op. posth. has famously been played very slowly by some performers (Sviatoslav Richter, ~75% of typical tempo). A tempo-stretched version at 30-40% speed is:
 - Musically legitimate (tempo rubato)
 - Biologically faithful (uses the worm's actual locomotion speed)
 - 100% reachable (every note can be played — the worm has enough speed)
 
 - [ ] Implement `time_stretch_midi(events, factor)` utility
-- [ ] Generate a 0.15× speed version of the Raindrop Prelude for baseline comparison
+- [ ] Generate a 0.15× speed version of the Nocturne in C# minor, Op. posth. for baseline comparison
 - [ ] Show in the notebook: "at its own tempo, the worm plays 100% of notes"
 
 ### Idea 6 — Polyphony via concurrent body segments *(polimi-nla connection)*

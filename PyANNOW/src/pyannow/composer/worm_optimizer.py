@@ -90,12 +90,12 @@ MN_TO_MUSCLE = np.array([
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Note-pitch assignment  (muscle group → MIDI pitch)
-# The 8 muscle groups span a D♭ major pentatonic, matching Chopin's key.
+# The 8 muscle groups span a C# minor pentatonic, matching Chopin's key.
 # Force amplitude is rescaled to MIDI velocity (0-127).
 # ─────────────────────────────────────────────────────────────────────────────
 
-# D♭ major pentatonic: Db(61), Eb(63), F(65), Ab(68), Bb(70),  + upper octave
-MUSCLE_PITCHES = np.array([61, 63, 65, 68, 70, 73, 75, 78])  # 8 muscle groups
+# C# minor pentatonic: C#-E-F#-G#-B
+MUSCLE_PITCHES = np.array([61, 64, 66, 68, 71, 73, 76, 78])  # 8 muscle groups
 
 
 def force_to_velocity(force_normalised: float,

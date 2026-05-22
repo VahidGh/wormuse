@@ -28,7 +28,7 @@ cells += [md(
     "## References\n",
     "- Presentation: `PyANNOW/presentation/index.html` (open in browser)\n"
     "- Living doc: `PyANNOW/docs/PyANNOW_NAML_progression.md`\n"
-    "- MIDI target: `shared/examples/frederic-chopin-nocturne-no20.mid`\n",
+    "- MIDI target: `shared/examples/chopin_nocturne_op_posth_csharp_minor.mid`\n",
     "## Runtime\n",
     "Approximately **5-8 minutes** end-to-end (Steps 0-6; Step 8 adds ~2 min extra). "
     "Step 8 ODE/PDE PINN comparison is the most expensive section."
@@ -67,7 +67,7 @@ cells += [md("## 0. Setup"), code(
     "\n"
     "plt.rcParams.update({'figure.figsize': (11, 4), 'axes.grid': True, 'grid.alpha': 0.3})\n"
     "OUTDIR = Path('step_outputs'); OUTDIR.mkdir(exist_ok=True)\n"
-    "MIDI_PATH = Path('../../shared/examples/frederic-chopin-nocturne-no20.mid')\n"
+    "MIDI_PATH = Path('../../shared/examples/chopin_nocturne_op_posth_csharp_minor.mid')\n"
     "DURATION = 10.0   # seconds to simulate and compare\n"
     "rng = np.random.default_rng(0)\n"
     "print('PyANNOW loaded ✓')"

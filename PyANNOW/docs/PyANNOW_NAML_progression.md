@@ -9,7 +9,7 @@
 
 > Can a biological neural system with limited physical constraints learn to play Chopin?
 
-We use **only the methods taught in the Numerical Analysis for Machine Learning (NAML)** course at Politecnico di Milano to build a composer that maps the *C. elegans* worm's 302-neuron activity onto a piano melody, then measure how close we can get to Chopin's Prelude in D♭.
+We use **only the methods taught in the Numerical Analysis for Machine Learning (NAML)** course at Politecnico di Milano to build a composer that maps the *C. elegans* worm's 302-neuron activity onto a piano melody, then measure how close we can get to Chopin's Nocturne in C# minor.
 
 ---
 

@@ -17,7 +17,7 @@ Quick usage
     from pyannow.composer.piano_synth import synthesise_melody
     from pyannow.targets.midi_target import parse_midi, NoteEvent
 
-    events, _ = parse_midi("shared/examples/frederic-chopin-nocturne-no20.mid")
+    events, _ = parse_midi("shared/examples/chopin_nocturne_op_posth_csharp_minor.mid")
     audio, fs  = synthesise_melody(events[:50], duration_s=15.0)
 
     import scipy.io.wavfile as wf
@@ -36,8 +36,9 @@ def midi_to_hz(pitch: int) -> float:
 
 
 # ─── The C. elegans pentatonic scale (8 muscle groups → 8 piano pitches) ─────
-# Same as MUSCLE_PITCHES in worm_optimizer_fast.py  (D♭ major pentatonic)
-WORM_PITCHES = [61, 63, 65, 68, 70, 73, 75, 78]  # MIDI note numbers
+# C# minor pentatonic: C#-E-F#-G#-B — matches the Nocturne in C# minor Op.posth.
+# Same as MUSCLE_PITCHES in worm_optimizer.py
+WORM_PITCHES = [61, 64, 66, 68, 71, 73, 76, 78]  # MIDI: C#4 E4 F#4 G#4 B4 C#5 E5 F#5
 
 
 # ─── Single-string stiff-string FDM synthesiser ──────────────────────────────
