@@ -1,5 +1,23 @@
 # wormuse — Claude Code project instructions
 
+## About this file
+
+This file is read automatically at the start of every Claude Code session in this
+repository. It defines the rules and context for the AI agent.
+
+**This project is built with Claude Code.** Claude acts as the principal development
+engineer under the scientific direction of Vahid Ghayoomie (Politecnico di Milano).
+See `AI_CONTRIBUTIONS.md` for a full breakdown of what Claude built, what the human
+directed, and known AI limitations.
+
+When starting a new session, Claude should:
+1. Read this file (done automatically)
+2. Scan `TODO.md` for open 🔴/🟡 issues
+3. Check `CHANGELOG.md` and `VERSION` to understand the current state
+4. Identify the active course skills (see "Skill hints" below)
+
+---
+
 ## Issue tracking rule (ALWAYS follow)
 
 Every time you identify a bug, missing feature, incorrect assumption, or improvement opportunity:

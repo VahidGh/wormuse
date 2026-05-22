@@ -285,6 +285,43 @@ The `wormuse-sim/src/ow_bridge/` directory is a stub. Until it's implemented,
 
 ---
 
+## ISSUE-014 — AI (Claude) contribution not documented or attributed
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ Resolved — commit pending |
+| **Priority** | P1 |
+| **Severity** | Documentation / attribution |
+
+**Description:** The project was built with substantial AI assistance (Claude Code by Anthropic).
+This is not documented anywhere in the repository. Academic projects, open-source
+contributions, and course submissions benefit from transparent attribution of AI tools.
+The contribution should be documented at multiple levels:
+- Which parts were AI-generated vs human-directed
+- How to reproduce the development workflow
+- Where AI limitations were encountered (e.g., the MIDI ceiling formula bug)
+- How future contributors can use the same workflow
+
+**Affected files:**
+- `AI_CONTRIBUTIONS.md` — new; dedicated document describing Claude's role per module
+- `README.md` — add "Built with Claude Code" badge + acknowledgement section
+- `CLAUDE.md` — update to include self-description of the AI agent's role
+- `CHANGELOG.md` — add AI attribution to each version entry
+- `PyANNOW/pyproject.toml` — add AI tool note in metadata
+- `PyANNOW/presentation/index.html` — add acknowledgement slide
+- `docs/SCIENTIFIC_FOUNDATION.md` — note AI involvement in derivations
+- `TODO.md` — this entry
+
+**Fix plan:**
+1. Create `AI_CONTRIBUTIONS.md` — module-by-module contribution breakdown,
+   development workflow, interaction methodology, known limitations
+2. Update `README.md` with Claude Code badge and attribution paragraph
+3. Update `CLAUDE.md` with agent self-description
+4. Update `CHANGELOG.md` with per-version AI contribution note
+5. Add acknowledgement slide to presentation (before "Thank you")
+
+---
+
 ## ISSUE-013 — No testing framework; changes have no automated verification
 
 | Field | Value |
@@ -454,4 +491,5 @@ Pitch maps updated from D♭ major → C# minor pentatonic.
 | 🟡 **P2** | ISSUE-008 — Ca_thresh as PINN parameter | 1 day | Connects to SC-PINN project |
 | 🔵 **P3** | ISSUE-009 — AppStat dataset generation | 2 days | Statistical validation |
 | 🟠 **P1** | ISSUE-013 — Testing framework (pytest + CI) | 1 day | Catches regressions on every change |
+| 🟠 **P1** | ISSUE-014 — AI contribution not documented | 2 hours | Transparency + reproducibility |
 | 🔵 **P3** | ISSUE-010 — Real OpenWorm integration | 1 week | Full biological fidelity |

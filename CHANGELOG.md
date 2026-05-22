@@ -7,9 +7,34 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`.
 - **MINOR** — new feature: module, notebook, simulation mode, presentation section
 - **PATCH** — bug fix, doc correction, refactor with no behaviour change
 
+> **AI development note:** Every version listed here was implemented with
+> [Claude Code](https://www.anthropic.com/claude-code) (Anthropic) acting as the principal
+> development engineer under the scientific direction of Vahid Ghayoomie.
+> See `AI_CONTRIBUTIONS.md` for a full breakdown.
+
 ---
 
-## [0.5.0] — 2026-05-22  *(current)*
+## [0.6.0] — 2026-05-22  *(current)*
+
+### Added
+- `AI_CONTRIBUTIONS.md` — full documentation of Claude's role per module,
+  human-directed corrections, known AI limitations, and citation guidance
+- `README.md` — Claude Code badge + AI Attribution section
+- `CLAUDE.md` — agent self-description and session startup protocol
+- 91-test pytest suite — `PyANNOW/tests/` with 7 test files covering all modules
+- `Makefile` — `make test / coverage / lint / nb-test / ci`
+- CI updated: real `pytest` replaces `echo` stubs; coverage artifact upload
+
+### Fixed
+- `pca_reduce` transpose condition was backwards (caught by new test suite)
+- `conftest.py` `REPO_ROOT` path depth (parents[3] → parents[2])
+
+### Versioned
+- v0.6.0 git tag
+
+---
+
+## [0.5.0] — 2026-05-22
 
 ### Added
 - 95-cell BWM model: `generate_muscle_pitches(n)`, `MUSCLE_PITCHES_95`; `run_forward_fast` now accepts `n_muscles` parameter (default 95)

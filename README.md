@@ -1,8 +1,9 @@
 # wormuse
 
-![version](https://img.shields.io/badge/version-v0.5.0-blue)
+![version](https://img.shields.io/badge/version-v0.6.0-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![python](https://img.shields.io/badge/python-3.10--3.13-blue)
+![built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-blueviolet?logo=anthropic)
 
 > **A *C. elegans*–driven musical simulator.**
 > The 302-neuron nervous system, simulated by OpenWorm (Sibernetic + C302), is wired into a physical piano model. Each neuron firing triggers a hammer; muscle contractions modulate timing and dynamics. **Ion channels are the tuning fork** — a physics-informed neural network learns the kinetics that make the worm's activity musically coherent. Move the worm → hear the melody.
@@ -95,9 +96,26 @@ Each piece of code is tied to a specific lecture concept. See [docs/lectures/lec
 
 [MIT](./LICENSE) — compatible with OpenWorm and the rest of the ecosystem.
 
+## AI Attribution
+
+This project was built with **[Claude Code](https://www.anthropic.com/claude-code)** (Anthropic).
+Claude acted as the principal development engineer: implementing all Python modules, C++ skeletons,
+tests, documentation, notebooks, and the Reveal.js presentation — under the scientific direction
+and design decisions of Vahid Ghayoomie.
+
+See **[`AI_CONTRIBUTIONS.md`](./AI_CONTRIBUTIONS.md)** for:
+- Module-by-module contribution breakdown
+- Where human judgment was essential (and where it corrected the AI)
+- Known AI limitations encountered
+- How to reproduce the workflow
+
+> *"From now on add everything marked as issue here to the TODO list and update the list when resolved or updated."*
+> — The project rule (see `CLAUDE.md`) that Claude enforces on itself every session.
+
 ## Acknowledgements
 
 - [OpenWorm](https://openworm.org/) — Sibernetic SPH body simulator, C302 nervous system, ChannelWorm ion-channel models.
 - *Time Domain Simulation of a Piano* (Chabassier et al.) — physical piano modeling reference (Parts 1 + 2).
 - Prof. Luca Formaggia (AMSC), Profs. Beraha & Andre (AppStat 2026), and the NAML faculty (PINN lecture).
-- The user's own [channelworm](#) and SC-PINN preliminary work informing the ion-channel architecture.
+- Vahid Ghayoomie's own channelworm and SC-PINN work informing the ion-channel architecture.
+- **Claude** (Anthropic) — engineering implementation, code, tests, documentation, and design.
