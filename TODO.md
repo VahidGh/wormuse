@@ -285,6 +285,82 @@ The `wormuse-sim/src/ow_bridge/` directory is a stub. Until it's implemented,
 
 ---
 
+## ISSUE-011 — Project has no version; releases are untagged
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ Resolved — commit pending |
+| **Priority** | P1 |
+| **Severity** | Improvement / reproducibility |
+
+**Description:** There is no semantic version number for the project. After every major
+structural change (new module, new notebook, new simulation mode) there is no way to
+reference a stable snapshot. Collaborators, citations, and course submissions need a
+version string. Apply semantic versioning (`MAJOR.MINOR.PATCH`) with:
+- `MAJOR` bump → breaking API change in PyANNOW public interface
+- `MINOR` bump → new feature (new step module, new simulation mode, new notebook)
+- `PATCH` bump → bug fix, doc update, refactor that does not change behaviour
+
+Recommended version bumps (retroactively):
+- `v0.1.0` — Phase 0 scaffolding (Phase 0 complete, commit `93af5e4`)
+- `v0.2.0` — 8-cell Chopin optimizer + audio playback (`2a5c308`)
+- `v0.3.0` — Full NAML module tree + presentation (`81c6858`)
+- `v0.4.0` — ODE/PDE PINN + progression notebook (`246b1e4`)
+- `v0.5.0` — 95-cell model + Nocturne MIDI + issue tracking (`be6a0c3`, current)
+
+**Affected files:**
+- `VERSION` — new file at repo root (single source of truth)
+- `PyANNOW/pyproject.toml` — `version` field
+- `wormuse-analytics/pyproject.toml` — `version` field
+- `CHANGELOG.md` — new file, one entry per version with summary
+- `README.md` — add version badge (`![version](https://img.shields.io/badge/version-v0.5.0-blue)`)
+- `PyANNOW/presentation/index.html` — footer version string
+- `TODO.md` — this entry; update after each version bump
+- `.github/workflows/verify.yml` — optional: add a step to check VERSION matches tag
+
+**Fix plan:**
+1. Create `VERSION` file with `0.5.0`
+2. Update both `pyproject.toml` files
+3. Create `CHANGELOG.md` with v0.1-v0.5 entries
+4. Tag the current commit: `git tag -a v0.5.0 -m "..."`
+5. On every subsequent major change: bump VERSION + update CHANGELOG + retag
+
+---
+
+## ISSUE-012 — Cross-system equivalence table missing from docs and presentation
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ Resolved — commit pending |
+| **Priority** | P1 |
+| **Severity** | Documentation / scientific clarity |
+
+**Description:** SCIENTIFIC_FOUNDATION.md (§C.2) lists three structural correspondences
+between the worm and the piano. A comprehensive cross-reference table is needed that
+maps every physical and computational constraint in the C. elegans model to its
+mathematical/physical counterpart in the piano model and the NAML learning algorithm.
+This table is a key scientific asset for:
+- Course submissions (shows the cross-course connection)
+- Presentations (one-slide cheat sheet for the audience)
+- Future work planning (the table reveals missing connections)
+
+**Affected files:**
+- `docs/EQUIVALENCE_TABLE.md` — new file, the master table
+- `docs/SCIENTIFIC_FOUNDATION.md` — add forward reference to the table in §C.2
+- `PyANNOW/presentation/index.html` — new slide between "NAML toolkit" and "PyANNOW journey"
+- `PyANNOW/docs/PyANNOW_NAML_progression.md` — add table reference in the intro
+- `TODO.md` — this entry
+
+**Fix plan:**
+Create `docs/EQUIVALENCE_TABLE.md` with a table covering three domains:
+- **Biology column:** C. elegans physical parameter, source, typical value
+- **Piano column:** corresponding piano physical parameter, role in sound
+- **NAML/PyANNOW column:** corresponding ML parameter/concept, where it appears in code
+
+Then extract one compact version of the table into the presentation slide.
+
+---
+
 ## ✅ Resolved issues
 
 ### ISSUE-R01 — Piece misidentified as Nocturne No. 20 (was Raindrop Prelude)

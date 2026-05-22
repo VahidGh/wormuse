@@ -3,6 +3,8 @@
 > **Two excitable, wave-bearing systems coupled by a learned map.**
 > This document describes the physics on both sides of wormuse: the biological chain (ion channels → spikes → muscle → body) on one side, the mechanical chain (hammer → string → soundboard → air) on the other, and the mapping that ties them together.
 
+> **Quick reference:** [`EQUIVALENCE_TABLE.md`](./EQUIVALENCE_TABLE.md) — 20-row cross-reference mapping every C. elegans physical constraint to its piano and NAML counterpart.
+
 ---
 
 ## Abstract

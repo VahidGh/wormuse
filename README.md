@@ -1,5 +1,9 @@
 # wormuse
 
+![version](https://img.shields.io/badge/version-v0.5.0-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
+![python](https://img.shields.io/badge/python-3.10--3.13-blue)
+
 > **A *C. elegans*–driven musical simulator.**
 > The 302-neuron nervous system, simulated by OpenWorm (Sibernetic + C302), is wired into a physical piano model. Each neuron firing triggers a hammer; muscle contractions modulate timing and dynamics. **Ion channels are the tuning fork** — a physics-informed neural network learns the kinetics that make the worm's activity musically coherent. Move the worm → hear the melody.
 

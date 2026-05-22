@@ -603,6 +603,76 @@
   </div>
 </section>
 
+<!-- ═════════════════════ EQUIVALENCE TABLE SLIDE ═════════════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">The Bridge — Three systems, one physics family</span>
+  <h3>Cross-system <span class="hl">equivalence</span> table</h3>
+  <p style="font-size:.72em;opacity:.75;margin-bottom:8px">
+    Every constraint in the worm biology has a structural counterpart in the piano and in the NAML algorithm.<br>
+    Full 20-row table: <code>docs/EQUIVALENCE_TABLE.md</code>
+  </p>
+  <table style="width:100%;font-size:.65em;border-collapse:collapse">
+    <thead>
+      <tr style="border-bottom:2px solid var(--accent)">
+        <th style="text-align:left;padding:5px 8px;color:var(--accent)">C. elegans biology</th>
+        <th style="text-align:left;padding:5px 8px;color:var(--accent3)">Piano physics</th>
+        <th style="text-align:left;padding:5px 8px;color:var(--green)">NAML / PyANNOW</th>
+        <th style="text-align:center;padding:5px 8px;color:var(--accent)">Lecture</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">302 neurons → <strong>4 motor modes</strong></td>
+        <td style="padding:4px 8px">∞ modes → <strong>40 dominant modes</strong></td>
+        <td style="padding:4px 8px">Rank-k SVD <strong>X_k = U_k Σ_k V_k^T</strong></td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L06</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">EGL-19 Ca²⁺ <strong>threshold V_half_Ca</strong></td>
+        <td style="padding:4px 8px">Hammer contact <strong>δ > 0 gate</strong></td>
+        <td style="padding:4px 8px"><strong>tanh</strong> activation; <code>Ca_THRESH</code></td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L15</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">τ_Ca <strong>activation speed</strong></td>
+        <td style="padding:4px 8px">Hammer contact <strong>duration ~1-4 ms</strong></td>
+        <td style="padding:4px 8px"><strong>τ_Ca</strong> in PINN; most sensitive param (§7)</td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L27</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">EXP-2 K⁺ <strong>repolarisation</strong></td>
+        <td style="padding:4px 8px">String damping <strong>σ₀ e^{-σ₀t}</strong></td>
+        <td style="padding:4px 8px"><strong>g_EXP2</strong> in params; sets note sustain</td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L27</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">Locomotion frequency <strong>~0.4 Hz</strong></td>
+        <td style="padding:4px 8px">Tempo <strong>(BPM)</strong></td>
+        <td style="padding:4px 8px"><strong>drive_freq_hz</strong>; master clock</td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L18 GD</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">Bending wave <strong>propagation</strong></td>
+        <td style="padding:4px 8px">Inharmonicity <strong>B</strong> (string stiffness)</td>
+        <td style="padding:4px 8px"><strong>1D conv kernel</strong>; temporal spread</td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L23</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+        <td style="padding:4px 8px">Body ODE: <strong>ÿ+2γẏ+ω²y=F</strong></td>
+        <td style="padding:4px 8px">String PDE: <strong>ρü−Tu_xx+σ₀u̇=F</strong></td>
+        <td style="padding:4px 8px"><strong>PINN residual loss</strong> (ODE + PDE)</td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L27</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px">95 BWM cells <strong>(4 quadrants)</strong></td>
+        <td style="padding:4px 8px">88 keys <strong>(4 registers)</strong></td>
+        <td style="padding:4px 8px"><strong>out_dim=95</strong> MLP + pitch_map</td>
+        <td style="padding:4px 8px;text-align:center;color:var(--accent)">L16</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
 <!-- ═══════════════════════════════════ PART V: PyANNOW ═══ -->
 <section data-background-color="#030d1a">
   <div class="part-header" style="background:linear-gradient(135deg,#0d2b0d,#1a4020)">
