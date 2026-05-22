@@ -28,49 +28,53 @@
     --border:  rgba(255,255,255,0.15);
   }
 
-  .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+  /* ── Base font & slide containment ── */
+  .reveal { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 34px; }
+  /* Every slide clips to slide dimensions — no content can escape */
+  .reveal .slides section {
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 8px 16px;
+  }
+  /* h3 headlines reduced from Reveal default */
+  .reveal h3 { font-size: 1.15em; margin: 0 0 6px; }
+  .reveal h2 { font-size: 1.4em;  margin: 0 0 8px; }
+  .reveal p  { margin: 0 0 4px; }
 
   /* ── Title slide ── */
-  .title-slide h1 { font-size:2.6em; color: var(--accent); margin-bottom:.2em; }
-  .title-slide .subtitle { font-size:1.2em; opacity:.8; }
-  .title-slide .by { font-size:.9em; margin-top:1.5em; opacity:.6; }
+  .title-slide h1 { font-size:2.4em; color: var(--accent); margin-bottom:.2em; }
 
   /* ── Part header slides ── */
-  .part-header { background: linear-gradient(135deg,#0a2540,#1a3c5e); border-radius:12px; padding:40px; }
-  .part-header .part-num { font-size:.8em; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
-  .part-header h2 { font-size:2em; margin:.3em 0; color:white; }
-  .part-header .tagline { font-size:1em; opacity:.7; font-style:italic; }
+  .part-header { background: linear-gradient(135deg,#0a2540,#1a3c5e); border-radius:10px; padding:24px 32px; }
+  .part-header .part-num { font-size:.75em; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
+  .part-header h2 { font-size:1.7em; margin:.2em 0; color:white; }
+  .part-header .tagline { font-size:.9em; opacity:.7; font-style:italic; }
 
-  /* ── Info cards ── */
-  .card-grid { display:grid; gap:16px; }
-  .card-grid.two { grid-template-columns: 1fr 1fr; }
+  /* ── Info cards — tighter ── */
+  .card-grid { display:grid; gap:10px; }
+  .card-grid.two   { grid-template-columns: 1fr 1fr; }
   .card-grid.three { grid-template-columns: 1fr 1fr 1fr; }
-  .card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:left; }
-  .card h4 { color:var(--accent); margin:0 0 8px; font-size:.85em; text-transform:uppercase; letter-spacing:.1em; }
-  .card p  { margin:0; font-size:.82em; line-height:1.5; opacity:.9; }
-  .card .big { font-size:2em; font-weight:700; color:var(--accent3); margin-bottom:4px; }
+  .card { background:var(--bg-card); border:1px solid var(--border);
+          border-radius:8px; padding:10px 13px; text-align:left; }
+  .card h4 { color:var(--accent); margin:0 0 5px; font-size:.78em;
+             text-transform:uppercase; letter-spacing:.08em; }
+  .card p  { margin:0; font-size:.76em; line-height:1.4; opacity:.9; }
+  .card .big { font-size:1.7em; font-weight:700; color:var(--accent3); margin-bottom:3px; }
 
-  /* ── Step cards ── */
-  .step-card { border-left:4px solid var(--accent); padding:12px 16px; margin:8px 0;
-               background:var(--bg-card); border-radius:0 8px 8px 0; text-align:left; }
-  .step-card .step-label { font-size:.75em; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
-  .step-card .step-title { font-size:1em; font-weight:600; margin:2px 0; }
-  .step-card .step-meta  { font-size:.75em; opacity:.7; }
+  /* ── Step cards — tighter ── */
+  .step-card { border-left:3px solid var(--accent); padding:6px 11px; margin:4px 0;
+               background:var(--bg-card); border-radius:0 7px 7px 0; text-align:left; }
+  .step-card .step-label { font-size:.68em; color:var(--accent); font-weight:700;
+                           text-transform:uppercase; letter-spacing:.08em; }
+  .step-card .step-title { font-size:.88em; font-weight:600; margin:1px 0; }
+  .step-card .step-meta  { font-size:.7em; opacity:.7; line-height:1.3; }
   .step-card.done  { border-color:var(--green); }
   .step-card.active{ border-color:var(--accent3); background:rgba(255,217,61,.08); }
 
-  /* ── Comparison bars ── */
-  .bar-container { text-align:left; margin:6px 0; }
-  .bar-label { font-size:.78em; opacity:.8; margin-bottom:3px; }
-  .bar-track { background:rgba(255,255,255,.12); border-radius:4px; height:14px; overflow:hidden; }
-  .bar-fill  { height:100%; border-radius:4px; transition:width .6s ease; }
-
-  /* ── Piano / worm diagrams ── */
-  .piano-svg, .worm-svg { width:100%; max-width:500px; margin:0 auto; display:block; }
-
-  /* ── Code blocks ── */
-  .reveal pre { font-size:.55em !important; border-radius:8px; }
-  .reveal pre code { padding:14px !important; }
+  /* ── Code blocks — compact with scroll ── */
+  .reveal pre { font-size:.44em !important; border-radius:7px; margin:6px 0; }
+  .reveal pre code { padding:10px !important; max-height:260px; overflow-y:auto !important;
+                     scrollbar-width:thin; }
 
   /* ── Highlighted text ── */
   .hl  { color:var(--accent); font-weight:600; }
@@ -79,33 +83,54 @@
 
   /* ── Equation box ── */
   .eq-box { background:rgba(0,217,255,.08); border:1px solid rgba(0,217,255,.3);
-            border-radius:8px; padding:16px; margin:12px 0; }
+            border-radius:7px; padding:9px 12px; margin:6px 0; }
 
   /* ── Timeline ── */
-  .timeline { display:flex; flex-direction:column; gap:8px; text-align:left; }
-  .tl-item  { display:flex; align-items:flex-start; gap:12px; }
-  .tl-dot   { width:10px; height:10px; border-radius:50%; background:var(--accent);
-              flex-shrink:0; margin-top:6px; }
-  .tl-text  { font-size:.8em; line-height:1.5; }
+  .timeline { display:flex; flex-direction:column; gap:5px; text-align:left; }
+  .tl-item  { display:flex; align-items:flex-start; gap:9px; }
+  .tl-dot   { width:8px; height:8px; border-radius:50%; background:var(--accent);
+              flex-shrink:0; margin-top:5px; }
+  .tl-text  { font-size:.74em; line-height:1.4; }
 
   /* ── Loss badges ── */
   .loss-badge { display:inline-block; background:rgba(0,217,255,.15); border:1px solid var(--accent);
-                border-radius:20px; padding:3px 12px; font-size:.8em; color:var(--accent); }
+                border-radius:20px; padding:2px 10px; font-size:.76em; color:var(--accent); }
 
   /* ── Section label ── */
-  .section-label { font-size:.65em; letter-spacing:.2em; text-transform:uppercase;
-                   color:var(--accent); margin-bottom:.5em; display:block; }
+  .section-label { font-size:.6em; letter-spacing:.18em; text-transform:uppercase;
+                   color:var(--accent); margin-bottom:.3em; display:block; }
 
-  /* ── Biological limit table ── */
-  table.bio-limits { font-size:.72em; width:100%; }
-  table.bio-limits th { color:var(--accent); background:rgba(0,217,255,.1); }
+  /* ── Tables ── */
+  table.bio-limits { font-size:.68em; width:100%; }
+  table.bio-limits th { color:var(--accent); background:rgba(0,217,255,.1); padding:5px 7px; }
+  table.bio-limits td { padding:4px 7px; }
   table.bio-limits td:last-child { color:var(--accent2); }
 
+  /* Generic compact table */
+  .reveal table { font-size:.72em; }
+  .reveal table th, .reveal table td { padding:4px 8px; }
+
   /* ── Notation list ── */
-  .notation { list-style:none; padding:0; text-align:left; font-size:.8em; }
-  .notation li { padding:4px 0; border-bottom:1px solid var(--border); }
+  .notation { list-style:none; padding:0; text-align:left; font-size:.76em; }
+  .notation li { padding:3px 0; border-bottom:1px solid var(--border); }
   .notation li:last-child { border:none; }
-  .notation .sym { display:inline-block; width:120px; font-family:monospace; color:var(--accent3); }
+  .notation .sym { display:inline-block; width:110px; font-family:monospace; color:var(--accent3); }
+
+  /* ── Piano / worm diagrams — responsive ── */
+  .piano-svg, .worm-svg { width:100%; max-width:460px; margin:0 auto; display:block; }
+
+  /* ── Comparison bars ── */
+  .bar-container { text-align:left; margin:4px 0; }
+  .bar-label { font-size:.74em; opacity:.8; margin-bottom:2px; }
+  .bar-track { background:rgba(255,255,255,.12); border-radius:3px; height:12px; overflow:hidden; }
+  .bar-fill  { height:100%; border-radius:3px; transition:width .6s ease; }
+
+  /* ── Dense slide utility class ── */
+  /* Apply to <section> on slides with lots of content */
+  section.dense { font-size:.88em; }
+  section.dense .card { padding:8px 11px; }
+  section.dense .step-card { padding:5px 10px; margin:3px 0; }
+  section.dense .eq-box { padding:7px 10px; margin:5px 0; }
 </style>
 </head>
 <body>
@@ -190,7 +215,7 @@
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Piano Physics — The basics</span>
   <h3>A piano is a <span class="hl">wave machine</span></h3>
   <div class="card-grid two">
@@ -206,7 +231,7 @@
     </div>
     <div>
       <!-- Animated string SVG -->
-      <svg width="100%" height="160" viewBox="0 0 300 160" style="background:rgba(255,255,255,.03);border-radius:8px">
+      <svg width="100%" height="140" viewBox="0 0 300 160" style="background:rgba(255,255,255,.03);border-radius:8px">
         <!-- String at rest -->
         <line x1="20" y1="80" x2="280" y2="80" stroke="rgba(255,255,255,.2)" stroke-width="1" stroke-dasharray="4"/>
         <!-- Vibrating string (sine wave) -->
@@ -250,7 +275,7 @@
 <section data-background-color="#030d1a">
   <span class="section-label">Piano Physics — Frequency = Pitch</span>
   <h3><span class="hl">Frequency</span> is what we hear as <span class="hl2">pitch</span></h3>
-  <div class="card-grid three" style="margin:20px 0">
+  <div class="card-grid three" style="margin:8px 0">
     <div class="card"><div class="big">110 Hz</div><h4>A2</h4><p>Low, bass register. String vibrates 110 times per second.</p></div>
     <div class="card"><div class="big">440 Hz</div><h4>A4 (concert A)</h4><p>The universal tuning reference. 440 vibrations/second.</p></div>
     <div class="card"><div class="big">3520 Hz</div><h4>A7</h4><p>Very high. Each octave up = ×2 in frequency.</p></div>
@@ -304,13 +329,13 @@
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Neurons — The Building Block</span>
   <h3>A neuron is a <span class="hl">biological transistor</span></h3>
   <div class="card-grid two">
     <div>
       <!-- Neuron SVG diagram -->
-      <svg width="100%" height="200" viewBox="0 0 280 200">
+      <svg width="100%" height="170" viewBox="0 0 280 200">
         <!-- Dendrites -->
         <line x1="30" y1="50" x2="100" y2="100" stroke="#00d9ff" stroke-width="2"/>
         <line x1="20" y1="100" x2="100" y2="100" stroke="#00d9ff" stroke-width="2"/>
@@ -350,7 +375,7 @@
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Neural Systems — Scale</span>
   <h3>From <span class="hl2">302</span> neurons to <span class="hl">86 billion</span></h3>
   <div class="card-grid three">
@@ -377,7 +402,7 @@
   </p>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Biological vs Artificial Neural Networks</span>
   <h3>How <span class="hl">nature</span> compares to <span class="hl2">math</span></h3>
   <div class="card-grid two" style="font-size:.82em">
@@ -419,7 +444,7 @@
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">C. elegans — Meet the worm</span>
   <h3><em>Caenorhabditis elegans</em> — why a worm?</h3>
   <div class="card-grid two">
@@ -444,11 +469,11 @@
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">C. elegans — The Locomotion Circuit</span>
   <h3>302 neurons playing a <span class="hl">body wave</span></h3>
   <!-- Simplified connectome/body diagram -->
-  <svg width="100%" height="200" viewBox="0 0 700 200" style="background:rgba(255,255,255,.02);border-radius:8px">
+  <svg width="100%" height="150" viewBox="0 0 700 200" style="background:rgba(255,255,255,.02);border-radius:8px;max-height:150px">
     <!-- Body outline -->
     <ellipse cx="350" cy="100" rx="320" ry="60" fill="none" stroke="rgba(0,217,255,.3)" stroke-width="2"/>
     <!-- Body segments -->
@@ -490,7 +515,7 @@
   </p>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">OpenWorm Project</span>
   <h3>The world's first <span class="hl">whole-organism simulation</span></h3>
   <div class="card-grid two">
@@ -522,7 +547,7 @@
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">NAML Course — Overview</span>
   <h3>From <span class="hl">SVD</span> to <span class="hl2">PINNs</span> — the full arc</h3>
   <div class="card-grid two" style="font-size:.82em">
@@ -542,7 +567,7 @@
   </p>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">NAML — Key equations we use</span>
   <h3>The <span class="hl">maths</span> in one slide</h3>
   <div class="card-grid two" style="font-size:.8em">
@@ -658,7 +683,7 @@ print(f"Alignment residual: {result['residual']:.3f}")</code></pre>
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Step 2-3 — Labs 02-03 · L07-10</span>
   <h3>Steps 2-3: <span class="hl">K-means</span> + <span class="hl2">Ridge</span></h3>
   <div class="card-grid two" style="font-size:.82em">
@@ -703,7 +728,7 @@ print(f"Ridge R² = {eval_res['r2']:.3f}")</code></pre>
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Steps 4-6 — Labs 06/08/10 · L14-22</span>
   <h3>Steps 4-6: <span class="hl">MLP → Adam → L-BFGS</span></h3>
   <div class="card-grid two" style="font-size:.78em">
@@ -750,7 +775,7 @@ print(f"Final loss: {h_lbfgs.train_loss[-1]:.5f}")</code></pre>
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Step 8a — L14 + L27 (ODE)</span>
   <h3>Step 8a: <span class="hl">ODE PINN</span> — damped harmonic oscillator</h3>
   <div class="card-grid two" style="font-size:.82em">
@@ -802,7 +827,7 @@ params_ode, hist_ode = train_pinn(
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Step 8b — L14 + L27 (PDE) — NEW</span>
   <h3>Step 8b: <span class="hl2">PDE PINN</span> — 1D wave equation along the worm body</h3>
   <div class="card-grid two" style="font-size:.82em">
@@ -849,13 +874,13 @@ print(f"PDE loss: {results['final_loss_pde']:.5f}")
   </div>
 </section>
 
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Step 8 — Comparison</span>
   <h3>ODE vs PDE: <span class="hl">what does the physics change?</span></h3>
   <div class="card-grid two" style="font-size:.82em">
     <div>
       <div style="background:var(--bg-card);border-radius:8px;padding:16px;margin-bottom:12px">
-        <table style="width:100%;font-size:.85em;border-collapse:collapse">
+        <table style="width:100%;font-size:.78em;border-collapse:collapse">
           <tr style="border-bottom:1px solid var(--border)">
             <th style="text-align:left;padding:6px;color:var(--accent)">Criterion</th>
             <th style="text-align:center;padding:6px;color:var(--accent)">ODE</th>
@@ -941,7 +966,7 @@ print(f"PDE loss: {results['final_loss_pde']:.5f}")
 <section data-background-color="#030d1a">
   <span class="section-label">Results — The biological ceiling</span>
   <h3>The <span class="hl2">hard limits</span> no NAML can overcome</h3>
-  <table class="bio-limits" style="width:100%;font-size:.78em;margin:16px 0">
+  <table class="bio-limits" style="width:100%;font-size:.74em;margin:8px 0">
     <thead>
       <tr><th style="text-align:left;padding:8px">Constraint</th><th style="text-align:left;padding:8px">Biological source</th><th style="text-align:left;padding:8px">Musical limit</th></tr>
     </thead>
@@ -1024,7 +1049,7 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
 </section>
 
 <!-- FW-A: polimi-amsc (Sibernetics + HPC) -->
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label" style="color:#c084fc">Further Work A — polimi-amsc</span>
   <h3>🔧 Sibernetics integration + HPC learning loop</h3>
   <div class="card-grid two" style="font-size:.8em">
@@ -1072,7 +1097,7 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
 </section>
 
 <!-- FW-B: polimi-appstat (ion channel statistics) -->
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label" style="color:#c084fc">Further Work B — polimi-appstat</span>
   <h3>📊 Statistical improvement of ion-channel kinetics predictions</h3>
   <div class="card-grid two" style="font-size:.8em">
@@ -1120,21 +1145,21 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
   <h3>Three courses × one worm × one piano</h3>
   <div style="text-align:left;font-size:.82em;margin:16px 0">
     <div style="display:flex;gap:10px;margin:8px 0;padding:14px;background:rgba(0,217,255,.07);border-left:4px solid var(--accent);border-radius:0 8px 8px 0">
-      <div style="font-size:1.6em;flex-shrink:0">📐</div>
+      <div style="font-size:1.3em;flex-shrink:0">📐</div>
       <div>
         <strong style="color:var(--accent)">NAML (done)</strong> — SVD → K-means → Ridge → MLP → Adam → L-BFGS → PINN (ODE + PDE)<br>
         <span style="opacity:.7">Learns the worm→music mapping using only course methods</span>
       </div>
     </div>
     <div style="display:flex;gap:10px;margin:8px 0;padding:14px;background:rgba(192,132,252,.07);border-left:4px solid #c084fc;border-radius:0 8px 8px 0">
-      <div style="font-size:1.6em;flex-shrink:0">🔧</div>
+      <div style="font-size:1.3em;flex-shrink:0">🔧</div>
       <div>
         <strong style="color:#c084fc">AMSC (next)</strong> — C++ Sibernetic wrapper, MPI distributed loop, GPU acceleration<br>
         <span style="opacity:.7">Makes the simulation real (actual OpenWorm) and fast (Azure NC24-A100)</span>
       </div>
     </div>
     <div style="display:flex;gap:10px;margin:8px 0;padding:14px;background:rgba(107,203,119,.07);border-left:4px solid var(--green);border-radius:0 8px 8px 0">
-      <div style="font-size:1.6em;flex-shrink:0">📊</div>
+      <div style="font-size:1.3em;flex-shrink:0">📊</div>
       <div>
         <strong style="color:var(--green)">AppStat (next)</strong> — PCA + clustering + OLS + RF on ion-channel parameter space<br>
         <span style="opacity:.7">Validates PINN predictions are biologically plausible; closes the loop with a Bayesian prior</span>
@@ -1202,11 +1227,14 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
     controls: true,
     progress: true,
     center: true,
+    // Slide dimensions — content designed for 1100×700
     width: 1100,
-    height: 680,
-    margin: 0.04,
+    height: 700,
+    margin: 0.02,          // 2% border margin (was 4%)
+    minScale: 0.08,        // allow aggressive scale-down on small windows
+    maxScale: 2.0,
+    disableLayout: false,  // keep Reveal's auto-fit scaling active
     plugins: [],
-    // MathJax integration
     mathjax3: {
       mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
     },
