@@ -69,3 +69,4 @@ logs/
 # Render outputs
 render-out/
 PyANNOW/notebooks/demo_outputs/
+PyANNOW/notebooks/step_outputs/

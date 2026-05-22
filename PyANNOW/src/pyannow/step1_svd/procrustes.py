@@ -87,7 +87,6 @@ def build_chopin_features(events: list, duration_s: float,
     n_bins     : temporal resolution (rows of the output)
     k_chopin   : number of Chopin feature dimensions (columns)
     """
-    from ..targets.midi_target import WORM_PITCHES  # noqa: F401
     dt = duration_s / n_bins
     pitches = sorted({int(e.pitch) for e in events if e.time_s <= duration_s})
     if not pitches:

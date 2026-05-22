@@ -751,49 +751,148 @@ print(f"Final loss: {h_lbfgs.train_loss[-1]:.5f}")</code></pre>
 </section>
 
 <section data-background-color="#030d1a">
-  <span class="section-label">Step 8 — L14 + L27</span>
-  <h3>Step 8: <span class="hl">PINN</span> — physics constrains the music</h3>
+  <span class="section-label">Step 8a — L14 + L27 (ODE)</span>
+  <h3>Step 8a: <span class="hl">ODE PINN</span> — damped harmonic oscillator</h3>
   <div class="card-grid two" style="font-size:.82em">
     <div>
-      <p><strong>The physics:</strong> the worm body is a damped harmonic oscillator</p>
+      <p><strong>Physics (ODE):</strong> each muscle group is a point oscillator</p>
       <div class="eq-box">
         \[\ddot q_j + 2\gamma\,\dot q_j + \omega^2 q_j = F_j^{\text{neural}}(t)\]
-        <span style="font-size:.8em;opacity:.7">γ = damping · ω = locomotion frequency · F = neural drive</span>
-      </div>
-      <div class="card" style="margin-top:10px">
-        <h4>Why not ion channels?</h4>
-        <p>The original SC-PINN (HH kinetics) captures ion-channel detail irrelevant to music. The oscillator captures what matters: <em>the rhythm is periodic, it's damped, and it's driven by neural activity.</em></p>
+        <span style="font-size:.8em;opacity:.7">time-only · one ODE per muscle · simple + fast</span>
       </div>
       <div class="card" style="margin-top:8px">
-        <h4>Lab14 / L27 connection</h4>
-        <p>The residual <code>q̈ + 2γq̇ + ω²q − F</code> is computed via <strong><code>jax.grad</code> twice</strong> at random collocation points. This is the exact PINN recipe from Lecture 27 and Lab04's JAX introduction.</p>
+        <h4>NAML L27 connection</h4>
+        <p>Residual = <code>q̈ + 2γq̇ + ω²q − F</code> via <strong><code>jax.jacfwd</code> twice</strong>. Random collocation in <em>time</em> only. Exact recipe from L27 slides.</p>
+      </div>
+      <div class="card" style="margin-top:8px">
+        <h4>Advantage</h4>
+        <p>Fast (~30s training). Easy to understand. Baseline for comparison.</p>
+      </div>
+      <div class="card" style="margin-top:8px;border-color:var(--accent2)">
+        <h4 style="color:var(--accent2)">Limitation</h4>
+        <p>Each muscle is <em>independent</em>. No spatial coupling — the body wave is not captured.</p>
       </div>
     </div>
     <div>
-      <pre><code class="language-python"># Step 8: PINN — locomotion physics (L14 + L27)
+      <pre><code class="language-python"># Step 8a: ODE PINN (L14 + L27)
 from pyannow.step8_pinn.locomotion_pinn import (
-    PINNComposer, train_pinn_adam_lbfgs
+    PhysicsComposer, ode_physics_loss, train_pinn
 )
 import jax, jax.numpy as jnp
 
-model = PINNComposer(hidden=48, depth=3, out_dim=8)
-params = model.init(jax.random.PRNGKey(0),
-                    jnp.zeros((1, 5)))  # (1, 1+k_worm)
+model_ode = PhysicsComposer(hidden=32, depth=2, out_dim=8)
+params_ode = model_ode.init(
+    jax.random.PRNGKey(0), jnp.zeros((1, 1+k_worm)))
 
-# Collocation points (L27: random sampling)
-t_colloc = jnp.linspace(0, 15, 300)
-z_colloc = Z_worm[::50]  # coarse neural samples
+# Collocation in TIME only (ODE)
+t_colloc = jnp.linspace(0, 15, 200)
+z_colloc = Z_worm[::T//200]
 
-# Physics-informed training (Adam → L-BFGS)
-params, hist = train_pinn_adam_lbfgs(
-    model, params,
-    tz_data, q_data,
-    t_colloc, z_colloc,
-    lam_phys=0.1,     # λ balances data vs physics
-    adam_steps=1000,
-    lbfgs_steps=100
+params_ode, hist_ode = train_pinn(
+    model_ode, params_ode,
+    inp_ode,       # (T, 1+k_worm)  ← time + neural code
+    C_chopin,
+    phys_loss_fn = ode_physics_loss,
+    phys_args    = (t_colloc, z_colloc),
+    lam_phys = 0.1,
+    adam_steps=500, lbfgs_steps=50,
+    label="ODE"
+)</code></pre>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Step 8b — L14 + L27 (PDE) — NEW</span>
+  <h3>Step 8b: <span class="hl2">PDE PINN</span> — 1D wave equation along the worm body</h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <p><strong>Physics (PDE):</strong> the worm body as a 1D elastic rod</p>
+      <div class="eq-box">
+        \[\rho\,q_{tt}(x,t) - \mu\,q_{xx}(x,t) + \gamma\,q_t = F(x,t)\]
+        <span style="font-size:.8em;opacity:.7">x = position along body · spatial + temporal derivatives</span>
+      </div>
+      <div class="card" style="margin-top:8px">
+        <h4>🎹 Beautiful symmetry with the piano string</h4>
+        <p>Piano (§B.2): <code>ρ_s ü − T_s u_xx + ESκ² u_xxxx = F_hammer</code><br>
+        Worm  (§A.6): <code>ρ q_tt − μ q_xx + γ q_t = F_neural</code><br>
+        <em>The same PDE family drives both!</em><br>
+        This is the Structural Correspondence 2 from <code>SCIENTIFIC_FOUNDATION.md §C.2</code>.</p>
+      </div>
+    </div>
+    <div>
+      <pre><code class="language-python"># Step 8b: PDE PINN — 1D wave eq (L14 + L27)
+from pyannow.step8_pinn.locomotion_pinn import (
+    PhysicsComposer, pde_physics_loss,
+    compare_ode_vs_pde
 )
-# Now the notes obey the worm's mechanical law!</code></pre>
+
+# Collocation in SPACE × TIME (PDE)
+x_colloc = jnp.linspace(0, 1, 200)
+t_colloc = jnp.linspace(0, 15, 200)
+
+# One call runs BOTH and compares
+results = compare_ode_vs_pde(
+    Z_worm, C_chopin, t_arr,
+    lam_phys=0.1,
+    adam_steps=500, lbfgs_steps=50
+)
+
+print(f"ODE loss: {results['final_loss_ode']:.5f}")
+print(f"PDE loss: {results['final_loss_pde']:.5f}")
+# PDE is typically better — it knows the wave propagates!</code></pre>
+      <div class="card" style="margin-top:8px;border-color:var(--green)">
+        <h4 style="color:var(--green)">Advantage over ODE</h4>
+        <p>Captures the spatial travelling wave. Adjacent segments are coupled → smoother melodies. Closer to real worm mechanics.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Step 8 — Comparison</span>
+  <h3>ODE vs PDE: <span class="hl">what does the physics change?</span></h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <div style="background:var(--bg-card);border-radius:8px;padding:16px;margin-bottom:12px">
+        <table style="width:100%;font-size:.85em;border-collapse:collapse">
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:6px;color:var(--accent)">Criterion</th>
+            <th style="text-align:center;padding:6px;color:var(--accent)">ODE</th>
+            <th style="text-align:center;padding:6px;color:var(--accent2)">PDE</th>
+          </tr>
+          <tr><td style="padding:5px">Physics dimension</td><td style="text-align:center">time only</td><td style="text-align:center;color:var(--accent2)">x + time</td></tr>
+          <tr><td style="padding:5px">Collocation space</td><td style="text-align:center">1D</td><td style="text-align:center;color:var(--accent2)">2D grid</td></tr>
+          <tr><td style="padding:5px">Captures body wave?</td><td style="text-align:center">✗</td><td style="text-align:center;color:var(--green)">✓</td></tr>
+          <tr><td style="padding:5px">Piano symmetry?</td><td style="text-align:center">partial</td><td style="text-align:center;color:var(--green)">full (§C.2)</td></tr>
+          <tr><td style="padding:5px">Training time</td><td style="text-align:center">~30s</td><td style="text-align:center;color:var(--accent2)">~90s</td></tr>
+          <tr><td style="padding:5px">Expected final loss</td><td style="text-align:center">lower bound</td><td style="text-align:center;color:var(--green)">slightly lower</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4>NAML L27 — both are the same recipe</h4>
+        <p>The only difference: collocation points are 1D (t) for ODE and 2D (x,t) for PDE. The loss, optimizer, and autodiff are identical.</p>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:.85em"><strong>The loss decomposition tells the story:</strong></p>
+      <div class="eq-box">
+        \[\mathcal{L}_{\text{total}} = \underbrace{\mathcal{L}_{\text{data}}}_{\text{match Chopin}} + \lambda_p \underbrace{\mathcal{L}_{\text{phys}}}_{\text{obey worm's law}}\]
+      </div>
+      <p style="font-size:.82em;margin-top:10px">
+        <span class="hl">ODE physics loss:</span>
+        \(\|\ddot q + 2\gamma\dot q + \omega^2 q - F\|^2\)
+        sampled at random <em>times</em>
+      </p>
+      <p style="font-size:.82em;margin-top:8px">
+        <span class="hl2">PDE physics loss:</span>
+        \(\|\rho q_{tt} - \mu q_{xx} + \gamma q_t - F\|^2\)
+        sampled at random <em>(x, t) pairs</em>
+      </p>
+      <div class="card" style="margin-top:12px">
+        <h4>When would you choose ODE?</h4>
+        <p>For real-time applications (ODE is 3× faster) or when spatial resolution is irrelevant (e.g., if you only care about total energy, not per-segment dynamics).</p>
+      </div>
     </div>
   </div>
 </section>

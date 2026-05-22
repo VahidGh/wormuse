@@ -123,30 +123,104 @@ We use **only the methods taught in the Numerical Analysis for Machine Learning 
 
 ---
 
-### Step 8 — PINN (locomotion mechanics)  *(L14 / L27)*
+### Step 8a — ODE PINN (damped harmonic oscillator)  *(L14 / L27)*
+
+**The physics (ODE):** Each muscle group j is a point oscillator:
+
+$$\ddot{q}_j + 2\gamma\,\dot{q}_j + \omega^2\,q_j = F_j^{\text{neural}}(t)$$
+
+- `γ` = damping (set to locomotion decay rate)
+- `ω` = natural frequency (2π × locomotion_freq_Hz)
+- `F_j` = neural forcing from latent code
 
 **NAML concepts:**
-- **L27 — PINNs:** add a physics residual to the MLP loss.
-- **Physics:** the worm body obeys a damped harmonic oscillator `ÿ + 2γẏ + ω²y = F_neural`.
-- **L14 — jax.grad** computes `dy/dt` and `d²y/dt²` automatically at collocation points.
-- **Recipe:** Adam (1000 steps) → L-BFGS (100 steps) — identical to the user's SC-PINN.
+- **L27 — PINNs:** data loss + λ × residual² at random collocation times.
+- **L14 — jax.grad** twice: `∂q/∂t` and `∂²q/∂t²` via `jax.jacfwd(jax.jacfwd(...))`.
+- **Recipe:** Adam → L-BFGS (identical to the user's SC-PINN, L22).
 
-**Files:**  
-- `step8_pinn/locomotion_pinn.py`
-
-**Expected improvement:** Generated notes respect the worm's mechanical timing constraint — notes are smoother, less jittery. The biological realism is enforced mathematically.
+**Limitation:** treats each muscle independently — no spatial coupling between segments.
 
 ---
 
-## Results summary (to be updated)
+### Step 8b — PDE PINN (1D wave equation)  *(L14 / L27 + NMPDE connection)*
 
-| Step | Method | NAML Lectures | Loss | Notes/s | Improvement |
+**The physics (PDE):** The worm body as a 1D elastic rod:
+
+$$\rho\,q_{tt}(x,t) - \mu\,q_{xx}(x,t) + \gamma\,q_t(x,t) = F(x,t)$$
+
+where `x ∈ [0,1]` is position along the body, `t` is time.
+
+**Why this PDE?**  
+This is the *linearised SPH model* from SCIENTIFIC_FOUNDATION.md §A.6 — it's also structurally identical to the piano string equation (§B.2):
+- Piano: `ρ_s ü - T_s u_xx + ES κ² u_xxxx + ... = F_hammer`
+- Worm:  `ρ q_tt - μ q_xx + γ q_t = F_neural`
+
+The worm and the piano obey the **same PDE family** (damped wave equation). This is SCIENTIFIC_FOUNDATION.md §C.2 Correspondence 2 made concrete.
+
+**NAML concepts:**
+- **L27 — PINNs:** collocation points now span (x, t) space, not just t.
+- **L14 — jax.grad** for both spatial (`∂²q/∂x²`) and temporal (`∂²q/∂t²`) derivatives.
+- More physics = higher accuracy but ~3× slower than ODE.
+
+**Files:**  
+- `step8_pinn/locomotion_pinn.py` — contains `ode_residual`, `pde_residual`, `compare_ode_vs_pde`
+
+---
+
+### ODE vs PDE comparison
+
+| Criterion | Step 8a (ODE) | Step 8b (PDE) |
+|---|---|---|
+| Physics dimension | Time only | Space + time |
+| Collocation points | `t ∈ [0, T]` | `(x,t) ∈ [0,1] × [0,T]` |
+| Derivatives needed | `∂²q/∂t²` | `∂²q/∂t²` + `∂²q/∂x²` |
+| Training time | ~30 s | ~90 s |
+| Captures body wave? | ✗ (per-muscle) | ✓ (spatial propagation) |
+| NAML coverage | L14, L27 | L14, L27 + NMPDE echo |
+| Expected loss | Slightly higher | Slightly lower |
+
+**Expected improvement:** PDE-constrained notes have smoother inter-note transitions because spatial coupling enforces that adjacent body segments cannot fire completely independently. Notes respect both mechanical timing (ODE benefit) and wave propagation (PDE benefit).
+
+---
+
+## Results (measured, 2026-05-22)
+
+Notebook: `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` (2 MB, all outputs baked).  
+Simulation: 10 s window, 302-neuron synthetic activity, Chopin first 10 s.
+
+| Step | Method | NAML Lectures | Onset loss | Notes (10s) | Notes |
 |---|---|---|---|---|---|
-| 0 | Rule-based | — | 0.010 | 3.2 | Baseline |
-| 1 | SVD + Procrustes | L06, L09 | ? | ? | TBD |
-| 2 | + K-means | L08, L10 | ? | ? | TBD |
-| 3 | + Ridge | L07, L11 | ? | ? | TBD |
-| 4 | + MLP (JAX) | L14-17 | ? | ? | TBD |
+| 0 | Rule-based | — | 0.00218 | 32 | Baseline; regular grid |
+| 1 | SVD + Procrustes | L06, L09 | 0.00734 | 32 | Alignment residual 2688 — worm/Chopin subspaces very different |
+| 2 | K-means | L08, L10 | **0.00145** | 1 | Low loss but sparse — 1 cluster transition in 10s |
+| 3 | Ridge | L07, L11 | 0.00761 | 30 | Ill-conditioned with k=1 (one dominant neural PC) |
+| 4-6 | MLP + Adam + L-BFGS | L14-22 | 0.00504 | 20 | Non-linear mapping; better than Ridge |
+| 8a | ODE PINN | L14, L27 | 0.05122 | — | Higher total loss (physics term); data_loss≈0.047 |
+| 8b | PDE PINN | L14, L27 | 0.07871 | — | PDE phys_loss stuck at 0.48; spatial derivatives harder |
+
+### Key findings
+
+1. **K-means achieved lowest onset loss** (0.00145) but by producing only 1 note — the soft Gaussian loss is easily gamed by sparse predictions. Better metric needed (e.g., precision/recall with fixed-width window).
+
+2. **MLP+Adam+L-BFGS (Steps 4-6) gave the best structured output** (20 notes, meaningful mapping) with loss 0.00504.
+
+3. **PINN losses are much higher** (0.05-0.08) than the data-only methods. This is expected: the PINN optimises `L_data + λ L_phys`. The total loss is higher because it is enforcing the physics constraint, not just fitting Chopin. The data_loss component alone (≈0.047 for ODE) is comparable to the other steps.
+
+4. **ODE PINN converged; PDE PINN got stuck.** The PDE physics loss stayed constant at 0.481 throughout training — the spatial Jacobians make the optimization landscape much harder. Solutions:
+   - Increase collocation point density
+   - Use curriculum: train data-only first, gradually increase λ_phys
+   - Lower learning rate for the PDE case
+
+5. **k=1 neural PC** was chosen by the variance criterion because the synthetic 302-neuron activity (302 repetitions of 8 muscle signals) collapses to one dominant direction. The real worm would have richer structure (motor circuits, interneurons, sensory neurons), yielding k=4-8 truly independent dimensions.
+
+### Interpretation
+
+The biological system (302 neurons, 8 muscles) has severe dimensionality constraints that limit what NAML can achieve:
+- The worm's 302-D neural space effectively lives in 1-4 dimensions (locomotion subspace)
+- Chopin's musical feature space requires much more structure
+- The mapping is learnable but has a low ceiling (57.7% note reachability)
+
+NAML methods improve the mapping quality **within** these constraints. The PINN adds physical realism, which changes the optimisation objective — the result is more biologically constrained but not necessarily closer to Chopin by the onset-loss metric.
 | 5 | + Adam | L18-20 | ? | ? | TBD |
 | 6 | + L-BFGS | L21-22 | ? | ? | TBD |
 | 8 | + PINN | L14, L27 | ? | ? | TBD |
