@@ -35,10 +35,16 @@ def midi_to_hz(pitch: int) -> float:
     return 440.0 * 2.0 ** ((pitch - 69) / 12.0)
 
 
-# ─── The C. elegans pentatonic scale (8 muscle groups → 8 piano pitches) ─────
-# C# minor pentatonic: C#-E-F#-G#-B — matches the Nocturne in C# minor Op.posth.
-# Same as MUSCLE_PITCHES in worm_optimizer.py
-WORM_PITCHES = [61, 64, 66, 68, 71, 73, 76, 78]  # MIDI: C#4 E4 F#4 G#4 B4 C#5 E5 F#5
+# ─── Default muscle→pitch maps ───────────────────────────────────────────────
+# Imported from worm_optimizer so they stay in sync.
+# These are the fallback when no pitch_map is supplied directly.
+try:
+    from .worm_optimizer import MUSCLE_PITCHES, MUSCLE_PITCHES_95, generate_muscle_pitches
+    WORM_PITCHES    = list(MUSCLE_PITCHES)       # 8-cell legacy
+    WORM_PITCHES_95 = list(MUSCLE_PITCHES_95)    # 95-cell full BWM
+except Exception:
+    WORM_PITCHES    = [61, 64, 66, 68, 71, 73, 76, 78]
+    WORM_PITCHES_95 = WORM_PITCHES
 
 
 # ─── Single-string stiff-string FDM synthesiser ──────────────────────────────
@@ -119,21 +125,25 @@ def synthesise_melody(
     fs: int = 22050,
     note_sustain_s: float = 0.7,
     max_notes: int | None = None,
+    pitch_map: "np.ndarray | list | None" = None,
 ) -> tuple[np.ndarray, int]:
     """Render a list of note events to a mono PCM array.
 
     ``events`` can be either:
     - ``NoteEvent`` objects from :func:`~pyannow.targets.midi_target.parse_midi`
-    - ``(time_s, pitch_midi, velocity)`` tuples (as returned by
-      :func:`~pyannow.composer.worm_optimizer_fast.onsets_from_result`)
+    - ``(time_s, muscle_idx_or_pitch, velocity)`` tuples (from worm forward model)
 
     Parameters
     ----------
-    events       : sequence of note events
-    duration_s   : output audio length in seconds
-    fs           : sample rate
-    note_sustain_s : default note duration (used when event.duration unavailable)
-    max_notes    : if set, limit to first N notes (for speed)
+    events         : sequence of note events
+    duration_s     : output audio length in seconds
+    fs             : sample rate
+    note_sustain_s : default note duration (when event.duration unavailable)
+    max_notes      : if set, limit to first N notes (for speed)
+    pitch_map      : optional array mapping muscle index → MIDI pitch.
+                     Pass ``result['pitch_map']`` from :func:`run_forward_fast`
+                     to correctly translate 95-cell muscle indices to pitches.
+                     If None, falls back to the 8-cell ``WORM_PITCHES`` list.
 
     Returns
     -------
@@ -146,14 +156,23 @@ def synthesise_melody(
         if max_notes is not None and i >= max_notes:
             break
 
-        # Handle both NoteEvent objects and tuples
+        # Handle both NoteEvent objects and (time_s, pitch_or_idx, vel) tuples
         if hasattr(ev, "time_s"):
             t_s, pitch, vel, dur = ev.time_s, ev.pitch, ev.velocity, ev.duration
         else:
             t_s, pitch_or_idx, vel = float(ev[0]), ev[1], int(ev[2])
-            # If pitch > 12 it's already a MIDI pitch; if 0-7 it's muscle index
-            pitch = pitch_or_idx if pitch_or_idx > 12 else WORM_PITCHES[pitch_or_idx % 8]
-            dur   = note_sustain_s
+            if pitch_or_idx > 12:
+                # Already a MIDI pitch number
+                pitch = pitch_or_idx
+            else:
+                # Muscle index — look up in pitch_map
+                if pitch_map is not None:
+                    idx = int(pitch_or_idx) % len(pitch_map)
+                    pitch = int(pitch_map[idx])
+                else:
+                    # Fallback: use legacy 8-cell table
+                    pitch = WORM_PITCHES[int(pitch_or_idx) % len(WORM_PITCHES)]
+            dur = note_sustain_s
 
         if t_s > duration_s:
             break

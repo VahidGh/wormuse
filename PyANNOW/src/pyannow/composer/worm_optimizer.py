@@ -90,12 +90,67 @@ MN_TO_MUSCLE = np.array([
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Note-pitch assignment  (muscle group → MIDI pitch)
-# The 8 muscle groups span a C# minor pentatonic, matching Chopin's key.
 # Force amplitude is rescaled to MIDI velocity (0-127).
 # ─────────────────────────────────────────────────────────────────────────────
 
-# C# minor pentatonic: C#-E-F#-G#-B
-MUSCLE_PITCHES = np.array([61, 64, 66, 68, 71, 73, 76, 78])  # 8 muscle groups
+def generate_muscle_pitches(n_muscles: int = 95,
+                             key: str = "C#m",
+                             midi_lo: int = 25,
+                             midi_hi: int = 108) -> np.ndarray:
+    """Return an array of `n_muscles` MIDI pitches distributed across the piano.
+
+    Biological layout of the 95 C. elegans BWM cells:
+      ~24 dorsal-left   (head → tail)  → lowest pitches  (bass register)
+      ~23 dorsal-right  (head → tail)  → lower-mid
+      ~24 ventral-left  (head → tail)  → upper-mid
+      ~24 ventral-right (head → tail)  → highest pitches (treble register)
+
+    The wave of contraction propagates head-to-tail, so as it passes through
+    each quadrant the pitch rises from bass to treble — a natural physical
+    interpretation.
+
+    With n_muscles=8  → the original C# minor pentatonic (simplified model)
+    With n_muscles=95 → the full 95-cell map across MIDI 25-108
+
+    Parameters
+    ----------
+    n_muscles : number of muscle groups (8 for simplified; 95 for full model)
+    key       : "C#m" = C# natural minor scale; "chrom" = chromatic
+    midi_lo   : lowest MIDI pitch to use (default 25 = C#1, lowest Nocturne bass note)
+    midi_hi   : highest MIDI pitch to use (default 108 = C7, upper piano range)
+    """
+    if n_muscles == 8 and key == "C#m":
+        # Original simplified mapping — preserved for backward compatibility
+        return np.array([61, 64, 66, 68, 71, 73, 76, 78])
+
+    if key == "C#m":
+        # C# natural minor scale intervals from C# (semitones from root):
+        # C# D# E F# G# A B  =  0 2 3 5 7 8 10
+        intervals = [0, 2, 3, 5, 7, 8, 10]
+        scale_pitches = []
+        for octave in range(11):         # 0-10 covers the full MIDI range
+            for semi in intervals:
+                p = octave * 12 + 1 + semi   # C# = 1 (C=0)
+                if midi_lo <= p <= midi_hi:
+                    scale_pitches.append(p)
+        pool = np.array(sorted(scale_pitches))
+    else:
+        pool = np.arange(midi_lo, midi_hi + 1)
+
+    # Distribute n_muscles evenly across the pool (always stays within piano range)
+    if n_muscles <= len(pool):
+        idx = np.round(np.linspace(0, len(pool) - 1, n_muscles)).astype(int)
+        return pool[idx]
+    else:
+        # More muscles than scale notes — fill with chromatic notes, staying ≤ midi_hi
+        chrom = np.arange(midi_lo, midi_hi + 1)
+        idx = np.round(np.linspace(0, len(chrom) - 1, n_muscles)).astype(int)
+        return chrom[idx]
+
+
+# Default pitch arrays
+MUSCLE_PITCHES    = generate_muscle_pitches(n_muscles=8)   # 8-cell simplified (backward compat)
+MUSCLE_PITCHES_95 = generate_muscle_pitches(n_muscles=95)  # 95-cell full BWM
 
 
 def force_to_velocity(force_normalised: float,
