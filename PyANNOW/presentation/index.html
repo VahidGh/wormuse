@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Can a Worm Play Chopin? | PyANNOW</title>
+
+<!-- Reveal.js 5 via CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/black.css">
+
+<!-- MathJax for equations -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<!-- Prism.js for code syntax highlighting -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+
+<style>
+  :root {
+    --accent:  #00d9ff;
+    --accent2: #ff6b6b;
+    --accent3: #ffd93d;
+    --green:   #6bcb77;
+    --bg-card: rgba(255,255,255,0.07);
+    --border:  rgba(255,255,255,0.15);
+  }
+
+  .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  /* ── Title slide ── */
+  .title-slide h1 { font-size:2.6em; color: var(--accent); margin-bottom:.2em; }
+  .title-slide .subtitle { font-size:1.2em; opacity:.8; }
+  .title-slide .by { font-size:.9em; margin-top:1.5em; opacity:.6; }
+
+  /* ── Part header slides ── */
+  .part-header { background: linear-gradient(135deg,#0a2540,#1a3c5e); border-radius:12px; padding:40px; }
+  .part-header .part-num { font-size:.8em; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
+  .part-header h2 { font-size:2em; margin:.3em 0; color:white; }
+  .part-header .tagline { font-size:1em; opacity:.7; font-style:italic; }
+
+  /* ── Info cards ── */
+  .card-grid { display:grid; gap:16px; }
+  .card-grid.two { grid-template-columns: 1fr 1fr; }
+  .card-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:left; }
+  .card h4 { color:var(--accent); margin:0 0 8px; font-size:.85em; text-transform:uppercase; letter-spacing:.1em; }
+  .card p  { margin:0; font-size:.82em; line-height:1.5; opacity:.9; }
+  .card .big { font-size:2em; font-weight:700; color:var(--accent3); margin-bottom:4px; }
+
+  /* ── Step cards ── */
+  .step-card { border-left:4px solid var(--accent); padding:12px 16px; margin:8px 0;
+               background:var(--bg-card); border-radius:0 8px 8px 0; text-align:left; }
+  .step-card .step-label { font-size:.75em; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
+  .step-card .step-title { font-size:1em; font-weight:600; margin:2px 0; }
+  .step-card .step-meta  { font-size:.75em; opacity:.7; }
+  .step-card.done  { border-color:var(--green); }
+  .step-card.active{ border-color:var(--accent3); background:rgba(255,217,61,.08); }
+
+  /* ── Comparison bars ── */
+  .bar-container { text-align:left; margin:6px 0; }
+  .bar-label { font-size:.78em; opacity:.8; margin-bottom:3px; }
+  .bar-track { background:rgba(255,255,255,.12); border-radius:4px; height:14px; overflow:hidden; }
+  .bar-fill  { height:100%; border-radius:4px; transition:width .6s ease; }
+
+  /* ── Piano / worm diagrams ── */
+  .piano-svg, .worm-svg { width:100%; max-width:500px; margin:0 auto; display:block; }
+
+  /* ── Code blocks ── */
+  .reveal pre { font-size:.55em !important; border-radius:8px; }
+  .reveal pre code { padding:14px !important; }
+
+  /* ── Highlighted text ── */
+  .hl  { color:var(--accent); font-weight:600; }
+  .hl2 { color:var(--accent3); font-weight:600; }
+  .hl3 { color:var(--green);   font-weight:600; }
+
+  /* ── Equation box ── */
+  .eq-box { background:rgba(0,217,255,.08); border:1px solid rgba(0,217,255,.3);
+            border-radius:8px; padding:16px; margin:12px 0; }
+
+  /* ── Timeline ── */
+  .timeline { display:flex; flex-direction:column; gap:8px; text-align:left; }
+  .tl-item  { display:flex; align-items:flex-start; gap:12px; }
+  .tl-dot   { width:10px; height:10px; border-radius:50%; background:var(--accent);
+              flex-shrink:0; margin-top:6px; }
+  .tl-text  { font-size:.8em; line-height:1.5; }
+
+  /* ── Loss badges ── */
+  .loss-badge { display:inline-block; background:rgba(0,217,255,.15); border:1px solid var(--accent);
+                border-radius:20px; padding:3px 12px; font-size:.8em; color:var(--accent); }
+
+  /* ── Section label ── */
+  .section-label { font-size:.65em; letter-spacing:.2em; text-transform:uppercase;
+                   color:var(--accent); margin-bottom:.5em; display:block; }
+
+  /* ── Biological limit table ── */
+  table.bio-limits { font-size:.72em; width:100%; }
+  table.bio-limits th { color:var(--accent); background:rgba(0,217,255,.1); }
+  table.bio-limits td:last-child { color:var(--accent2); }
+
+  /* ── Notation list ── */
+  .notation { list-style:none; padding:0; text-align:left; font-size:.8em; }
+  .notation li { padding:4px 0; border-bottom:1px solid var(--border); }
+  .notation li:last-child { border:none; }
+  .notation .sym { display:inline-block; width:120px; font-family:monospace; color:var(--accent3); }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════ TITLE ═══ -->
+<section class="title-slide" data-background-gradient="radial-gradient(circle at 30% 40%, #0a2540 0%, #050a15 100%)">
+  <div style="padding:20px">
+    <div style="font-size:.7em;letter-spacing:.3em;color:var(--accent);text-transform:uppercase;margin-bottom:1em">
+      PyANNOW · Politecnico di Milano · NAML 2025-26
+    </div>
+    <h1 style="font-size:2.4em;color:var(--accent);line-height:1.2;margin-bottom:.4em">
+      Can a Worm Play Chopin?
+    </h1>
+    <p style="font-size:1.1em;opacity:.8;margin-bottom:1.5em">
+      Teaching a biological neural system to compose music<br>
+      using only methods from a Numerical Analysis course
+    </p>
+    <!-- Piano + worm mini diagram -->
+    <svg width="480" height="70" viewBox="0 0 480 70" style="margin:0 auto;display:block">
+      <!-- Worm body -->
+      <ellipse cx="60" cy="35" rx="50" ry="18" fill="none" stroke="#00d9ff" stroke-width="2"/>
+      <circle cx="60" cy="35" r="8" fill="#00d9ff" opacity=".3"/>
+      <text x="60" y="39" text-anchor="middle" fill="#00d9ff" font-size="8">302 neurons</text>
+      <!-- Arrow -->
+      <path d="M115 35 L175 35" stroke="#ffd93d" stroke-width="2" marker-end="url(#arr)"/>
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ffd93d"/></marker></defs>
+      <text x="145" y="28" text-anchor="middle" fill="#ffd93d" font-size="9">PyANNOW</text>
+      <!-- Piano keys -->
+      <rect x="185" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <rect x="205" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <rect x="225" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <rect x="245" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <rect x="265" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <rect x="285" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <rect x="305" y="15" width="18" height="50" rx="2" fill="white" stroke="#333" stroke-width="1"/>
+      <!-- Black keys -->
+      <rect x="199" y="15" width="11" height="32" rx="2" fill="#111"/>
+      <rect x="218" y="15" width="11" height="32" rx="2" fill="#111"/>
+      <rect x="257" y="15" width="11" height="32" rx="2" fill="#111"/>
+      <rect x="276" y="15" width="11" height="32" rx="2" fill="#111"/>
+      <rect x="296" y="15" width="11" height="32" rx="2" fill="#111"/>
+      <!-- Arrow to Chopin -->
+      <path d="M330 35 L390 35" stroke="#6bcb77" stroke-width="2" marker-end="url(#arr2)"/>
+      <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6bcb77"/></marker></defs>
+      <text x="360" y="28" text-anchor="middle" fill="#6bcb77" font-size="9">vs Chopin</text>
+      <!-- Music note -->
+      <text x="420" y="48" font-size="36" fill="#6bcb77">♪</text>
+    </svg>
+    <p style="font-size:.75em;opacity:.5;margin-top:1em">
+      Vahid Ghayoomie · wormuse project · 2026
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ AGENDA ═══ -->
+<section data-background-gradient="radial-gradient(circle at 70% 30%, #0d1f3c 0%, #050a15 100%)">
+  <span class="section-label">Overview</span>
+  <h2>What we'll cover</h2>
+  <div class="card-grid two" style="font-size:.85em">
+    <div>
+      <div class="step-card"><div class="step-label">Part I</div><div class="step-title">🎹 What is a piano?</div><div class="step-meta">Physics of sound, strings, and harmony</div></div>
+      <div class="step-card"><div class="step-label">Part II</div><div class="step-title">🧠 Biological neural systems</div><div class="step-meta">Neurons, action potentials, brains</div></div>
+      <div class="step-card"><div class="step-label">Part III</div><div class="step-title">🐛 C. elegans + OpenWorm</div><div class="step-meta">The simplest brain on Earth</div></div>
+      <div class="step-card"><div class="step-label">Part IV</div><div class="step-title">📐 The NAML toolkit</div><div class="step-meta">Our mathematical instruments</div></div>
+    </div>
+    <div>
+      <div class="step-card active"><div class="step-label">Part V</div><div class="step-title">🔬 PyANNOW: the journey</div><div class="step-meta">8 steps from noise to music</div></div>
+      <div class="step-card"><div class="step-label">Part VI</div><div class="step-title">📊 Results & limits</div><div class="step-meta">How far can biology + math go?</div></div>
+      <div class="step-card"><div class="step-label">Part VII</div><div class="step-title">🎧 Listen: Worm vs Chopin</div><div class="step-meta">Side-by-side audio comparison</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ PART I: PIANO ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header">
+    <div class="part-num">Part I</div>
+    <h2>🎹 What is a Piano?</h2>
+    <p class="tagline">From a hammer strike to a symphony — the physics of music</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Piano Physics — The basics</span>
+  <h3>A piano is a <span class="hl">wave machine</span></h3>
+  <div class="card-grid two">
+    <div>
+      <p style="font-size:.82em;text-align:left">When you press a piano key:</p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>1.</strong> A felt <span class="hl">hammer</span> strikes a steel string</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>2.</strong> The string <span class="hl">vibrates</span> back and forth at a fixed frequency</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>3.</strong> The vibrations travel to the <span class="hl">soundboard</span> (a thin wooden plate)</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>4.</strong> The soundboard <span class="hl">amplifies</span> the vibrations into audible sound waves</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>5.</strong> The vibrations <span class="hl">decay</span> exponentially (the string loses energy to air + friction)</div></div>
+      </div>
+    </div>
+    <div>
+      <!-- Animated string SVG -->
+      <svg width="100%" height="160" viewBox="0 0 300 160" style="background:rgba(255,255,255,.03);border-radius:8px">
+        <!-- String at rest -->
+        <line x1="20" y1="80" x2="280" y2="80" stroke="rgba(255,255,255,.2)" stroke-width="1" stroke-dasharray="4"/>
+        <!-- Vibrating string (sine wave) -->
+        <path id="string-wave" d="" stroke="var(--accent)" stroke-width="2.5" fill="none"/>
+        <!-- Hammer -->
+        <rect id="hammer" x="120" y="20" width="20" height="30" rx="4" fill="var(--accent3)"/>
+        <text x="150" y="55" fill="var(--accent3)" font-size="10">hammer</text>
+        <!-- Bridge labels -->
+        <rect x="15" y="65" width="10" height="30" rx="2" fill="#666"/>
+        <rect x="275" y="65" width="10" height="30" rx="2" fill="#666"/>
+        <text x="20" y="120" fill="#aaa" font-size="9">bridge</text>
+        <!-- Frequency label -->
+        <text x="150" y="150" text-anchor="middle" fill="var(--accent)" font-size="11" id="freq-label">f = 261 Hz  (C4)</text>
+      </svg>
+      <script>
+        // Simple animation
+        let t = 0;
+        const stringEl = document.getElementById('string-wave');
+        const hammerEl = document.getElementById('hammer');
+        const freqEl   = document.getElementById('freq-label');
+        function animatePiano() {
+          t += 0.08;
+          const amp = Math.max(0, 18 * Math.exp(-t * 0.3));
+          let d = "M 20 80 ";
+          for (let x = 20; x <= 280; x += 5) {
+            const y = 80 + amp * Math.sin((x - 20) / 260 * Math.PI) * Math.sin(t * 5);
+            d += `L ${x} ${y} `;
+          }
+          stringEl.setAttribute('d', d);
+          const hY = Math.max(15, 50 - t * 8);
+          hammerEl.setAttribute('y', hY > 45 ? 20 : hY);
+          if (t > 12) { t = 0; }
+          requestAnimationFrame(animatePiano);
+        }
+        animatePiano();
+      </script>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Piano Physics — Frequency = Pitch</span>
+  <h3><span class="hl">Frequency</span> is what we hear as <span class="hl2">pitch</span></h3>
+  <div class="card-grid three" style="margin:20px 0">
+    <div class="card"><div class="big">110 Hz</div><h4>A2</h4><p>Low, bass register. String vibrates 110 times per second.</p></div>
+    <div class="card"><div class="big">440 Hz</div><h4>A4 (concert A)</h4><p>The universal tuning reference. 440 vibrations/second.</p></div>
+    <div class="card"><div class="big">3520 Hz</div><h4>A7</h4><p>Very high. Each octave up = ×2 in frequency.</p></div>
+  </div>
+  <div class="eq-box">
+    <p style="font-size:.85em;margin:0">
+      Frequency formula: \( f_n = n \cdot f_1 \cdot \sqrt{1 + B n^2} \)<br>
+      <span style="font-size:.8em;opacity:.7">where \(f_1\) = fundamental, \(n\) = harmonic number, \(B\) = inharmonicity (bending stiffness)</span>
+    </p>
+  </div>
+  <p style="font-size:.78em;opacity:.7;margin-top:12px">
+    The \(B n^2\) term makes real piano strings <span class="hl">slightly sharp</span> at high harmonics —
+    giving the piano its characteristic bright, rich timbre. This is the <strong>inharmonicity</strong>
+    we model with modal synthesis in PyANNOW.
+  </p>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Piano Physics — The Wave Equation</span>
+  <h3>The <span class="hl">mathematics</span> behind the sound</h3>
+  <p style="font-size:.82em;text-align:left">The string's motion \(u(x,t)\) obeys a 4th-order PDE (Chabassier 2014):</p>
+  <div class="eq-box">
+    \[
+      \rho_s\,\ddot{u} - T_s\,u_{xx} + ES\kappa^2\,u_{xxxx} + 2\rho_s\sigma_0\,\dot{u} = F_h(t)\,\delta(x - x_h)
+    \]
+  </div>
+  <div class="card-grid two" style="font-size:.8em;margin-top:12px">
+    <div>
+      <ul class="notation">
+        <li><span class="sym">\(T_s u_{xx}\)</span> Restoring tension force</li>
+        <li><span class="sym">\(ES\kappa^2 u_{xxxx}\)</span> Bending stiffness</li>
+        <li><span class="sym">\(2\sigma_0\dot{u}\)</span> Damping (decay)</li>
+        <li><span class="sym">\(F_h \delta(\cdot)\)</span> Hammer impact</li>
+      </ul>
+    </div>
+    <div class="card" style="font-size:.85em">
+      <h4>PyANNOW shortcut</h4>
+      <p>We skip the FEM solver and use <strong>modal synthesis</strong> instead:<br>
+      Sum 40 decaying sinusoids at their inharmonic frequencies.<br>
+      0.03 s per note (vs minutes for FEM). Same physics, different math.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ PART II: NEURONS ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header">
+    <div class="part-num">Part II</div>
+    <h2>🧠 Biological Neural Systems</h2>
+    <p class="tagline">From single cells to intelligence — how nature computes</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Neurons — The Building Block</span>
+  <h3>A neuron is a <span class="hl">biological transistor</span></h3>
+  <div class="card-grid two">
+    <div>
+      <!-- Neuron SVG diagram -->
+      <svg width="100%" height="200" viewBox="0 0 280 200">
+        <!-- Dendrites -->
+        <line x1="30" y1="50" x2="100" y2="100" stroke="#00d9ff" stroke-width="2"/>
+        <line x1="20" y1="100" x2="100" y2="100" stroke="#00d9ff" stroke-width="2"/>
+        <line x1="30" y1="150" x2="100" y2="100" stroke="#00d9ff" stroke-width="2"/>
+        <text x="10" y="95" fill="#00d9ff" font-size="9">dendrites</text>
+        <text x="10" y="107" fill="#00d9ff" font-size="9">(inputs)</text>
+        <!-- Cell body -->
+        <circle cx="120" cy="100" r="22" fill="rgba(0,217,255,.15)" stroke="#00d9ff" stroke-width="2"/>
+        <text x="120" y="97" text-anchor="middle" fill="white" font-size="8">cell</text>
+        <text x="120" y="108" text-anchor="middle" fill="white" font-size="8">body</text>
+        <!-- Axon -->
+        <line x1="142" y1="100" x2="240" y2="100" stroke="var(--accent3)" stroke-width="3"/>
+        <text x="185" y="90" text-anchor="middle" fill="var(--accent3)" font-size="9">axon</text>
+        <!-- Myelin sheaths -->
+        <ellipse cx="165" cy="100" rx="12" ry="6" fill="none" stroke="rgba(255,217,61,.5)" stroke-width="2"/>
+        <ellipse cx="195" cy="100" rx="12" ry="6" fill="none" stroke="rgba(255,217,61,.5)" stroke-width="2"/>
+        <ellipse cx="225" cy="100" rx="12" ry="6" fill="none" stroke="rgba(255,217,61,.5)" stroke-width="2"/>
+        <!-- Synaptic terminal -->
+        <circle cx="245" cy="100" r="8" fill="var(--accent2)"/>
+        <text x="255" y="120" fill="var(--accent2)" font-size="9">synapse</text>
+        <!-- Voltage trace -->
+        <polyline points="30,170 60,170 65,155 70,185 75,170 130,170 135,155 140,185 145,170 200,170" stroke="var(--green)" stroke-width="2" fill="none"/>
+        <text x="20" y="165" fill="var(--green)" font-size="8">V(t)</text>
+        <text x="200" y="165" fill="var(--green)" font-size="8">spikes!</text>
+      </svg>
+    </div>
+    <div style="text-align:left">
+      <p style="font-size:.8em"><strong>How a neuron "decides":</strong></p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>Receive:</strong> thousands of input signals via dendrites (+ or −)</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>Integrate:</strong> sum all inputs — if total > threshold: fire!</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>Fire:</strong> a rapid voltage spike (~100 mV, ~2 ms) travels down the axon at ~100 m/s</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><strong>Transmit:</strong> spike releases neurotransmitters at the synapse → next neuron receives input</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--accent2)"></div><div class="tl-text"><strong>Rest:</strong> 1-3 ms "refractory period" — neuron temporarily cannot fire again</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Neural Systems — Scale</span>
+  <h3>From <span class="hl2">302</span> neurons to <span class="hl">86 billion</span></h3>
+  <div class="card-grid three">
+    <div class="card">
+      <div class="big" style="color:var(--accent)">302</div>
+      <h4>C. elegans 🐛</h4>
+      <p>The <em>entire</em> nervous system. Every connection is mapped. Capable of: feeding, moving, reproducing, learning.</p>
+    </div>
+    <div class="card">
+      <div class="big" style="color:var(--accent3)">71,000</div>
+      <h4>Fruit fly 🪰</h4>
+      <p>Complete brain recently mapped (2023). Capable of: flight, complex navigation, courtship.</p>
+    </div>
+    <div class="card">
+      <div class="big" style="color:var(--accent2)">86B</div>
+      <h4>Human 🧠</h4>
+      <p>With ~100 trillion synaptic connections. Capable of: language, music, mathematics, consciousness.</p>
+    </div>
+  </div>
+  <p style="font-size:.78em;opacity:.75;margin-top:16px;text-align:left">
+    <span class="hl">Key insight:</span> complexity of behaviour does <em>not</em> simply scale with neuron count.
+    The worm's 302 neurons produce sophisticated movement patterns — and with the right mathematical tools,
+    we can translate those patterns into music.
+  </p>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Biological vs Artificial Neural Networks</span>
+  <h3>How <span class="hl">nature</span> compares to <span class="hl2">math</span></h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div class="card">
+      <h4>🧠 Biological</h4>
+      <ul style="margin:0;padding-left:18px;line-height:1.8">
+        <li>Information = <strong>spike timing</strong> (binary events)</li>
+        <li>Weights = <strong>synaptic strengths</strong> (change by experience)</li>
+        <li>Non-linear: <strong>ion channels</strong> (EGL-19, EXP-2, …)</li>
+        <li>Learning = <strong>Hebbian</strong> + neuromodulatory</li>
+        <li>Very <strong>energy efficient</strong> (~20W for human brain)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🤖 Artificial (NAML)</h4>
+      <ul style="margin:0;padding-left:18px;line-height:1.8">
+        <li>Information = <strong>continuous activations</strong> in [0,1]</li>
+        <li>Weights = <strong>matrix entries</strong> (updated by gradient)</li>
+        <li>Non-linear: <strong>tanh / ReLU</strong> activation functions (L15)</li>
+        <li>Learning = <strong>SGD / Adam</strong> (L18-20)</li>
+        <li>Less efficient — but <strong>analysable</strong> mathematically</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;font-size:.82em">
+    <h4>The bridge — PyANNOW</h4>
+    <p>We record the <em>worm's</em> neural activity (biological), compress it with SVD (L06),
+    and feed it into an <em>artificial</em> neural network (L16) trained with Adam (L20) to produce notes.
+    Both worlds in one pipeline.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ PART III: C. ELEGANS ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header">
+    <div class="part-num">Part III</div>
+    <h2>🐛 C. elegans &amp; OpenWorm</h2>
+    <p class="tagline">The simplest nervous system on Earth — and the first to be simulated</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">C. elegans — Meet the worm</span>
+  <h3><em>Caenorhabditis elegans</em> — why a worm?</h3>
+  <div class="card-grid two">
+    <div>
+      <div class="card-grid two" style="gap:10px">
+        <div class="card"><div class="big">1 mm</div><h4>Body length</h4><p>Visible under a light microscope</p></div>
+        <div class="card"><div class="big">302</div><h4>Neurons</h4><p>The entire nervous system</p></div>
+        <div class="card"><div class="big">959</div><h4>Total cells</h4><p>Every cell has been identified and named</p></div>
+        <div class="card"><div class="big">1986</div><h4>Year mapped</h4><p>White et al. — the first complete connectome (Nobel-adjacent)</p></div>
+      </div>
+    </div>
+    <div style="text-align:left">
+      <p style="font-size:.82em"><strong>Why C. elegans is priceless for science:</strong></p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-text"><strong>Complete connectome:</strong> every neuron, every synapse is known — unlike any other animal</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-text"><strong>Reproducible:</strong> every worm of the same species has the <em>same</em> neural wiring</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-text"><strong>Behaviourally rich:</strong> forward/backward crawl, turning, egg-laying, learning — with only 302 neurons!</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-text"><strong>Ion channels:</strong> the same EGL-19 Ca²⁺ channel relevant to human muscle disease</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--accent2)"></div><div class="tl-text"><strong>Musical constraint:</strong> 8 muscle groups, 0.4–2 Hz movement = max ~3 notes/second</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">C. elegans — The Locomotion Circuit</span>
+  <h3>302 neurons playing a <span class="hl">body wave</span></h3>
+  <!-- Simplified connectome/body diagram -->
+  <svg width="100%" height="200" viewBox="0 0 700 200" style="background:rgba(255,255,255,.02);border-radius:8px">
+    <!-- Body outline -->
+    <ellipse cx="350" cy="100" rx="320" ry="60" fill="none" stroke="rgba(0,217,255,.3)" stroke-width="2"/>
+    <!-- Body segments -->
+    <rect x="60" cy="80" width="55" height="40" y="80" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="125" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="190" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="255" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="320" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="385" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="450" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <rect x="515" y="80" width="55" height="40" rx="4" fill="rgba(0,217,255,.12)" stroke="rgba(0,217,255,.4)" stroke-width="1.5"/>
+    <!-- Segment labels -->
+    <text x="87" y="107" text-anchor="middle" fill="#00d9ff" font-size="10">D1</text>
+    <text x="152" y="107" text-anchor="middle" fill="#00d9ff" font-size="10">D2</text>
+    <text x="217" y="107" text-anchor="middle" fill="#00d9ff" font-size="10">D3</text>
+    <text x="282" y="107" text-anchor="middle" fill="#00d9ff" font-size="10">D4</text>
+    <text x="347" y="107" text-anchor="middle" fill="#ffd93d" font-size="10">V1</text>
+    <text x="412" y="107" text-anchor="middle" fill="#ffd93d" font-size="10">V2</text>
+    <text x="477" y="107" text-anchor="middle" fill="#ffd93d" font-size="10">V3</text>
+    <text x="542" y="107" text-anchor="middle" fill="#ffd93d" font-size="10">V4</text>
+    <!-- Head -->
+    <circle cx="30" cy="100" r="22" fill="rgba(0,217,255,.2)" stroke="#00d9ff" stroke-width="2"/>
+    <text x="30" y="97" text-anchor="middle" fill="white" font-size="8">brain</text>
+    <text x="30" y="107" text-anchor="middle" fill="white" font-size="8">302n</text>
+    <!-- Wave annotations -->
+    <text x="87" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩C</text>
+    <text x="152" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩D</text>
+    <text x="217" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩E</text>
+    <text x="282" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩G</text>
+    <text x="347" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩A</text>
+    <text x="412" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩C'</text>
+    <text x="477" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩D'</text>
+    <text x="542" y="155" text-anchor="middle" fill="var(--accent3)" font-size="9">♩E'</text>
+    <text x="315" y="175" text-anchor="middle" fill="rgba(255,217,61,.7)" font-size="9">each muscle → one piano note (D♭ pentatonic)</text>
+  </svg>
+  <p style="font-size:.78em;opacity:.75;margin-top:8px">
+    The travelling body wave activates muscle segments sequentially from head to tail at ~0.4–2 Hz.
+    In PyANNOW, each contraction = one piano note at a phase-specific pitch.
+  </p>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">OpenWorm Project</span>
+  <h3>The world's first <span class="hl">whole-organism simulation</span></h3>
+  <div class="card-grid two">
+    <div style="text-align:left">
+      <p style="font-size:.82em"><strong>OpenWorm</strong> (2011–present) is an open-source project to recreate every cell of <em>C. elegans</em> in software:</p>
+      <div class="step-card done"><div class="step-label">Sibernetic</div><div class="step-title">Body physics simulator</div><div class="step-meta">Smoothed Particle Hydrodynamics (SPH); GPU-accelerated OpenCL</div></div>
+      <div class="step-card done"><div class="step-label">C302</div><div class="step-title">Neural simulator</div><div class="step-meta">302 neurons in NEURON/NeuroML with full connectome</div></div>
+      <div class="step-card"><div class="step-label">ChannelWorm</div><div class="step-title">Ion-channel database</div><div class="step-meta">EGL-19, UNC-2, EXP-2, NCA parameters — the user's own research extends this</div></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <h4>What wormuse uses</h4>
+        <p>The Docker image <code>openworm/openworm:latest</code> (already on your machine) contains both Sibernetic and C302. The <code>docker-compose.yml</code> in the repo orchestrates them alongside the MK scientific toolchain.</p>
+      </div>
+      <div class="card">
+        <h4>The data PyANNOW reads</h4>
+        <p>Sibernetic outputs WCON (Worm Configuration Object Notation) for body pose. C302 outputs spike trains in JSON. PyANNOW's Step 1 compresses these into a low-dimensional latent code.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ PART IV: NAML ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header">
+    <div class="part-num">Part IV</div>
+    <h2>📐 The NAML Toolkit</h2>
+    <p class="tagline">Numerical Analysis for Machine Learning — our mathematical instruments</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">NAML Course — Overview</span>
+  <h3>From <span class="hl">SVD</span> to <span class="hl2">PINNs</span> — the full arc</h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <div class="step-card"><div class="step-label">Labs 01-02 · L06-09</div><div class="step-title">Linear Algebra + SVD</div><div class="step-meta">Eckart-Young, pseudoinverse, PCA, RSVD</div></div>
+      <div class="step-card"><div class="step-label">Labs 03-04 · L07-11</div><div class="step-title">Regression + Clustering</div><div class="step-meta">Least squares, ridge, K-means, matrix completion</div></div>
+      <div class="step-card"><div class="step-label">Labs 05-08 · L18-22</div><div class="step-title">Optimisation</div><div class="step-meta">GD → SGD → Adam → Newton → L-BFGS</div></div>
+    </div>
+    <div>
+      <div class="step-card"><div class="step-label">Labs 06-10 · L14-17</div><div class="step-title">Neural Networks</div><div class="step-meta">Autodiff, activations, MLP, CNN, Flax + Optax</div></div>
+      <div class="step-card"><div class="step-label">Lab 09 · L23</div><div class="step-title">Convolution</div><div class="step-meta">1D/2D conv, feature extraction from time series</div></div>
+      <div class="step-card active"><div class="step-label">L27</div><div class="step-title">Physics-Informed NNs (PINNs)</div><div class="step-meta">Physics loss via jax.grad; the user's own SC-PINN project</div></div>
+    </div>
+  </div>
+  <p style="font-size:.75em;opacity:.7;margin-top:12px">
+    The PyANNOW progression uses one new NAML concept per step — a direct mapping from the course to a musical improvement.
+  </p>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">NAML — Key equations we use</span>
+  <h3>The <span class="hl">maths</span> in one slide</h3>
+  <div class="card-grid two" style="font-size:.8em">
+    <div>
+      <div class="eq-box" style="margin-bottom:10px">
+        <strong style="color:var(--accent);font-size:.85em">Step 1 — Eckart-Young (L06)</strong><br>
+        \( X_k = U_k \Sigma_k V_k^T \quad\text{(best rank-}k\text{ approx.)}\)
+      </div>
+      <div class="eq-box" style="margin-bottom:10px">
+        <strong style="color:var(--accent);font-size:.85em">Step 1b — Procrustes (L06/L09)</strong><br>
+        \( R = \arg\min_{R^TR=I} \|W_k R - C_k\|_F \)<br>
+        \(\Rightarrow C_k^T W_k = U\Sigma V^T,\quad R = VU^T\)
+      </div>
+      <div class="eq-box">
+        <strong style="color:var(--accent);font-size:.85em">Step 3 — Ridge (L07/L11)</strong><br>
+        \( W = (Z^TZ + \lambda I)^{-1} Z^T C \)
+      </div>
+    </div>
+    <div>
+      <div class="eq-box" style="margin-bottom:10px">
+        <strong style="color:var(--accent3);font-size:.85em">Step 5 — Adam update (L20)</strong><br>
+        \( \theta \leftarrow \theta - \alpha \frac{\hat m_t}{\sqrt{\hat v_t}+\varepsilon} \)
+      </div>
+      <div class="eq-box" style="margin-bottom:10px">
+        <strong style="color:var(--accent3);font-size:.85em">Step 6 — L-BFGS (L22)</strong><br>
+        \( p_k = -H_k \nabla f \)\;(\(H_k\approx\) Hessian⁻¹)
+      </div>
+      <div class="eq-box">
+        <strong style="color:var(--green);font-size:.85em">Step 8 — PINN loss (L27)</strong><br>
+        \( \mathcal{L} = \mathcal{L}_{\text{data}} + \lambda_p \cdot \|\ddot q + 2\gamma\dot q + \omega^2 q - F\|^2 \)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ PART V: PyANNOW ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header" style="background:linear-gradient(135deg,#0d2b0d,#1a4020)">
+    <div class="part-num" style="color:var(--green)">Part V</div>
+    <h2 style="color:var(--green)">🔬 PyANNOW</h2>
+    <p class="tagline">Teaching the worm to play Chopin — step by step</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">PyANNOW — The Pipeline</span>
+  <h3>From <span class="hl2">302 neurons</span> to <span class="hl">Chopin</span></h3>
+  <div style="text-align:left;font-size:.82em">
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;padding:10px;background:var(--bg-card);border-radius:8px">
+      <span style="background:#00d9ff;color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</span>
+      <span><strong style="color:var(--accent)">RSVD compress</strong> — 302-D neural trajectory → k=4 principal components (L06)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;padding:10px;background:var(--bg-card);border-radius:8px">
+      <span style="background:#00d9ff;color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</span>
+      <span><strong style="color:var(--accent)">Procrustes align</strong> — rotate worm subspace to face Chopin (L06/L09)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;padding:10px;background:var(--bg-card);border-radius:8px">
+      <span style="background:#ffd93d;color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</span>
+      <span><strong style="color:var(--accent3)">K-means cluster</strong> — motor states → 4 musical categories (L08/L10)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;padding:10px;background:var(--bg-card);border-radius:8px">
+      <span style="background:#ffd93d;color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">4</span>
+      <span><strong style="color:var(--accent3)">Ridge regression</strong> — regularised linear velocity map (L07/L11)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;padding:10px;background:rgba(107,203,119,.1);border-radius:8px;border:1px solid rgba(107,203,119,.2)">
+      <span style="background:var(--green);color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">5</span>
+      <span><strong style="color:var(--green)">MLP + Adam + L-BFGS</strong> — non-linear neural composer (L14-22, Labs 06/10)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;padding:10px;background:rgba(255,107,107,.08);border-radius:8px;border:1px solid rgba(255,107,107,.2)">
+      <span style="background:var(--accent2);color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">8</span>
+      <span><strong style="color:var(--accent2)">PINN physics loss</strong> — locomotion ODE constraint (L14/L27)</span>
+    </div>
+  </div>
+</section>
+
+<!-- Step slides (one per step) -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Step 1 — NAML Lectures 06 + 09</span>
+  <h3>Step 1: <span class="hl">SVD + Procrustes</span> — the best linear map</h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <div class="eq-box">
+        <strong>Eckart-Young (L06):</strong><br>
+        Compress 302 neurons → k=4 PCs:<br>
+        \( X_k = U_k\Sigma_k V_k^T \)<br><br>
+        <strong>Procrustes (L06/L09):</strong><br>
+        Align worm subspace to Chopin:<br>
+        \( R = VU^T \;\text{where}\; C_k^TW_k = U\Sigma V^T \)
+      </div>
+      <div class="card" style="margin-top:10px">
+        <h4>Lab01 analogy</h4>
+        <p>In Lab01 we compressed the Tarantula Nebula image with SVD. Here we compress the worm's neural activity. Same maths — different data.</p>
+      </div>
+    </div>
+    <div>
+      <pre><code class="language-python"># Step 1: RSVD + Procrustes (from Lab01 + L06/L09)
+from pyannow.step1_svd.encoder import rsvd, neural_scores
+from pyannow.step1_svd.procrustes import procrustes_align
+
+# Compress 302-D neural trajectory to k=4
+U_k, s_k, Vt_k = rsvd(X_neural, k=4)
+Z_worm = neural_scores(X_neural, U_k)  # (T, 4)
+
+# Build Chopin target features
+C_chopin = build_chopin_features(events, duration_s=15)
+
+# Find orthogonal rotation to Chopin space (L06/L09)
+result = procrustes_align(Z_worm, C_chopin)
+R = result['R']          # (4, k_chopin)
+Z_aligned = Z_worm @ R  # worm in Chopin's space
+print(f"Alignment residual: {result['residual']:.3f}")</code></pre>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Step 2-3 — Labs 02-03 · L07-10</span>
+  <h3>Steps 2-3: <span class="hl">K-means</span> + <span class="hl2">Ridge</span></h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <div class="step-card">
+        <div class="step-label">Step 2 — L08 + L10 (Lab02)</div>
+        <div class="step-title">PCA + K-means motor primitives</div>
+        <div class="step-meta">Cluster neural states → Forward / Backward / Turn / Pause. Each cluster → a musical phrase.</div>
+      </div>
+      <div class="step-card" style="margin-top:10px">
+        <div class="step-label">Step 3 — L07 + L11 (Lab03/Lab07)</div>
+        <div class="step-title">Ridge regression composer</div>
+        <div class="step-meta">Learn the linear mapping W such that Z_worm @ W ≈ C_chopin. Ridge handles the ill-conditioned gram matrix (many correlated neural modes).</div>
+      </div>
+      <div class="card" style="margin-top:10px;font-size:.9em">
+        <h4>Ridge insight (L07)</h4>
+        <p>Ridge shrinks each singular direction by σ/(σ²+λ). Small σ = noisy neural mode = suppressed. Exactly like the pseudoinverse truncation in L09.</p>
+      </div>
+    </div>
+    <div>
+      <pre><code class="language-python"># Step 2: K-means (Lab02 / L08 / L10 pattern)
+from pyannow.step2_clustering.motor_primitives import (
+    pca_reduce, find_motor_primitives, cluster_to_notes
+)
+
+scores, pca = pca_reduce(X_neural, n_components=4)
+labels, km  = find_motor_primitives(scores, k=4)
+
+# Each cluster transition → note onset
+note_events = cluster_to_notes(labels, t_arr_ms)
+
+# Step 3: Ridge (Lab07 / L07 / L11 pattern)
+from pyannow.step3_regression.ridge_composer import RidgeComposer
+
+ridge = RidgeComposer(alpha=None)  # CV chooses λ
+ridge.fit(Z_worm, C_chopin)
+
+C_pred   = ridge.predict(Z_worm)
+eval_res = ridge.evaluate(Z_test, C_test)
+print(f"Ridge R² = {eval_res['r2']:.3f}")</code></pre>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Steps 4-6 — Labs 06/08/10 · L14-22</span>
+  <h3>Steps 4-6: <span class="hl">MLP → Adam → L-BFGS</span></h3>
+  <div class="card-grid two" style="font-size:.78em">
+    <div>
+      <div class="eq-box" style="margin-bottom:8px">
+        <strong>Step 4 — FFNN (L14-17, Lab06/Lab10)</strong><br>
+        \(f_\theta : \mathbb{R}^{k_w} \to \mathbb{R}^{k_c}\)<br>
+        \(\text{tanh}(W_2\,\text{tanh}(W_1 z + b_1)+b_2)\)<br>
+        Xavier init; autodiff via <code>jax.grad</code> (L14)
+      </div>
+      <div class="eq-box" style="margin-bottom:8px">
+        <strong>Step 5 — Adam (L20, Lab05/Lab07/Lab10)</strong><br>
+        Per-parameter learning rate adapts to feature scale mismatch in neural PCs
+      </div>
+      <div class="eq-box">
+        <strong>Step 6 — L-BFGS (L22, Lab08)</strong><br>
+        Super-linear convergence near minimum. Stores last m=10 gradient pairs (memory O(mk) vs O(k²) for Newton)
+      </div>
+    </div>
+    <div>
+      <pre><code class="language-python"># Step 4-6: MLP + Adam + L-BFGS (Lab06/Lab10 pattern)
+from pyannow.step4_ffnn.jax_composer import (
+    create_model, init_params)
+from pyannow.step5_training.adam_trainer import train_adam
+from pyannow.step6_lbfgs.lbfgs_polish import polish_lbfgs
+
+# Build MLP (same architecture as Lab10 MNIST)
+model  = create_model(k_worm=4, k_chopin=8, hidden=32)
+params = init_params(model, k_worm=4)
+
+# Stage 1: Adam warmup (Lab10 / L20)
+params, h_adam = train_adam(
+    model, params, Z_worm, C_chopin,
+    lr=1e-3, epochs=500, verbose=True
+)
+
+# Stage 2: L-BFGS polish (Lab08 / L22)
+params, h_lbfgs = polish_lbfgs(
+    model, params, Z_worm, C_chopin,
+    max_steps=100
+)
+print(f"Final loss: {h_lbfgs.train_loss[-1]:.5f}")</code></pre>
+    </div>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Step 8 — L14 + L27</span>
+  <h3>Step 8: <span class="hl">PINN</span> — physics constrains the music</h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <p><strong>The physics:</strong> the worm body is a damped harmonic oscillator</p>
+      <div class="eq-box">
+        \[\ddot q_j + 2\gamma\,\dot q_j + \omega^2 q_j = F_j^{\text{neural}}(t)\]
+        <span style="font-size:.8em;opacity:.7">γ = damping · ω = locomotion frequency · F = neural drive</span>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <h4>Why not ion channels?</h4>
+        <p>The original SC-PINN (HH kinetics) captures ion-channel detail irrelevant to music. The oscillator captures what matters: <em>the rhythm is periodic, it's damped, and it's driven by neural activity.</em></p>
+      </div>
+      <div class="card" style="margin-top:8px">
+        <h4>Lab14 / L27 connection</h4>
+        <p>The residual <code>q̈ + 2γq̇ + ω²q − F</code> is computed via <strong><code>jax.grad</code> twice</strong> at random collocation points. This is the exact PINN recipe from Lecture 27 and Lab04's JAX introduction.</p>
+      </div>
+    </div>
+    <div>
+      <pre><code class="language-python"># Step 8: PINN — locomotion physics (L14 + L27)
+from pyannow.step8_pinn.locomotion_pinn import (
+    PINNComposer, train_pinn_adam_lbfgs
+)
+import jax, jax.numpy as jnp
+
+model = PINNComposer(hidden=48, depth=3, out_dim=8)
+params = model.init(jax.random.PRNGKey(0),
+                    jnp.zeros((1, 5)))  # (1, 1+k_worm)
+
+# Collocation points (L27: random sampling)
+t_colloc = jnp.linspace(0, 15, 300)
+z_colloc = Z_worm[::50]  # coarse neural samples
+
+# Physics-informed training (Adam → L-BFGS)
+params, hist = train_pinn_adam_lbfgs(
+    model, params,
+    tz_data, q_data,
+    t_colloc, z_colloc,
+    lam_phys=0.1,     # λ balances data vs physics
+    adam_steps=1000,
+    lbfgs_steps=100
+)
+# Now the notes obey the worm's mechanical law!</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ PART VI: RESULTS ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header" style="background:linear-gradient(135deg,#1a1a0d,#2d2d00)">
+    <div class="part-num" style="color:var(--accent3)">Part VI</div>
+    <h2 style="color:var(--accent3)">📊 Results &amp; Biological Limits</h2>
+    <p class="tagline">How far can a worm with 302 neurons go toward Chopin?</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Results — The progression</span>
+  <h3>Each NAML step <span class="hl">improves</span> the music</h3>
+  <div style="text-align:left;font-size:.78em">
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <strong style="color:var(--accent)">Step</strong><strong>Method (NAML)</strong><strong style="text-align:right;color:var(--accent3)">Loss</strong>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>0</span><span>Rule-based (no learning)</span><span style="text-align:right"><span class="loss-badge">0.010</span></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>1</span><span>SVD + Procrustes (L06/L09)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">~0.007</span></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>1-3</span><span>+ K-means + Ridge (L08-11)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">~0.005</span></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>4-5</span><span>+ MLP + Adam (L14-20)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green)">~0.003</span></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>6</span><span>+ L-BFGS (L21-22)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green)">~0.0024</span></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0">
+      <span>8</span><span>+ PINN (L27)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green)">~0.002</span></span>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;font-size:.78em">
+    <h4>What loss means</h4>
+    <p>Loss = soft Hamming distance between worm's note-onset density and Chopin's. Loss=0 would mean perfect alignment (physically impossible). Loss=1 = silence.</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Results — The biological ceiling</span>
+  <h3>The <span class="hl2">hard limits</span> no NAML can overcome</h3>
+  <table class="bio-limits" style="width:100%;font-size:.78em;margin:16px 0">
+    <thead>
+      <tr><th style="text-align:left;padding:8px">Constraint</th><th style="text-align:left;padding:8px">Biological source</th><th style="text-align:left;padding:8px">Musical limit</th></tr>
+    </thead>
+    <tbody>
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:8px"><strong>8 voices</strong></td>
+        <td style="padding:8px">8 BWM muscle segments</td>
+        <td style="padding:8px;color:var(--accent2)">Max 8 simultaneous notes (Chopin uses more)</td>
+      </tr>
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:8px"><strong>57.7% reachable</strong></td>
+        <td style="padding:8px">BWM refractory ~280 ms (EGL-19 + EXP-2 channels)</td>
+        <td style="padding:8px;color:var(--accent2)">42% of Chopin notes unreachable regardless of ML</td>
+      </tr>
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:8px"><strong>Regular rhythm</strong></td>
+        <td style="padding:8px">Body wave is periodic (locomotion circuit oscillator)</td>
+        <td style="padding:8px;color:var(--accent2)">Worm plays a regular grid; Chopin is syncopated</td>
+      </tr>
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:8px"><strong>8 pitches</strong></td>
+        <td style="padding:8px">8 muscle groups → 8 D♭ pentatonic pitches</td>
+        <td style="padding:8px;color:var(--accent2)">Chopin spans 5 octaves, 88 notes</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:.8em;text-align:left">
+    <span class="hl3">What NAML CAN improve:</span> note density (SVD threshold), velocity/dynamics (ridge/MLP), temporal clustering (K-means), attack/release shaping (PINN).
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════ PART VII: AUDIO ═══ -->
+<section data-background-color="#030d1a">
+  <div class="part-header" style="background:linear-gradient(135deg,#0d1a2d,#0d2d1a)">
+    <div class="part-num" style="color:var(--green)">Part VII</div>
+    <h2>🎧 Listen: Worm vs Chopin</h2>
+    <p class="tagline">Side-by-side audio — the same physical piano model, different neural source</p>
+  </div>
+</section>
+
+<section data-background-color="#030d1a">
+  <span class="section-label">Audio comparison</span>
+  <h3>Both rendered through the same <span class="hl">piano string model</span></h3>
+  <div class="card-grid two" style="font-size:.82em">
+    <div class="card" style="text-align:center">
+      <h4>🐛 Worm melody</h4>
+      <p>302 neurons → 8 muscle groups → D♭ pentatonic, 3.2 notes/s</p>
+      <p style="font-size:.8em;opacity:.7;margin-top:8px">Generated by PyANNOW forward model. Modal synthesis piano (40 modes, 22050 Hz).</p>
+      <p style="margin-top:12px"><em>(Play in the notebook: demo_outputs/worm_melody.wav)</em></p>
+      <pre style="font-size:.6em;text-align:left;margin-top:10px"><code class="language-python">from IPython.display import Audio, display
+from pyannow.composer.piano_synth import synthesise_melody
+audio_worm, fs = synthesise_melody(worm_events)
+display(Audio(audio_worm, rate=fs))</code></pre>
+    </div>
+    <div class="card" style="text-align:center">
+      <h4>🎼 Chopin (synthesised)</h4>
+      <p>Original MIDI → same piano model → same string physics</p>
+      <p style="font-size:.8em;opacity:.7;margin-top:8px">Prelude in D♭ Major, first 15 seconds. 40 notes, 2.67 notes/s.</p>
+      <p style="margin-top:12px"><em>(Play in the notebook: demo_outputs/chopin_synth.wav)</em></p>
+      <pre style="font-size:.6em;text-align:left;margin-top:10px"><code class="language-python">chopin_events, _ = parse_midi(MIDI_PATH)
+audio_chopin, fs = synthesise_melody(chopin_events)
+display(Audio(audio_chopin, rate=fs))</code></pre>
+    </div>
+  </div>
+  <p style="font-size:.75em;opacity:.7;margin-top:12px">
+    <strong>Note:</strong> The worm uses only 8 fixed pitches from the D♭ pentatonic scale.
+    Chopin uses the full piano range. The <em>timbre</em> of each note is identical (same physics).
+    The <em>rhythm</em> is what differs: regular body wave vs Chopin's expressive phrasing.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════ CONCLUSION ═══ -->
+<section data-background-gradient="radial-gradient(circle at 50% 50%, #0a2540 0%, #050a15 100%)">
+  <span class="section-label">Conclusion</span>
+  <h2>What we learned</h2>
+  <div class="card-grid two" style="font-size:.82em">
+    <div>
+      <p><strong>The NAML tools improved the music:</strong></p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="background:var(--accent)"></div><div class="tl-text">SVD (L06): compressed 302 neurons to 4 dimensions. Same Eckart-Young theorem used in Lab01 image compression.</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--accent)"></div><div class="tl-text">K-means (L10): discovered motor primitives automatically. Same algorithm as Lab02 digit clustering.</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--accent3)"></div><div class="tl-text">Ridge + MLP (L07/L16): learned the non-linear worm→Chopin mapping. Identical training pipeline to Lab07/Lab10.</div></div>
+        <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-text">PINN (L27): physics constrained the output to be biologically realistic.</div></div>
+      </div>
+    </div>
+    <div>
+      <p><strong>The biology sets the ceiling:</strong></p>
+      <div class="card" style="border-color:var(--accent2)">
+        <h4 style="color:var(--accent2)">57.7% reachable — not 100%</h4>
+        <p>The worm's 280 ms muscle refractory period and 8 independent voices are fixed by evolution, not by our choice of ML method. No amount of NAML sophistication can move the ceiling.</p>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <h4>The beautiful result</h4>
+        <p>A 1 mm worm with 302 neurons, simulated in software, can — with the right mathematical tools from a university course — approximate a Chopin piano piece at <strong>~58% onset coverage</strong>. Nature's simplest brain can be a composer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-background-gradient="radial-gradient(circle at 30% 40%, #0a2540 0%, #050a15 100%)">
+  <h2 style="color:var(--accent)">Thank you</h2>
+  <p style="font-size:.9em;opacity:.8;margin-bottom:1.5em">Questions &amp; comments</p>
+  <div class="card-grid three" style="font-size:.75em;margin-bottom:1.5em">
+    <div class="card"><h4>Source code</h4><p><code>github.com/…/wormuse</code><br>PyANNOW module + notebook</p></div>
+    <div class="card"><h4>Notebook</h4><p><code>PyANNOW/notebooks/<br>03_pyannow_naml_progression.ipynb</code></p></div>
+    <div class="card"><h4>Living doc</h4><p><code>PyANNOW/docs/<br>PyANNOW_NAML_progression.md</code></p></div>
+  </div>
+  <p style="font-size:.75em;opacity:.5">
+    Built with: Python · JAX · Flax · Optax · NumPy · scikit-learn · Reveal.js<br>
+    Physics: Chabassier (2014) piano model · OpenWorm Sibernetic + C302<br>
+    Music: Chopin Prelude in D♭ Op. 28 No. 15 ("Raindrop") · MIDI public domain
+  </p>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: true,
+    width: 1100,
+    height: 680,
+    margin: 0.04,
+    plugins: [],
+    // MathJax integration
+    mathjax3: {
+      mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
+    },
+  });
+</script>
+</body>
+</html>
