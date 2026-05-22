@@ -44,7 +44,9 @@ def pca_reduce(X: np.ndarray, n_components: int = 4,
         The variance ratio tells us how much of the worm's movement is
         explained by k dimensions — analogous to the cancer Lab's scree plot.
     """
-    Xt = X.T if X.shape[0] > X.shape[1] else X   # ensure (T, 302)
+    # X is (n_neurons, T) — we want samples=T in rows, so transpose when n_neurons < T.
+    # Bug fixed (ISSUE-013 test caught this): was > instead of <.
+    Xt = X.T if X.shape[0] < X.shape[1] else X   # ensure (T, n_neurons)
     if standardize:
         mu  = Xt.mean(axis=0)
         std = Xt.std(axis=0) + 1e-10

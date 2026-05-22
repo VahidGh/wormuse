@@ -63,30 +63,29 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install PyANNOW
-        run: |
-          if [ -f PyANNOW/pyproject.toml ]; then
-            pip install -e PyANNOW
-          else
-            echo "PyANNOW not yet packaged — skipping"
-          fi
+      - name: Install PyANNOW with dev dependencies
+        run: pip install -e "PyANNOW[dev]"
 
       - name: Install wormuse-analytics
         run: |
           if [ -f wormuse-analytics/pyproject.toml ]; then
             pip install -e wormuse-analytics
-          else
-            pip install numpy scipy pandas scikit-learn statsmodels matplotlib seaborn jupyter
           fi
 
-      - name: Run pytest (if any tests)
+      - name: Run pytest (PyANNOW unit tests)
         run: |
-          if find PyANNOW wormuse-analytics -name "test_*.py" -o -name "*_test.py" | grep -q .; then
-            pip install pytest
-            pytest PyANNOW wormuse-analytics -q
-          else
-            echo "(no Python tests yet — pre-Phase-3)"
-          fi
+          cd PyANNOW
+          python -m pytest tests/ -q --tb=short \
+            --cov=src/pyannow --cov-report=term-missing \
+            -x   # stop on first failure
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: PyANNOW/htmlcov/
+          if-no-files-found: ignore
 
       - name: Notebook smoke test
         run: |

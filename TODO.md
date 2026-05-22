@@ -285,6 +285,45 @@ The `wormuse-sim/src/ow_bridge/` directory is a stub. Until it's implemented,
 
 ---
 
+## ISSUE-013 — No testing framework; changes have no automated verification
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ Resolved — commit pending |
+| **Priority** | P1 |
+| **Severity** | Quality / reproducibility — every change is currently unverified |
+
+**Description:** There are no unit or integration tests. Any code change can silently
+break the ion-channel model, piano synthesiser, pitch mapping, or a NAML step module
+without being caught. The CI skeleton in `.github/workflows/verify.yml` has placeholder
+`echo` statements where tests should run. A proper testing layer needs:
+- `pytest` unit tests for all PyANNOW modules
+- `nbclient` smoke tests for the two executed notebooks
+- A local `make test` shortcut
+- CI updated to run real tests
+
+**Affected files:**
+- `PyANNOW/tests/conftest.py` — shared fixtures (default params, synthetic data, tiny MIDI)
+- `PyANNOW/tests/test_ion_channels.py` — HH model correctness
+- `PyANNOW/tests/test_midi_target.py` — MIDI parsing + onset_loss
+- `PyANNOW/tests/test_forward_model.py` — worm forward simulation
+- `PyANNOW/tests/test_piano_synth.py` — audio synthesis
+- `PyANNOW/tests/test_step_modules.py` — Steps 1-8 shape/type/convergence
+- `PyANNOW/tests/test_numerical.py` — Eckart-Young, convergence, PINN
+- `PyANNOW/pyproject.toml` — add pytest + pytest-cov to dev deps
+- `.github/workflows/verify.yml` — replace echo stubs with real pytest
+- `Makefile` — new; `make test`, `make coverage`, `make lint`
+- `TODO.md` — this entry
+
+**Fix plan:**
+1. `conftest.py` with shared fixtures (tiny MIDI, synthetic X_neural, default params)
+2. 7 test files covering all PyANNOW modules (target: 80%+ coverage)
+3. `pyproject.toml`: add `pytest>=7`, `pytest-cov>=4`, `nbclient` to dev deps
+4. `Makefile` with `test` and `coverage` targets
+5. CI `py-test` job: replace `echo` with `pytest PyANNOW/tests/ -q --tb=short`
+
+---
+
 ## ISSUE-011 — Project has no version; releases are untagged
 
 | Field | Value |
@@ -414,4 +453,5 @@ Pitch maps updated from D♭ major → C# minor pentatonic.
 | 🟡 **P2** | ISSUE-007 — Notebook n_muscles consistency | 1 hour | Prevents silent failures |
 | 🟡 **P2** | ISSUE-008 — Ca_thresh as PINN parameter | 1 day | Connects to SC-PINN project |
 | 🔵 **P3** | ISSUE-009 — AppStat dataset generation | 2 days | Statistical validation |
+| 🟠 **P1** | ISSUE-013 — Testing framework (pytest + CI) | 1 day | Catches regressions on every change |
 | 🔵 **P3** | ISSUE-010 — Real OpenWorm integration | 1 week | Full biological fidelity |
