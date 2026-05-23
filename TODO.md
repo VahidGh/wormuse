@@ -216,7 +216,7 @@ The current model treated all 95 muscles with a single wave, losing this natural
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit 8f515fd) |
 | **Priority** | P2 |
 | **Severity** | Improvement / biological fidelity |
 
