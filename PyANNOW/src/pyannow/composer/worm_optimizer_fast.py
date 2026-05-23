@@ -37,7 +37,6 @@ def run_forward_fast(
     random_seed: int | None = 42,
     n_muscles: int = 95,                # 95 = full BWM; 8 = simplified legacy
     n_fires: int = 3,                   # muscles to fire per cycle (rate = n_fires × drive_freq_hz)
-    ca_thresh: float = -10.0,           # mV — used for MIDI velocity calculation only
 ) -> dict:
     """Simulate the C. elegans locomotion circuit (numpy-vectorised).
 
@@ -55,8 +54,8 @@ def run_forward_fast(
     n_fires   : muscles fired per locomotion cycle.  Total note rate =
                 n_fires × drive_freq_hz.  Default 3 → 3 × 1.5 Hz = 4.5 notes/s
                 ≈ Chopin's 4.40 notes/s.
-    ca_thresh : voltage threshold (mV) used only for MIDI velocity scaling;
-                does not gate which muscles fire.
+    p.ca_thresh : voltage gate (mV) from CelegansChannelParams; crest muscles
+                  below this threshold are suppressed (PINN-tunable via ISSUE-008).
 
     Returns
     -------
@@ -83,9 +82,10 @@ def run_forward_fast(
     omega = 2.0 * np.pi * drive_freq_hz * 1e-3       # rad/ms
 
     # Pre-extract params to locals
-    g_EGL19 = p.g_EGL19; V_hCa = p.V_half_Ca; tau_Ca = p.tau_Ca
-    g_EXP2  = p.g_EXP2;  g_NCA = p.g_NCA
-    g_leak  = p.g_leak;  Cm    = p.C_m
+    g_EGL19   = p.g_EGL19; V_hCa = p.V_half_Ca; tau_Ca = p.tau_Ca
+    g_EXP2    = p.g_EXP2;  g_NCA = p.g_NCA
+    g_leak    = p.g_leak;  Cm    = p.C_m
+    ca_thresh = p.ca_thresh
 
     # ── Segmental travelling-wave drive — dorsal/ventral antiphase ───────
     # Biological reality: dorsal and ventral BWM cells fire in antiphase.

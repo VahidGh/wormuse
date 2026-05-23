@@ -314,6 +314,7 @@ def compare_ode_vs_pde(
     lbfgs_steps: int = 50,
     seed:      int   = 0,
     verbose:   bool  = True,
+    ca_thresh: float = -10.0,       # mV — PINN-tunable gate from CelegansChannelParams
 ) -> dict:
     """Run the ODE PINN and the PDE PINN on the same data and compare.
 
@@ -402,4 +403,5 @@ def compare_ode_vs_pde(
         "model_pde": model_pde, "params_pde": p_pde, "history_pde": h_pde,
         "inp_ode": np.array(inp_ode), "inp_pde": np.array(inp_pde),
         "final_loss_ode": final_ode, "final_loss_pde": final_pde,
+        "ca_thresh": ca_thresh,   # threshold used for converting PINN output → notes
     }

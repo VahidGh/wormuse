@@ -50,6 +50,7 @@ class CelegansChannelParams:
     V_half_Ca: float = -20.0  # mV      EGL-19 half-activation voltage
     tau_Ca:    float = 15.0   # ms      EGL-19 activation time constant
     g_EXP2:    float = 5.0    # mS/cm²  delayed-rectifier K⁺ (note duration)
+    ca_thresh: float = -10.0  # mV      voltage gate for MIDI note detection
     # ── Other tunable (less impactful on music) ───────────────────────────
     g_SHK1:    float = 3.0    # mS/cm²  Shaw K⁺ (motor neuron repolarisation)
     g_NCA:     float = 0.8    # mS/cm²  Na⁺ leak (baseline excitability)
@@ -60,28 +61,31 @@ class CelegansChannelParams:
     g_leak:    float = 0.05   # mS/cm²  passive leak
 
     def as_vector(self) -> np.ndarray:
-        """Return the four PINN-tunable params as a 1-D array for the optimizer."""
-        return np.array([self.g_EGL19, self.V_half_Ca, self.tau_Ca, self.g_EXP2])
+        """Return the five PINN-tunable params as a 1-D array for the optimizer."""
+        return np.array([self.g_EGL19, self.V_half_Ca, self.tau_Ca,
+                         self.g_EXP2, self.ca_thresh])
 
     @classmethod
     def from_vector(cls, x: np.ndarray, base: "CelegansChannelParams | None" = None):
-        """Reconstruct from a 4-element optimizer vector, keeping other fields."""
+        """Reconstruct from a 5-element optimizer vector, keeping other fields."""
         b = base or cls()
         return cls(
             g_EGL19   = float(x[0]),
             V_half_Ca = float(x[1]),
             tau_Ca    = float(x[2]),
             g_EXP2    = float(x[3]),
+            ca_thresh = float(x[4]),
             g_SHK1=b.g_SHK1, g_NCA=b.g_NCA,
             g_SHL1=b.g_SHL1, g_UNC2=b.g_UNC2,
             C_m=b.C_m, g_leak=b.g_leak,
         )
 
     BOUNDS = [   # (min, max) for each element of as_vector()
-        (0.5,  25.0),   # g_EGL19
-        (-50.0, 0.0),   # V_half_Ca
-        (1.0,  80.0),   # tau_Ca
-        (0.5,  20.0),   # g_EXP2
+        (0.5,  25.0),    # g_EGL19
+        (-50.0, 0.0),    # V_half_Ca
+        (1.0,  80.0),    # tau_Ca
+        (0.5,  20.0),    # g_EXP2
+        (-30.0, 10.0),   # ca_thresh
     ]
 
 
@@ -287,10 +291,11 @@ def force_to_velocity(force_normalised: float, force_scale: float = 50.0) -> int
 # Sensitivity helpers  (used in the notebook's ion-channel importance analysis)
 # ─────────────────────────────────────────────────────────────────────────────
 
-PARAM_NAMES = ["g_EGL19", "V_half_Ca", "tau_Ca", "g_EXP2"]
+PARAM_NAMES = ["g_EGL19", "V_half_Ca", "tau_Ca", "g_EXP2", "ca_thresh"]
 PARAM_LABELS = [
     "g_EGL19\n(Ca²⁺ conductance)",
     "V½_Ca\n(activation threshold)",
     "τ_Ca\n(activation speed)",
     "g_EXP2\n(K⁺ repolarisation)",
+    "V_thresh\n(note detection gate)",
 ]

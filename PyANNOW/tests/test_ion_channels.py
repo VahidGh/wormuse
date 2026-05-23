@@ -101,9 +101,9 @@ class TestMuscleSimulation:
 class TestChannelParams:
 
     def test_as_vector_length(self, default_params):
-        """as_vector() must return exactly 4 elements."""
+        """as_vector() must return exactly 5 elements (4 channel params + ca_thresh)."""
         v = default_params.as_vector()
-        assert len(v) == 4, f"Expected 4 params, got {len(v)}"
+        assert len(v) == 5, f"Expected 5 params, got {len(v)}"
 
     def test_vector_round_trip(self, default_params):
         """from_vector(as_vector()) must recover the original parameters."""
@@ -114,6 +114,7 @@ class TestChannelParams:
         assert abs(p2.V_half_Ca - default_params.V_half_Ca) < 1e-9
         assert abs(p2.tau_Ca    - default_params.tau_Ca)    < 1e-9
         assert abs(p2.g_EXP2    - default_params.g_EXP2)    < 1e-9
+        assert abs(p2.ca_thresh - default_params.ca_thresh) < 1e-9
 
     def test_force_to_velocity_range(self):
         """force_to_velocity must always return an integer in [1, 127]."""

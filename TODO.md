@@ -216,21 +216,27 @@ The current model treated all 95 muscles with a single wave, losing this natural
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (commit TBD) |
 | **Priority** | P2 |
 | **Severity** | Improvement / biological fidelity |
 
-**Description:** `Ca_THRESH` (EGL-19 firing threshold) is hard-coded in the forward model.
-It should be a `CelegansChannelParams` field, making it PINN-tunable. The PINN can then
-learn the optimal threshold for musical output — directly connecting to the SC-PINN user project.
+**Description:** `Ca_THRESH` (EGL-19 firing threshold) was hard-coded in the forward model.
+It is now a `CelegansChannelParams` field, making it PINN-tunable.
+
+**Resolution:**
+- `CelegansChannelParams.ca_thresh: float = -10.0` added to the PINN-tunable block
+- `as_vector()` now returns 5 elements (was 4); `from_vector()` reads `x[4]`; `BOUNDS` has 5 entries `(-30.0, 10.0)` for ca_thresh
+- `PARAM_NAMES` / `PARAM_LABELS` extended with `"ca_thresh"` / `"V_thresh\n(note detection gate)"`
+- `run_forward_fast()` drops the `ca_thresh` kwarg, reads `p.ca_thresh` instead
+- `compare_ode_vs_pde()` accepts `ca_thresh: float = -10.0` and returns it in the result dict
+- `test_as_vector_length` updated: 4 → 5; `test_vector_round_trip` asserts `p2.ca_thresh` round-trips
 
 **Affected files:**
-- `PyANNOW/src/pyannow/ion_channels/celegans_hh.py` — add `Ca_thresh: float = -10.0` to `CelegansChannelParams`
-- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` — read `p.Ca_thresh` instead of hardcoded -10.0
-- `PyANNOW/src/pyannow/step8_pinn/locomotion_pinn.py` — add Ca_thresh to the PINN parameter vector
-- `PyANNOW/docs/PyANNOW_NAML_progression.md` — update Step 8 description
-- `PyANNOW/presentation/index.html` — "Ion channels as tuning knobs" table
-- `TODO.md` — this entry
+- `PyANNOW/src/pyannow/ion_channels/celegans_hh.py` ✅
+- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` ✅
+- `PyANNOW/src/pyannow/step8_pinn/locomotion_pinn.py` ✅
+- `PyANNOW/tests/test_ion_channels.py` ✅
+- `TODO.md` ✅
 
 ---
 
