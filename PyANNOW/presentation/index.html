@@ -1275,36 +1275,44 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
   <h3>🤖 Built with <span style="color:#c084fc">Claude Code</span> (Anthropic)</h3>
   <div class="card-grid two" style="font-size:.78em">
     <div>
-      <p style="margin-bottom:10px">This project was implemented by <strong>Claude</strong> (claude-sonnet-4-5/4-6), Anthropic's AI assistant, acting as principal development engineer under the scientific direction of <strong>Vahid Ghayoomie</strong> (Politecnico di Milano, 2025-26).</p>
-      <div class="step-card">
-        <div class="step-label">Claude's role</div>
-        <div class="step-title">Principal development engineer</div>
-        <div class="step-meta">All Python modules · C++ skeletons · 91 tests · documentation · notebooks · this presentation</div>
+      <div class="step-card done" style="margin-bottom:6px">
+        <div class="step-label">Vahid Ghayoomie — researcher</div>
+        <div class="step-title">Concept · science · validation · all issues</div>
+        <div class="step-meta">
+          Original idea ("can a worm play Chopin?") · biological grounding ·
+          NAML progression as narrative · discovered every issue in TODO.md ·
+          validated audio output, plots, biological correctness · directed all features
+        </div>
       </div>
-      <div class="step-card" style="margin-top:6px">
-        <div class="step-label">Human's role</div>
-        <div class="step-title">Scientific director</div>
-        <div class="step-meta">Course material context · design confirmations · domain corrections · key constraints</div>
+      <div class="step-card" style="margin-bottom:6px">
+        <div class="step-label">Claude — development engineer</div>
+        <div class="step-title">All implementation</div>
+        <div class="step-meta">Python modules · 91 tests · documentation · notebooks · this presentation</div>
+      </div>
+      <div class="card" style="font-size:.88em">
+        <h4>Issues caught by Vahid</h4>
+        <p>
+          • MIDI mislabeled Raindrop → Nocturne No. 20 (ISSUE-001)<br>
+          • Ceiling formula single-voice artefact 57.7% → ~100% (ISSUE-002)<br>
+          • 95-cell model 38 notes/s too dense → selective gating (ISSUE-005)<br>
+          • JAX not PyTorch · NAML course stack only · HPC shell config
+        </p>
       </div>
     </div>
     <div>
       <div class="card" style="margin-bottom:8px">
-        <h4>Notable human corrections</h4>
+        <h4>AI limitations encountered</h4>
         <p>
-          • "Use only NAML course materials" → constrained all ML to specific lectures<br>
-          • "JAX, not PyTorch" → corrected the canonical course stack<br>
-          • Identified the MIDI mislabeling (Raindrop≠Nocturne)<br>
-          • Noted 95-cell 38/s rate as a biological design issue, not a bug
+          • Could not download correct MIDI → Vahid sourced the file<br>
+          • PDE Jacobian shape bug → caught during execution<br>
+          • pca_reduce transpose bug → caught by the test suite<br>
+          • FDM instability for high strings → replaced with modal synthesis<br>
+          • Single-voice ceiling bug → caught by Vahid (ISSUE-002)
         </p>
       </div>
       <div class="card">
-        <h4>AI limitations encountered</h4>
-        <p>
-          • Could not download correct MIDI from internet → synthesised from score<br>
-          • PDE Jacobian shape bug → caught during execution<br>
-          • pca_reduce transpose bug → caught by the test suite<br>
-          • FDM instability for high strings → replaced with modal synthesis
-        </p>
+        <h4>Optimisation finding</h4>
+        <p>Nelder-Mead showed near-zero improvement on ion-channel parameters — not an AI failure, but a real biological result: timing is structural (body-wave), not parametric. Vahid confirmed this interpretation.</p>
       </div>
       <p style="font-size:.72em;opacity:.6;margin-top:8px">
         Full breakdown: <code>AI_CONTRIBUTIONS.md</code>
