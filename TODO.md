@@ -191,7 +191,7 @@ The current model treated all 95 muscles with a single wave, losing this natural
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit 5a4a080) |
 | **Priority** | P2 |
 | **Severity** | Consistency |
 
@@ -289,7 +289,7 @@ The `wormuse-sim/src/ow_bridge/` directory is a stub. Until it's implemented,
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit 5a4a080) |
 | **Priority** | P1 |
 | **Severity** | Scientific correctness — code could silently violate the physical contracts |
 
