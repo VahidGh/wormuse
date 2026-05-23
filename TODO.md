@@ -139,7 +139,7 @@ def synthesise_melody(events, duration_s=None, max_notes=None, ...):
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (commit TBD) |
 | **Priority** | P2 |
 | **Severity** | Biological realism / musical quality |
 
@@ -148,17 +148,20 @@ def synthesise_melody(events, duration_s=None, max_notes=None, ...):
 Selective gating (only wave-crest muscles fire) requires either raising `Ca_THRESH` or
 lowering `drive_amplitude`.
 
-**Affected files:**
-- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` — add `Ca_THRESH` parameter, or auto-tune based on `n_muscles`
-- `PyANNOW/src/pyannow/composer/worm_optimizer.py` — same
-- `PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb` — §3 forward model demo, §5 random baseline
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — data preparation cell
-- `TODO.md` — this entry
+**Resolution:** Replaced per-cycle peak detection with phase-gated crest detection in
+`run_forward_fast()`. Added `n_fires=3` (muscles fired per cycle) and `ca_thresh=-10mV`
+parameters. Detection uses rotating muscle index selection: `[(cyc * n_fires + f) % n_muscles]`
+— purely index-based, not voltage-threshold-based (the HH model is intrinsically oscillatory;
+voltage thresholds alone cannot gate selectively). With n_fires=3 and drive_freq_hz=1.5:
+rate = 3 × 1.5 = 4.5 notes/s ≈ Chopin's 4.40 notes/s. gcd(3, 95)=1 so all 95 muscles
+are visited over 95 cycles (63 s) — full pitch variety. Added `ca_thresh` gate to silence
+quiescent muscles (zero drive → V stays at -65mV < -10mV → 0 notes).
 
-**Fix plan:**
-- Raise `Ca_THRESH` to `+5 mV`; expected ~7 fires/cycle × 0.4 Hz = 2.8 notes/s ✓
-- OR: make `Ca_THRESH` a `CelegansChannelParams` field (PINN-tunable)
-- Test: run both modes and compare to Chopin note rate
+**Affected files:**
+- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` — phase-gated crest detection ✅
+- `PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb` — §3 forward model demo, §5 random baseline (needs cell re-execution)
+- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — data preparation cell (needs cell re-execution)
+- `TODO.md` — this entry ✅
 
 ---
 

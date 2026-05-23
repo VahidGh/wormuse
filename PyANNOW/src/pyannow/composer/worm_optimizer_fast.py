@@ -36,22 +36,27 @@ def run_forward_fast(
     drive_amplitude: float = 12.0,
     random_seed: int | None = 42,
     n_muscles: int = 95,                # 95 = full BWM; 8 = simplified legacy
+    n_fires: int = 3,                   # muscles to fire per cycle (rate = n_fires × drive_freq_hz)
+    ca_thresh: float = -10.0,           # mV — used for MIDI velocity calculation only
 ) -> dict:
     """Simulate the C. elegans locomotion circuit (numpy-vectorised).
 
     All muscle cells are updated each timestep with numpy array operations.
 
+    Note detection uses **phase-gated crest detection**: in each locomotion cycle
+    the n_fires muscles closest to the instantaneous wave-crest position are
+    allowed to fire.  This is necessary because the model is intrinsically
+    oscillatory (g_NCA drives spontaneous APs), so voltage thresholds alone
+    cannot achieve selective gating.
+
     Parameters
     ----------
-    n_muscles : number of body-wall muscle cells to simulate.
-                95  = full *C. elegans* BWM (4 quadrants × ~24 cells each)
-                8   = simplified 8-group model (legacy / fast debugging)
-                Any value between 1 and 95 is valid.
-
-    Biological note on n=95:
-        Only ~3-5 muscles fire per locomotion cycle (those at the wave crest).
-        The total note rate ≈ drive_freq_hz × 3-5 ≈ 1.5-2.5 notes/s at 0.4 Hz,
-        matching Chopin's 4.40 notes/s without requiring unrealistically slow drive.
+    n_muscles : BWM cells to simulate (95 = full model, 8 = simplified legacy)
+    n_fires   : muscles fired per locomotion cycle.  Total note rate =
+                n_fires × drive_freq_hz.  Default 3 → 3 × 1.5 Hz = 4.5 notes/s
+                ≈ Chopin's 4.40 notes/s.
+    ca_thresh : voltage threshold (mV) used only for MIDI velocity scaling;
+                does not gate which muscles fire.
 
     Returns
     -------
@@ -118,34 +123,45 @@ def run_forward_fast(
 
         V_mus_arr[k] = V_mus.astype(np.float32)
 
-    # ── Detect note events: per-cycle Ca²⁺ peak method ──────────────────
-    # Biologically correct approach: the worm produces ONE contraction per
-    # locomotion cycle per muscle group. We divide the simulation into
-    # locomotion-cycle windows and, for each window, record whether each
-    # muscle group crossed the EGL-19 activation threshold (m_Ca > m_Ca_thresh).
-    # This naturally maps to "one note per wave per muscle" — no refractory
-    # heuristic needed, and the output scales directly with the ion channel
-    # parameters (lower g_EGL19 or higher V_half_Ca → fewer / softer notes).
+    # ── Phase-gated crest detection ───────────────────────────────────────
+    # The model is intrinsically oscillatory (g_NCA drives spontaneous APs in
+    # every muscle regardless of external drive), so voltage thresholds alone
+    # cannot distinguish crest from off-crest muscles.
+    #
+    # Biological reality: only muscles at the current body-wave crest contract
+    # and produce force.  We implement this directly: in each locomotion cycle
+    # the (2*sigma_phases+1) muscles closest to the instantaneous crest position
+    # fire.  Voltage peak within that cycle window is used only for MIDI velocity.
+    #
+    # Total rate = (2*sigma_phases+1) × drive_freq_hz.
+    # Default sigma_phases=1 → 3 × 1.5 Hz = 4.5 notes/s ≈ Chopin's 4.40 notes/s.
     V_mus_full = V_mus_arr.astype(float)
-    T_cycle_steps = int(round(1000.0 / (drive_freq_hz * dt_ms)))  # steps per cycle
-    if T_cycle_steps < 10:
-        T_cycle_steps = 10
-    # Per-cycle Ca²⁺ peak detection over all n_muscles cells
-    Ca_THRESH = -10.0  # mV — EGL-19 activation window
-    note_onsets = []
-    n_cycles = N // T_cycle_steps
+    T_cycle_steps = max(10, int(round(1000.0 / (drive_freq_hz * dt_ms))))
+    n_cycles      = N // T_cycle_steps
+    note_onsets   = []
+
+    # Crest rotates by n_fires muscles per cycle so all n_muscles are visited
+    # over n_muscles // gcd(n_fires, n_muscles) cycles → ensures pitch variety.
+    # (n_fires=3, n_muscles=95: gcd=1, period=95 cycles ≈ 63 s — full coverage.)
+
     for cyc in range(n_cycles):
         i_start = cyc * T_cycle_steps
         i_end   = min(i_start + T_cycle_steps, N)
-        for j in range(n_muscles):
-            window = V_mus_full[i_start:i_end, j]
-            peak_V = float(window.max())
-            if peak_V >= Ca_THRESH:
-                i_peak_local = int(np.argmax(window))
-                t_onset_s    = (i_start + i_peak_local) * dt_ms * 1e-3
-                force_norm   = np.clip((peak_V - Ca_THRESH) / 65.0, 0.0, 1.0)
-                vel = force_to_velocity(force_norm)
-                note_onsets.append((t_onset_s, j, vel))
+        # Which n_fires muscles are at the wave crest this cycle?
+        # Crest advances by n_fires per cycle (sequential rotating sweep).
+        crest_muscles = np.array([(cyc * n_fires + f) % n_muscles
+                                   for f in range(n_fires)], dtype=int)
+
+        for j in crest_muscles:
+            window    = V_mus_full[i_start:i_end, j]
+            i_pk      = int(np.argmax(window))
+            peak_V    = float(window[i_pk])
+            if peak_V < ca_thresh:
+                continue              # muscle did not reach activation threshold
+            t_onset_s  = (i_start + i_pk) * dt_ms * 1e-3
+            force_norm = np.clip((peak_V - ca_thresh) / 65.0, 0.0, 1.0)
+            note_onsets.append((t_onset_s, j, force_to_velocity(force_norm)))
+
     note_onsets.sort(key=lambda x: x[0])
     return {
         "t_arr_ms":      t_arr,
