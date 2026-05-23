@@ -429,12 +429,25 @@ cells += [md(
 
 # ── Full-length Chopin player ──────────────────────────────────────────────────
 cells += [code(
-    "# Full-length original Chopin MIDI — Nocturne No. 20 in C# minor (Op. posth.)\n"
+    "import base64\n"
+    "from IPython.display import HTML\n"
+    "\n"
+    "# Synthesised version (worm piano model, full length)\n"
     "full_dur_s = max(e.time_s for e in events_chopin) + 2.0\n"
     "audio_full, fs_full = synthesise_melody(events_chopin, duration_s=full_dur_s)\n"
-    "print(f'🎼 Chopin — Nocturne No. 20 in C# minor (Op. posth.)  '\n"
-    "      f'[full length: {full_dur_s-2.0:.1f}s / {(full_dur_s-2.0)/60:.1f} min]')\n"
-    "display(Audio(audio_full, rate=fs_full, autoplay=False))"
+    "print(f'🎹 Synthesised (worm piano model)  '\n"
+    "      f'[{full_dur_s-2.0:.1f}s / {(full_dur_s-2.0)/60:.1f} min]')\n"
+    "display(Audio(audio_full, rate=fs_full, autoplay=False))\n"
+    "\n"
+    "# Original MIDI file played directly in the browser via html-midi-player\n"
+    "midi_b64 = base64.b64encode(MIDI_PATH.read_bytes()).decode('ascii')\n"
+    "print('🎼 Original MIDI file (html-midi-player, requires internet for soundfont)')\n"
+    "display(HTML(\n"
+    "    '<script src=\"https://cdn.jsdelivr.net/combine/npm/tone@14/build/Tone.js,'\n"
+    "    'npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0\"></script>'\n"
+    "    f'<midi-player src=\"data:audio/midi;base64,{midi_b64}\" '\n"
+    "    'sound-font style=\"width:100%\"></midi-player>'\n"
+    "))"
 )]
 
 # ── Conclusion ────────────────────────────────────────────────────────────────
