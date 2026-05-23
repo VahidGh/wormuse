@@ -285,6 +285,38 @@ The `wormuse-sim/src/ow_bridge/` directory is a stub. Until it's implemented,
 
 ---
 
+## ISSUE-015 — No tests validating models against biophysical constraints in EQUIVALENCE_TABLE.md
+
+| Field | Value |
+|---|---|
+| **Status** | 🟡 In Progress |
+| **Priority** | P1 |
+| **Severity** | Scientific correctness — code could silently violate the physical contracts |
+
+**Description:** `docs/EQUIVALENCE_TABLE.md` lists 20 biophysical constraints and their
+equivalents in the piano and NAML models. The existing tests verify shapes, types, and
+numerical stability, but none explicitly test that the code *satisfies the physical
+contracts stated in the table*. For example: τ_Ca should be in [2, 20] ms; g_EGL19
+should monotonically control force; the BWM refractory period should be ~65 ms; the
+travelling-wave phases should correctly encode the body-wave pattern.
+
+**Affected files:**
+- `PyANNOW/tests/test_biophysical_constraints.py` — new; one test class per
+  correspondence type (A/B/C/D) + per structural correspondence (C2.1/C2.2/C2.3)
+- `TODO.md` — this entry
+
+**Fix plan:**
+Write `test_biophysical_constraints.py` with tests grouped by EQUIVALENCE_TABLE type:
+- Type A (Threshold/gate): EGL-19 threshold behaviour, τ_Ca range, V_half_Ca gating, refractory 65 ms
+- Type B (Wave/oscillation): drive_freq controls note rate, travelling-wave phases correct
+- Type C (Decay/damping): EXP-2 repolarisation, AP waveform asymmetry
+- Type D (Compression/low-rank): 302→k compression, 95-cell piano range, SVD truncation
+- C2.1 Excitable threshold in biology + piano
+- C2.2 Body wave encoded in muscle phases
+- C2.3 m_∞ sigmoid shape vs hammer power-law shape
+
+---
+
 ## ISSUE-014 — AI (Claude) contribution not documented or attributed
 
 | Field | Value |
@@ -492,4 +524,5 @@ Pitch maps updated from D♭ major → C# minor pentatonic.
 | 🔵 **P3** | ISSUE-009 — AppStat dataset generation | 2 days | Statistical validation |
 | 🟠 **P1** | ISSUE-013 — Testing framework (pytest + CI) | 1 day | Catches regressions on every change |
 | 🟠 **P1** | ISSUE-014 — AI contribution not documented | 2 hours | Transparency + reproducibility |
+| 🟠 **P1** | ISSUE-015 — Biophysical constraint tests missing | 2 hours | Catches scientific violations |
 | 🔵 **P3** | ISSUE-010 — Real OpenWorm integration | 1 week | Full biological fidelity |
