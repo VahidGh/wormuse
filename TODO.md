@@ -516,7 +516,7 @@ Pitch maps updated from D♭ major → C# minor pentatonic.
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit f1797a5) |
 | **Priority** | P1 |
 | **Severity** | Correctness — Step 0 "wins" every comparison despite being the worst musically |
 
@@ -543,7 +543,7 @@ components separately or add a note explaining the scale difference.
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD — see ISSUE-017 for per-step F1 tracking) |
+| **Status** | ✅ Resolved (commit f1797a5 — see ISSUE-017 for per-step F1 tracking) |
 | **Priority** | P1 |
 | **Severity** | Correctness — K-means "best" result (0.00145) had only 1 note |
 
