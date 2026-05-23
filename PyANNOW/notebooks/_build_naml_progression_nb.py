@@ -427,27 +427,32 @@ cells += [md(
     "display(Audio(audio_chopin, rate=fs, autoplay=False))"
 )]
 
-# ── Full-length Chopin player ──────────────────────────────────────────────────
+# ── Full-length Chopin: synthesised ───────────────────────────────────────────
 cells += [code(
-    "import base64\n"
-    "from IPython.display import HTML\n"
-    "\n"
     "# Synthesised version (worm piano model, full length)\n"
     "full_dur_s = max(e.time_s for e in events_chopin) + 2.0\n"
     "audio_full, fs_full = synthesise_melody(events_chopin, duration_s=full_dur_s)\n"
     "print(f'🎹 Synthesised (worm piano model)  '\n"
     "      f'[{full_dur_s-2.0:.1f}s / {(full_dur_s-2.0)/60:.1f} min]')\n"
-    "display(Audio(audio_full, rate=fs_full, autoplay=False))\n"
+    "display(Audio(audio_full, rate=fs_full, autoplay=False))"
+)]
+
+# ── Full-length Chopin: original WAV (self-contained) ─────────────────────────
+cells += [code(
+    "from pathlib import Path\n"
+    "from scipy.io import wavfile\n"
+    "from IPython.display import Audio, display\n"
+    "import numpy as np\n"
     "\n"
-    "# Original MIDI file played directly in the browser via html-midi-player\n"
-    "midi_b64 = base64.b64encode(MIDI_PATH.read_bytes()).decode('ascii')\n"
-    "print('🎼 Original MIDI file (html-midi-player, requires internet for soundfont)')\n"
-    "display(HTML(\n"
-    "    '<script src=\"https://cdn.jsdelivr.net/combine/npm/tone@14/build/Tone.js,'\n"
-    "    'npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0\"></script>'\n"
-    "    f'<midi-player src=\"data:audio/midi;base64,{midi_b64}\" '\n"
-    "    'sound-font style=\"width:100%\"></midi-player>'\n"
-    "))"
+    "wav_path = Path('../../shared/examples/chopin_nocturne_op_posth_csharp_minor.wav')\n"
+    "fs_wav, audio_wav = wavfile.read(str(wav_path))\n"
+    "if audio_wav.dtype == np.int16:\n"
+    "    audio_wav = audio_wav.astype(np.float32) / 32768.0\n"
+    "if audio_wav.ndim == 2:\n"
+    "    audio_wav = audio_wav.mean(axis=1)\n"
+    "print(f'🎼 Original Chopin — real piano audio  '\n"
+    "      f'[{len(audio_wav)/fs_wav:.1f}s / {len(audio_wav)/fs_wav/60:.1f} min]')\n"
+    "display(Audio(audio_wav, rate=fs_wav, autoplay=False))"
 )]
 
 # ── Conclusion ────────────────────────────────────────────────────────────────
