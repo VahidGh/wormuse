@@ -427,6 +427,16 @@ cells += [md(
     "display(Audio(audio_chopin, rate=fs, autoplay=False))"
 )]
 
+# ── Full-length Chopin player ──────────────────────────────────────────────────
+cells += [code(
+    "# Full-length original Chopin MIDI — Nocturne No. 20 in C# minor (Op. posth.)\n"
+    "full_dur_s = max(e.time_s for e in events_chopin) + 2.0\n"
+    "audio_full, fs_full = synthesise_melody(events_chopin, duration_s=full_dur_s)\n"
+    "print(f'🎼 Chopin — Nocturne No. 20 in C# minor (Op. posth.)  '\n"
+    "      f'[full length: {full_dur_s-2.0:.1f}s / {(full_dur_s-2.0)/60:.1f} min]')\n"
+    "display(Audio(audio_full, rate=fs_full, autoplay=False))"
+)]
+
 # ── Conclusion ────────────────────────────────────────────────────────────────
 cells += [md(
     "## Summary: what NAML contributed\n",
