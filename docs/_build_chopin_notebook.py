@@ -30,7 +30,7 @@ cells += [md(
     "**PyANNOW notebook 02 — Chopin worm optimizer**\n",
     "> *Starting from random neural activity, optimize the C. elegans ion-channel "
     "parameters to make the worm's body movements generate a melody as close as "
-    "possible to Chopin's Nocturne in C# minor (Op. 28 No. 15 — \"Raindrop\").*\n",
+    "possible to Chopin's Nocturne No. 20 in C# minor (Op. posth.).*\n",
     "## What this notebook shows\n",
     "| Section | Question |\n"
     "|---|---|\n"
@@ -74,13 +74,13 @@ cells += [md("## 0. Setup"), code(
     "plt.rcParams.update({'figure.figsize': (11, 4), 'axes.grid': True, 'grid.alpha': 0.3})\n"
     "OUTDIR = Path('demo_outputs')\n"
     "OUTDIR.mkdir(exist_ok=True)\n"
-    "MIDI_PATH = Path('../shared/examples/chopin_nocturne_op_posth_csharp_minor.mid')\n"
+    "MIDI_PATH = Path('../../shared/examples/chopin_nocturne_op_posth_csharp_minor.mid')\n"
     "print('imports OK')"
 )]
 
 # ─── Section 1: Target ────────────────────────────────────────────────────────
 cells += [md(
-    "## 1. The target — Chopin Nocturne in C# minor (\"Raindrop\")\n",
+    "## 1. The target — Chopin Nocturne No. 20 in C# minor (Op. posth.)\n",
     "We parse the MIDI file with `mido`, extract all note onset times, and visualise "
     "the piano roll.  This is the **target note sequence** our worm must match.\n",
     "The piece is ~4.7 minutes, 52 BPM, with ~2.7 notes per second."

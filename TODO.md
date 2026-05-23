@@ -15,7 +15,7 @@
 
 | Field | Value |
 |---|---|
-| **Status** | 🟡 In Progress |
+| **Status** | ✅ Resolved — commit pending |
 | **Priority** | P0 |
 | **Severity** | Correctness |
 
