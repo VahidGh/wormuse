@@ -169,7 +169,7 @@ quiescent muscles (zero drive → V stays at -65mV < -10mV → 0 notes).
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit e84e182) |
 | **Priority** | P2 |
 | **Severity** | Biological realism / musical richness |
 
