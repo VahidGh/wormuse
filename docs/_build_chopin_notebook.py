@@ -83,7 +83,7 @@ cells += [md(
     "## 1. The target — Chopin Nocturne No. 20 in C# minor (Op. posth.)\n",
     "We parse the MIDI file with `mido`, extract all note onset times, and visualise "
     "the piano roll.  This is the **target note sequence** our worm must match.\n",
-    "The piece is ~4.7 minutes, 52 BPM, with ~2.7 notes per second."
+    "The piece is ~3.8 minutes, 50 BPM, with ~4.4 notes per second."
 ), code(
     "events, bpm = parse_midi(MIDI_PATH)\n"
     "t_on_all = note_onsets(events)\n"

@@ -51,7 +51,7 @@ def run_forward_fast(
     Biological note on n=95:
         Only ~3-5 muscles fire per locomotion cycle (those at the wave crest).
         The total note rate ≈ drive_freq_hz × 3-5 ≈ 1.5-2.5 notes/s at 0.4 Hz,
-        matching Chopin's 2.74 notes/s without requiring unrealistically slow drive.
+        matching Chopin's 4.40 notes/s without requiring unrealistically slow drive.
 
     Returns
     -------
