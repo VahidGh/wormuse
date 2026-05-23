@@ -169,26 +169,21 @@ quiescent muscles (zero drive → V stays at -65mV < -10mV → 0 notes).
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (commit TBD) |
 | **Priority** | P2 |
 | **Severity** | Biological realism / musical richness |
 
 **Description:** The worm's dorsal and ventral muscles fire in antiphase during locomotion.
-The current model treats all 95 muscles with a single wave, losing this natural doubling.
-With dorsal (0-47) offset by π from ventral (48-94), the effective note rate doubles.
+The current model treated all 95 muscles with a single wave, losing this natural D/V symmetry.
+
+**Resolution:** `muscle_phases` now split into dorsal (48 cells, phase 0→2π) and ventral
+(47 cells, phase π→3π). Note rate unchanged at 4.5 notes/s — rate is now controlled by
+`n_fires × drive_freq_hz` (ISSUE-005 fix), not the driving wave. All 95 muscles fire
+(48 dorsal + 47 ventral) over 95 cycles. Biologically correct body-wave with D/V antiphase.
 
 **Affected files:**
-- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` — split `muscle_phases` into dorsal (offset 0) + ventral (offset π)
-- `PyANNOW/docs/PyANNOW_NAML_progression.md` — results table (note rate)
-- `TODO.md` — this entry
-
-**Fix plan:**
-```python
-# muscle_phases for 95 cells (48 dorsal + 47 ventral, antiphase)
-dorsal  = np.linspace(0.0, 2*np.pi, 48, endpoint=False)
-ventral = np.linspace(np.pi, 3*np.pi, 47, endpoint=False)  # offset by π
-muscle_phases = np.concatenate([dorsal, ventral])
-```
+- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` — `muscle_phases` split ✅
+- `TODO.md` — this entry ✅
 
 ---
 

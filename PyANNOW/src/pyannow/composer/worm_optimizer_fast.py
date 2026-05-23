@@ -87,12 +87,17 @@ def run_forward_fast(
     g_EXP2  = p.g_EXP2;  g_NCA = p.g_NCA
     g_leak  = p.g_leak;  Cm    = p.C_m
 
-    # ── Segmental travelling-wave drive ──────────────────────────────────
-    # One full spatial wavelength across the n_muscles segments.
-    # Phase offset between adjacent muscles = 2π / n_muscles.
-    # At 0.4 Hz with n=95: the crest spans ~3-5 muscles simultaneously
-    # → natural polyphony (chord-like), matching Chopin's note density.
-    muscle_phases = np.linspace(0.0, 2.0 * np.pi, n_muscles, endpoint=False)
+    # ── Segmental travelling-wave drive — dorsal/ventral antiphase ───────
+    # Biological reality: dorsal and ventral BWM cells fire in antiphase.
+    # First half of muscles = dorsal (phase 0→2π); second half = ventral
+    # (phase π→3π, i.e. offset by π from dorsal).  This reproduces the
+    # sinusoidal body-wave with correct D/V symmetry.
+    n_dorsal  = n_muscles // 2 + n_muscles % 2   # ceil(n/2)
+    n_ventral = n_muscles // 2                    # floor(n/2)
+    muscle_phases = np.concatenate([
+        np.linspace(0.0,        2.0 * np.pi, n_dorsal,  endpoint=False),
+        np.linspace(np.pi, 3.0 * np.pi, n_ventral, endpoint=False),
+    ])
 
     for k in range(N):
         t = t_arr[k]
