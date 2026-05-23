@@ -256,3 +256,69 @@ def biological_ceiling(p_celegans, target_onsets: np.ndarray,
         "tau_refrac_ms":      tau_refrac * 1000,
         "n_voices":           n_voices,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Musical evaluation metrics  (ISSUE-016)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def musical_f1(worm_onsets: np.ndarray,
+               target_onsets: np.ndarray,
+               tol_s: float = 0.05,
+               window_s: float = 15.0) -> dict:
+    """F1-score with ±tol_s tolerance (standard MIR onset evaluation).
+
+    Unlike onset_loss, this metric cannot be gamed by sparsity: producing
+    zero or one note yields recall ≈ 0 and therefore F1 ≈ 0.
+
+    Parameters
+    ----------
+    tol_s : matching tolerance in seconds (default 50 ms, MIR standard)
+
+    Returns
+    -------
+    dict with keys: f1, precision, recall, tp_worm, tp_chopin, n_worm, n_chopin
+    """
+    w = worm_onsets[worm_onsets <= window_s]
+    t = target_onsets[target_onsets <= window_s]
+    if len(w) == 0 or len(t) == 0:
+        return {"f1": 0.0, "precision": 0.0, "recall": 0.0,
+                "tp_worm": 0, "tp_chopin": 0,
+                "n_worm": int(len(w)), "n_chopin": int(len(t))}
+    # True positives from each side
+    tp_w = int(sum(1 for wn in w if np.any(np.abs(t - wn) <= tol_s)))
+    tp_t = int(sum(1 for tn in t if np.any(np.abs(w - tn) <= tol_s)))
+    precision = tp_w / len(w)
+    recall    = tp_t / len(t)
+    f1 = (2.0 * precision * recall / (precision + recall)
+          if (precision + recall) > 0 else 0.0)
+    return {"f1": f1, "precision": precision, "recall": recall,
+            "tp_worm": tp_w, "tp_chopin": tp_t,
+            "n_worm": int(len(w)), "n_chopin": int(len(t))}
+
+
+def ioi_similarity(worm_onsets: np.ndarray,
+                   target_onsets: np.ndarray,
+                   window_s: float = 15.0) -> float:
+    """Inter-onset interval (IOI) histogram intersection — rhythmic similarity.
+
+    Computes the overlap between the IOI distributions of worm and Chopin on a
+    [0, 2s] range with 40 bins.  Returns a value in [0, 1]:
+      0 = no rhythmic overlap (completely different IOI structure)
+      1 = identical IOI distributions
+
+    A periodic worm will produce a spike at one IOI; Chopin has a broad,
+    musically-phrased distribution.  Low overlap ≈ robotic/unmusical.
+    Satisfactory: ≥ 0.30.
+    """
+    w = np.sort(worm_onsets[worm_onsets <= window_s])
+    t = np.sort(target_onsets[target_onsets <= window_s])
+    if len(w) < 2 or len(t) < 2:
+        return 0.0
+    ioi_w = np.diff(w)
+    ioi_t = np.diff(t)
+    bins = np.linspace(0.0, 2.0, 41)
+    hw, _ = np.histogram(ioi_w, bins=bins, density=True)
+    ht, _ = np.histogram(ioi_t, bins=bins, density=True)
+    bin_width = bins[1] - bins[0]
+    return float(np.minimum(hw, ht).sum() * bin_width)

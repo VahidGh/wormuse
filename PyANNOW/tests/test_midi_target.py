@@ -129,6 +129,48 @@ class TestPianoRoll:
         assert roll.shape == (len(pitches), len(times)), "roll.shape must be (n_pitches, n_times)"
         assert roll.dtype == bool, "Piano roll must be boolean"
 
+class TestMusicalMetrics:
+
+    def test_musical_f1_perfect_match(self):
+        """F1 must be 1.0 when worm onsets == target onsets."""
+        from pyannow.targets.midi_target import musical_f1
+        onsets = np.linspace(0.1, 14.9, 40)
+        result = musical_f1(onsets, onsets, tol_s=0.05, window_s=15.0)
+        assert result["f1"] == pytest.approx(1.0, abs=1e-6), (
+            f"Identical arrays must give F1=1.0, got {result['f1']:.4f}")
+
+    def test_musical_f1_single_note_zero_recall(self):
+        """1-note worm vs 40-note target must give F1 ≈ 0 (sparse → recall≈0)."""
+        from pyannow.targets.midi_target import musical_f1
+        target = np.linspace(0.1, 14.9, 40)
+        worm   = np.array([7.0])
+        result = musical_f1(worm, target, tol_s=0.05, window_s=15.0)
+        assert result["f1"] < 0.1, (
+            f"Single-note worm should give F1<0.1 vs 40 Chopin notes, got {result['f1']:.4f}")
+        assert result["recall"] < 0.1, "Recall must be near-zero for single-note worm"
+
+    def test_ioi_similarity_identical(self):
+        """ioi_similarity must return 1.0 for identical onset arrays."""
+        from pyannow.targets.midi_target import ioi_similarity
+        onsets = np.linspace(0.2, 14.8, 40)
+        sim = ioi_similarity(onsets, onsets, window_s=15.0)
+        assert sim == pytest.approx(1.0, abs=0.02), (
+            f"Identical IOI distributions must give similarity≈1.0, got {sim:.4f}")
+
+    def test_ioi_similarity_orthogonal(self):
+        """Non-overlapping IOI distributions must give near-zero similarity."""
+        from pyannow.targets.midi_target import ioi_similarity
+        # Worm: IOIs all at 2.0s (very slow) — falls outside [0, 2) histogram range
+        worm   = np.arange(0.0, 15.0, 2.0)
+        # Target: IOIs all at ~0.1s (fast) — spike near 0.1 in histogram
+        target = np.arange(0.0, 15.0, 0.1)
+        sim = ioi_similarity(worm, target, window_s=15.0)
+        assert sim < 0.20, (
+            f"Orthogonal IOI distributions should give near-zero similarity, got {sim:.4f}")
+
+
+class TestPianoRoll:
+
     def test_piano_roll_no_notes_before_onset(self, midi_path):
         """Piano roll first bin must not be unusually dense (opening chord check).
 

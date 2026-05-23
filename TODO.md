@@ -512,6 +512,66 @@ Pitch maps updated from D♭ major → C# minor pentatonic.
 
 ---
 
+## ISSUE-017 — losses dict mixes incomparable metrics; no per-step F1 tracking
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ Resolved (commit TBD) |
+| **Priority** | P1 |
+| **Severity** | Correctness — Step 0 "wins" every comparison despite being the worst musically |
+
+**Description:** The `losses` dict in notebook 03 mixes two completely different metrics:
+- Steps 0–6 use `onset_loss` (soft Hamming distance on a 20ms/60ms-Gaussian grid)
+- Steps 8a/8b use PINN total training loss (data + λ·physics on feature matrices)
+
+These are **not comparable**. Additionally `onset_loss` has no recall component — Step 0 (4.5 notes/s
+periodic) scores 0.00475 while Steps 1–3 (learning from data) score 0.007–0.008, making the
+random baseline appear better than learning. The correct comparison metric is `musical_f1`.
+
+**Fix:** Add a parallel `f1_scores` dict tracking `musical_f1` per step. Add `ioi_similarity`
+per step. Update cell 20 bar chart to show F1 scores. Update cell 24 summary table.
+Remove Steps 8a/8b from the `losses` dict (they're incommensurable) and show their data loss
+components separately or add a note explaining the scale difference.
+
+**Affected files:**
+- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — cells 2, 6, 10, 12, 14, 16, 20, 24
+- `TODO.md` — this entry
+
+---
+
+## ISSUE-016 — onset_loss is gameable; musical F1 and IOI similarity metrics added
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ Resolved (commit TBD — see ISSUE-017 for per-step F1 tracking) |
+| **Priority** | P1 |
+| **Severity** | Correctness — K-means "best" result (0.00145) had only 1 note |
+
+**Description:** `onset_loss` is a soft Hamming distance on a 20ms grid with a 60ms Gaussian blur.
+K-means achieves lowest loss by producing exactly 1 note (zero recall) — musically meaningless.
+Step 8 PINN looks 20× worse than K-means, but that is because the metric has no recall component.
+Also: notebook 03 cell 4 had a NameError (`n_muscles` used before definition), builder script had
+stale `drive_freq_hz=0.4` and `% 8` references, and Step 8 PINN was under-trained
+(300 Adam + 40 L-BFGS; PDE phys_loss gradient vanished immediately).
+
+**Fix:**
+- Added `musical_f1` (±50ms tolerance F1, MIR standard) and `ioi_similarity` (IOI histogram intersection)
+  to `midi_target.py`. Satisfactory threshold: F1 ≥ 0.20, IOI similarity ≥ 0.30.
+- Fixed cell 4 NameError: added `n_muscles = V_mus.shape[1]` after `V_mus` assignment.
+- Fixed builder script: `drive_freq_hz=1.5, drive_amplitude=12.0`, `% n_muscles`.
+- Step 8 re-trained: `lam_phys=0.05`, `adam_steps=600`, `lbfgs_steps=80`, wired `ca_thresh`.
+  ODE improved 0.051→0.048, PDE 0.079→0.054. L-BFGS now has enough budget.
+- Step 0 baseline evaluation: F1=0.186, IOI similarity=0.682 (IOI satisfactory ✓).
+
+**Affected files:**
+- `PyANNOW/src/pyannow/targets/midi_target.py` — `musical_f1`, `ioi_similarity` added
+- `PyANNOW/tests/test_midi_target.py` — 4 new metric tests (130 passed, 1 xfailed)
+- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — cell 4 NameError, cell 18 PINN params, cells 20/24 new metrics
+- `PyANNOW/notebooks/_build_naml_progression_nb.py` — lines 88/102 stale params fixed
+- `TODO.md` — this entry
+
+---
+
 ## Priority order (open issues)
 
 | Priority | Issue | Effort | Impact |
