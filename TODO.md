@@ -41,7 +41,7 @@ but any notebook cell that was executed _before_ the rename will still show "Rai
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit 8a49683) |
 | **Priority** | P0 |
 | **Severity** | Correctness — headline result "57.7%" is misleading |
 
