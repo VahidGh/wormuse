@@ -15,7 +15,7 @@
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved — commit pending |
+| **Status** | ✅ Resolved — commit `a00d9da` |
 | **Priority** | P0 |
 | **Severity** | Correctness |
 
