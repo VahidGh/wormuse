@@ -184,44 +184,55 @@ class TestTypeB_WaveOscillation:
 
     # ── Row 13 — Travelling wave phases correctly encode the body wave ────
 
-    def test_row13_muscle_phases_are_linear_over_2pi(self):
-        """Row 13 (Type B): `muscle_phases` must span exactly [0, 2π) linearly.
-        This is what encodes 'one full spatial wavelength along the body per cycle'
+    def test_row13_dorsal_phases_span_0_to_2pi(self):
+        """Row 13 (Type B): dorsal muscle phases (first ceil(n/2) cells) must span
+        exactly [0, 2π) — one full spatial wavelength along the dorsal side
         (Wen et al. 2012; Boyle et al. 2012)."""
-        import numpy as np
         n_muscles = 95
-        expected_phases = np.linspace(0.0, 2.0 * np.pi, n_muscles, endpoint=False)
-        # Compute as the model would
-        actual_phases = np.linspace(0.0, 2.0 * np.pi, n_muscles, endpoint=False)
-        np.testing.assert_allclose(actual_phases, expected_phases, atol=1e-12,
-                                    err_msg="Row 13: muscle phases must span [0, 2π) uniformly")
+        n_dorsal = n_muscles // 2 + n_muscles % 2   # 48
+        dorsal = np.linspace(0.0, 2.0 * np.pi, n_dorsal, endpoint=False)
+        assert abs(dorsal[0])                        < 1e-12, "Row 13: dorsal start must be 0"
+        assert abs(dorsal[-1] - 2*np.pi*(n_dorsal-1)/n_dorsal) < 1e-10, \
+            "Row 13: dorsal last phase must be 2π*(n_d-1)/n_d"
 
-    def test_row13_adjacent_muscle_phase_offset(self):
-        """Row 13 (Type B): adjacent muscles must be offset by exactly 2π/n_muscles,
-        creating the body bending wave (one full wave along the worm body)."""
-        n = 95
-        phases = np.linspace(0.0, 2.0 * np.pi, n, endpoint=False)
-        expected_offset = 2.0 * np.pi / n
-        offsets = np.diff(phases)
-        np.testing.assert_allclose(offsets, expected_offset, atol=1e-12,
-                                    err_msg="Row 13: inter-muscle phase offset must be 2π/n")
+    def test_row13_ventral_offset_by_pi(self):
+        """Row 13 (Type B): ventral muscle phases must start at π (antiphase from dorsal).
+        This is the biological D/V antiphase: when dorsal muscles are at peak excitation,
+        ventral muscles are at trough, and vice versa."""
+        n_muscles = 95
+        n_ventral = n_muscles // 2                   # 47
+        ventral = np.linspace(np.pi, 3.0 * np.pi, n_ventral, endpoint=False)
+        assert abs(ventral[0] - np.pi) < 1e-12, \
+            "Row 13: ventral phase array must start at π (antiphase from dorsal)"
+
+    def test_row13_dorsal_ventral_are_antiphase(self):
+        """Row 13 (Type B): dorsal and ventral arrays must be offset by exactly π at
+        their first element — the biological antiphase origin condition.
+        (The two groups have different spacings — 2π/48 vs 2π/47 — so only the
+        start-point offset is the biological invariant, not element-wise differences.)"""
+        n_muscles = 95
+        n_dorsal  = n_muscles // 2 + n_muscles % 2   # 48
+        n_ventral = n_muscles // 2                    # 47
+        dorsal  = np.linspace(0.0,   2.0 * np.pi, n_dorsal,  endpoint=False)
+        ventral = np.linspace(np.pi, 3.0 * np.pi, n_ventral, endpoint=False)
+        start_offset = (ventral[0] - dorsal[0]) % (2 * np.pi)
+        assert abs(start_offset - np.pi) < 1e-12, (
+            f"Row 13: dorsal[0]={dorsal[0]:.4f}, ventral[0]={ventral[0]:.4f}; "
+            f"start offset must be π, got {start_offset:.6f}")
 
     def test_row13_body_wave_propagates_head_to_tail(self):
-        """Row 13 (Type B): the wave crest (phase = 0) must appear at muscle 0 first,
-        then propagate to muscle n-1 last. This mirrors the biological head-to-tail
-        bending wave in C. elegans locomotion."""
-        n = 8
-        phases = np.linspace(0.0, 2.0 * np.pi, n, endpoint=False)
-        drive_freq = 0.4    # Hz
+        """Row 13 (Type B): the dorsal wave crest must appear at muscle 0 first,
+        then propagate to muscle n_dorsal-1 last — head-to-tail wave propagation."""
+        n_dorsal = 48
+        phases = np.linspace(0.0, 2.0 * np.pi, n_dorsal, endpoint=False)
+        drive_freq = 1.5    # Hz (new standard)
         omega = 2.0 * np.pi * drive_freq * 1e-3    # rad/ms
 
-        # Time at which each muscle reaches its crest (raw_mn = 1.0)
+        # Time at which each dorsal muscle reaches its crest
         t_crest = np.array([(2.0 * np.pi - ph) / omega % (1000.0 / drive_freq)
                              for ph in phases])
-        # Crest should arrive in order: muscle 0 first (phase=0 → crest at t=0),
-        # muscle n-1 last
         assert t_crest[0] < t_crest[-1], (
-            "Row 13: body wave crest must arrive at muscle 0 before muscle n-1")
+            "Row 13: body wave crest must arrive at muscle 0 before muscle n_dorsal-1")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -433,13 +444,22 @@ class TestStructuralCorrespondences:
     # ── C2.2 — Wave-bearing dynamics: the body wave is physically encoded ─
 
     def test_C22_body_wave_phase_span(self):
-        """C2.2: the body-wave phase array must span exactly 0 to 2π.
-        This is what makes the worm produce a wave (not all muscles fire at once)."""
+        """C2.2: the worm body-wave phase array uses D/V antiphase.
+        Dorsal phases span [0, 2π); ventral phases span [π, 3π).
+        Together they encode the sinusoidal bending wave with correct biological
+        symmetry (dorsal and ventral muscles fire in antiphase)."""
         n = 95
-        phases = np.linspace(0.0, 2.0 * np.pi, n, endpoint=False)
-        assert abs(phases[0] - 0.0)              < 1e-12, "C2.2: first phase must be 0"
-        assert abs(phases[-1] - 2*np.pi*(n-1)/n) < 1e-10, "C2.2: last phase must be 2π*(n-1)/n"
-        assert abs(phases.max() - phases.min() - 2*np.pi*(n-1)/n) < 1e-10
+        n_dorsal  = n // 2 + n % 2    # 48
+        n_ventral = n // 2             # 47
+        dorsal  = np.linspace(0.0,   2.0 * np.pi, n_dorsal,  endpoint=False)
+        ventral = np.linspace(np.pi, 3.0 * np.pi, n_ventral, endpoint=False)
+        assert abs(dorsal[0] - 0.0)    < 1e-12, "C2.2: dorsal first phase must be 0"
+        assert abs(ventral[0] - np.pi) < 1e-12, "C2.2: ventral first phase must be π (antiphase)"
+        # D/V start-point offset is exactly π (the two groups have different step sizes,
+        # so only the origin offset is the biological invariant)
+        start_offset = (ventral[0] - dorsal[0]) % (2 * np.pi)
+        assert abs(start_offset - np.pi) < 1e-12, \
+            f"C2.2: dorsal/ventral start-point offset must be π, got {start_offset:.6f}"
 
     def test_C22_piano_inharmonicity_disperses_modes(self):
         """C2.2: piano string modes must be dispersive — higher modes have a

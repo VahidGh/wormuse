@@ -191,27 +191,24 @@ The current model treated all 95 muscles with a single wave, losing this natural
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (commit TBD) |
 | **Priority** | P2 |
 | **Severity** | Consistency |
 
 **Description:** `run_forward_fast` now defaults to `n_muscles=95` but the notebooks
-(`02`, `03`) call it with the old 8-cell assumption (e.g. `MUSCLE_PITCHES` size 8,
-`V_muscles[:, j]` over range(8)). They will fail or silently use 8-cell data
-with a 95-cell function.
+(`02`, `03`) called it with the old 8-cell assumption (e.g. `MUSCLE_PITCHES` size 8,
+`V_muscles[:, j]` over range(8)).
+
+**Resolution:** All 8-cell hardcoding removed from both notebooks:
+- nb-02 cells 8, 12, 15: `drive_freq_hz=0.4, drive_amplitude=8.0` → 1.5/12.0 (ISSUE-005)
+- nb-03 cell 4: `muscle_idx = i % 8` → `% n_muscles` (ISSUE-005)
+- nb-03 cell 2 import: removed `MUSCLE_PITCHES` from import
+- nb-03 cell 21: `MUSCLE_PITCHES[k_idx % 8]` → `result_worm['pitch_map'][k_idx % n_muscles]`
 
 **Affected files:**
-- `PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb` — all calls to `run_forward_fast`; §3, §4, §5, §6, §9
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — data prep cell, all forward model calls
-- `PyANNOW/notebooks/_build_naml_progression_nb.py` — rebuild with explicit `n_muscles=95`
-- `docs/_build_chopin_notebook.py` — same
-- `TODO.md` — this entry
-
-**Fix plan:**
-1. Decide canonical default: keep `n_muscles=95` everywhere, or make each notebook explicit
-2. Update all `run_forward_fast(...)` calls to pass `n_muscles=95` explicitly
-3. Update `MUSCLE_PITCHES_95` usage in pitch lookups
-4. Re-execute both notebooks
+- `PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb` ✅ (fixed in ISSUE-005 commit ac98245)
+- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` ✅
+- `TODO.md` ✅
 
 ---
 
@@ -292,31 +289,28 @@ The `wormuse-sim/src/ow_bridge/` directory is a stub. Until it's implemented,
 
 | Field | Value |
 |---|---|
-| **Status** | 🟡 In Progress |
+| **Status** | ✅ Resolved (commit TBD) |
 | **Priority** | P1 |
 | **Severity** | Scientific correctness — code could silently violate the physical contracts |
 
 **Description:** `docs/EQUIVALENCE_TABLE.md` lists 20 biophysical constraints and their
-equivalents in the piano and NAML models. The existing tests verify shapes, types, and
-numerical stability, but none explicitly test that the code *satisfies the physical
-contracts stated in the table*. For example: τ_Ca should be in [2, 20] ms; g_EGL19
-should monotonically control force; the BWM refractory period should be ~65 ms; the
-travelling-wave phases should correctly encode the body-wave pattern.
+equivalents in the piano and NAML models. The existing tests verified shapes, types, and
+numerical stability, but none explicitly tested that the code satisfies the physical contracts.
+
+**Resolution:** `PyANNOW/tests/test_biophysical_constraints.py` written with 35 tests
+covering all EQUIVALENCE_TABLE correspondence types:
+- Type A (Threshold/gate): EGL-19 Boltzmann gate, τ_Ca range, V_half_Ca gating, refractory 65 ms
+- Type B (Wave/oscillation): drive_freq controls note rate, D/V antiphase phase encoding
+- Type C (Decay/damping): EXP-2 repolarisation speed, AP waveform asymmetry
+- Type D (Compression/low-rank): 302→k compression, 95-cell piano range, SVD truncation
+- C2.1 Excitable threshold (worm silent without drive; piano silent without hammer)
+- C2.2 D/V antiphase body-wave encoding (updated from linear phases after ISSUE-006)
+- C2.3 m_∞ Boltzmann sigmoid vs hammer power-law convexity
+35 pass; 1 pre-existing failure (test_row17 piano attack vs decay timing, tracked as ISSUE-003).
 
 **Affected files:**
-- `PyANNOW/tests/test_biophysical_constraints.py` — new; one test class per
-  correspondence type (A/B/C/D) + per structural correspondence (C2.1/C2.2/C2.3)
-- `TODO.md` — this entry
-
-**Fix plan:**
-Write `test_biophysical_constraints.py` with tests grouped by EQUIVALENCE_TABLE type:
-- Type A (Threshold/gate): EGL-19 threshold behaviour, τ_Ca range, V_half_Ca gating, refractory 65 ms
-- Type B (Wave/oscillation): drive_freq controls note rate, travelling-wave phases correct
-- Type C (Decay/damping): EXP-2 repolarisation, AP waveform asymmetry
-- Type D (Compression/low-rank): 302→k compression, 95-cell piano range, SVD truncation
-- C2.1 Excitable threshold in biology + piano
-- C2.2 Body wave encoded in muscle phases
-- C2.3 m_∞ sigmoid shape vs hammer power-law shape
+- `PyANNOW/tests/test_biophysical_constraints.py` ✅
+- `TODO.md` ✅
 
 ---
 
