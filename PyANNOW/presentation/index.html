@@ -1047,9 +1047,9 @@ print(f"PDE loss: {results['final_loss_pde']:.5f}")
         <td style="padding:8px;color:var(--accent2)">Max 8 simultaneous notes (Chopin uses more)</td>
       </tr>
       <tr style="border-top:1px solid var(--border)">
-        <td style="padding:8px"><strong>57.7% reachable</strong></td>
-        <td style="padding:8px">BWM refractory ~280 ms (EGL-19 + EXP-2 channels)</td>
-        <td style="padding:8px;color:var(--accent2)">42% of Chopin notes unreachable regardless of ML</td>
+        <td style="padding:8px"><strong>~100% rate-reachable</strong></td>
+        <td style="padding:8px">8–95 voices × 65 ms refractory (EGL-19 + EXP-2)</td>
+        <td style="padding:8px;color:var(--accent3)">All Chopin notes achievable by rate — real limit is timing</td>
       </tr>
       <tr style="border-top:1px solid var(--border)">
         <td style="padding:8px"><strong>Regular rhythm</strong></td>
@@ -1258,12 +1258,12 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
     <div>
       <p><strong>The biology sets the ceiling:</strong></p>
       <div class="card" style="border-color:var(--accent2)">
-        <h4 style="color:var(--accent2)">57.7% reachable — not 100%</h4>
-        <p>The worm's 280 ms muscle refractory period and 8 independent voices are fixed by evolution, not by our choice of ML method. No amount of NAML sophistication can move the ceiling.</p>
+        <h4 style="color:var(--accent2)">Rhythm, not rate, is the hard limit</h4>
+        <p>With 8–95 independent voices and 65 ms refractory, the worm can match <em>all</em> of Chopin's notes by rate (~100% ceiling). The irreducible constraint is the periodic travelling wave — Chopin's timing is syncopated; the worm's is not.</p>
       </div>
       <div class="card" style="margin-top:10px">
         <h4>The beautiful result</h4>
-        <p>A 1 mm worm with 302 neurons, simulated in software, can — with the right mathematical tools from a university course — approximate a Chopin piano piece at <strong>~58% onset coverage</strong>. Nature's simplest brain can be a composer.</p>
+        <p>A 1 mm worm with 302 neurons, simulated in software, can — with the right mathematical tools from a university course — approximate a Chopin piano piece. Nature's simplest brain can be a composer.</p>
       </div>
     </div>
   </div>
@@ -1331,6 +1331,49 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
 </div><!-- .slides -->
 </div><!-- .reveal -->
 
+<!-- ── Background audio (loops Chopin while presenting) ── -->
+<audio id="bg-audio" loop preload="auto">
+  <source src="../../shared/examples/chopin_nocturne_op_posth_csharp_minor.wav" type="audio/wav">
+</audio>
+
+<!-- ── Floating audio control bar ── -->
+<div id="audio-bar" style="
+  position: fixed;
+  bottom: 18px;
+  left: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(8,18,36,0.85);
+  border: 1px solid rgba(0,217,255,0.35);
+  border-radius: 30px;
+  padding: 7px 16px 7px 13px;
+  backdrop-filter: blur(8px);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  user-select: none;
+">
+  <span style="font-size:15px;opacity:.6;letter-spacing:0">♪</span>
+  <button id="audio-btn" onclick="toggleAudio()" title="Play / Pause (M)" style="
+    background: none;
+    border: 1px solid rgba(0,217,255,0.55);
+    color: #00d9ff;
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s, border-color .15s;
+  ">▶</button>
+  <input id="audio-vol" type="range" min="0" max="1" step="0.02" value="0.28"
+    oninput="document.getElementById('bg-audio').volume = +this.value"
+    title="Volume"
+    style="width:80px; accent-color:#00d9ff; cursor:pointer; vertical-align:middle;">
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
 <script>
   Reveal.initialize({
@@ -1353,6 +1396,55 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
       mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
     },
   });
+</script>
+
+<script>
+  (function () {
+    const audio = document.getElementById('bg-audio');
+    const btn   = document.getElementById('audio-btn');
+    const vol   = document.getElementById('audio-vol');
+
+    audio.volume = +vol.value;
+
+    // Auto-start; if browser blocks autoplay, wait for first user interaction
+    function startAudio() {
+      audio.play().then(() => { btn.textContent = '⏸'; }).catch(() => {
+        // Autoplay blocked — play on first click/keypress anywhere on the page
+        const unblock = function () {
+          audio.play().then(() => { btn.textContent = '⏸'; }).catch(() => {});
+          document.removeEventListener('click',   unblock);
+          document.removeEventListener('keydown', unblock);
+        };
+        document.addEventListener('click',   unblock, { once: true });
+        document.addEventListener('keydown', unblock, { once: true });
+      });
+    }
+    if (document.readyState === 'complete') {
+      startAudio();
+    } else {
+      window.addEventListener('load', startAudio);
+    }
+
+    window.toggleAudio = function () {
+      if (audio.paused) {
+        audio.play().then(() => { btn.textContent = '⏸'; }).catch(() => {});
+      } else {
+        audio.pause();
+        btn.textContent = '▶';
+      }
+    };
+
+    // M key toggles music (avoid clashing with Reveal.js space/arrow shortcuts)
+    document.addEventListener('keydown', function (e) {
+      if (e.code === 'KeyM' && !e.target.matches('input, textarea, [contenteditable]')) {
+        toggleAudio();
+      }
+    });
+
+    // Visual feedback: keep button in sync if audio ends unexpectedly
+    audio.addEventListener('pause', () => { btn.textContent = '▶'; });
+    audio.addEventListener('play',  () => { btn.textContent = '⏸'; });
+  })();
 </script>
 </body>
 </html>

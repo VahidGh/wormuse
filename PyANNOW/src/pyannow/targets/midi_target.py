@@ -189,21 +189,20 @@ def note_rate_mismatch(worm_onsets: np.ndarray,
 # Biological ceiling analysis (no optimisation needed)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def biological_ceiling(p_celegans, target_onsets: np.ndarray,
-                       window_s: float = 15.0) -> dict:
-    """Theoretical upper limit: what fraction of Chopin notes can the worm
-    physically produce given its muscle contraction time constant?
+def biological_ceiling_1voice(p_celegans, target_onsets: np.ndarray,
+                               window_s: float = 30.0) -> dict:
+    """Single-voice ceiling (conservative / for comparison only).
 
-    A new note can only start after ≥ tau_Ca + tau_relax_ms ms. Any Chopin note
-    that falls within this refractory window is unreachable without changing the
-    ion channels.
+    Checks whether consecutive target notes respect the refractory window as if
+    there were only one muscle cell.  Use biological_ceiling() for the
+    biologically correct n-voice version.
     """
-    tau_refrac = (p_celegans.tau_Ca + 50.0) * 1e-3     # s: Ca activation + passive relax
-
+    tau_refrac = (p_celegans.tau_Ca + 50.0) * 1e-3
     t_clip = target_onsets[target_onsets <= window_s]
     if len(t_clip) < 2:
-        return {"reachable_fraction": 1.0, "n_reachable": len(t_clip)}
-
+        return {"reachable_fraction": 1.0, "reachable_N": len(t_clip),
+                "total_N": len(t_clip), "tau_refrac_ms": tau_refrac * 1000,
+                "n_voices": 1}
     reachable = 1
     last = t_clip[0]
     for t in t_clip[1:]:
@@ -215,4 +214,45 @@ def biological_ceiling(p_celegans, target_onsets: np.ndarray,
         "reachable_N":        reachable,
         "total_N":            len(t_clip),
         "tau_refrac_ms":      tau_refrac * 1000,
+        "n_voices":           1,
+    }
+
+
+def biological_ceiling(p_celegans, target_onsets: np.ndarray,
+                       window_s: float = 30.0,
+                       n_voices: int = 95) -> dict:
+    """N-voice biological ceiling: fraction of target notes physically reachable.
+
+    With n_voices independent BWM muscle groups each having a refractory period
+    of tau_Ca + 50 ms, a greedy scheduler assigns each target note to the voice
+    that last fired most recently (but has recovered).  This maximises utilisation
+    while keeping the most-recovered voices available for rapid future bursts.
+
+    For Chopin at 4.4 notes/s with tau_refrac=65 ms:
+      8 voices  → ~100% rate-reachable
+      95 voices → ~100% rate-reachable
+    The real bottleneck is rhythmic regularity, not note rate.
+
+    Use n_voices=1 to reproduce the (incorrect) single-voice result for comparison.
+    """
+    tau_refrac = (p_celegans.tau_Ca + 50.0) * 1e-3
+    t_clip = target_onsets[target_onsets <= window_s]
+    if len(t_clip) == 0:
+        return {"reachable_fraction": 1.0, "reachable_N": 0, "total_N": 0,
+                "tau_refrac_ms": tau_refrac * 1000, "n_voices": n_voices}
+
+    last_fired = np.full(n_voices, -np.inf)
+    reachable = 0
+    for t in t_clip:
+        avail = np.where(last_fired + tau_refrac <= t)[0]
+        if len(avail) > 0:
+            best = avail[np.argmax(last_fired[avail])]  # least-idle recovered voice
+            last_fired[best] = t
+            reachable += 1
+    return {
+        "reachable_fraction": reachable / len(t_clip),
+        "reachable_N":        reachable,
+        "total_N":            len(t_clip),
+        "tau_refrac_ms":      tau_refrac * 1000,
+        "n_voices":           n_voices,
     }

@@ -66,13 +66,21 @@ class TestBiologicalCeiling:
         assert result["reachable_fraction"] == pytest.approx(1.0, abs=0.01), (
             "Notes 5s apart must all be reachable given tau_refrac ~65ms")
 
-    def test_dense_piece_partial_ceiling(self, default_params):
-        """Notes spaced 30ms apart must have ceiling < 1 (below tau_refrac ~65ms)."""
+    def test_dense_piece_partial_ceiling_single_voice(self, default_params):
+        """Single-voice ceiling: notes 30ms apart must be < 1 (below tau_refrac ~65ms)."""
         from pyannow.targets.midi_target import biological_ceiling
         dense_target = np.arange(0, 5.0, 0.030)   # note every 30ms
-        result = biological_ceiling(default_params, dense_target, window_s=5.0)
+        result = biological_ceiling(default_params, dense_target, window_s=5.0, n_voices=1)
         assert result["reachable_fraction"] < 1.0, (
-            "Notes 30ms apart should be below full reachability (tau_refrac ~65ms)")
+            "Single-voice: notes 30ms apart should hit the refractory ceiling (tau_refrac ~65ms)")
+
+    def test_dense_piece_nvoice_fully_reachable(self, default_params):
+        """95-voice ceiling: notes 30ms apart must all be reachable (95 voices >> needed)."""
+        from pyannow.targets.midi_target import biological_ceiling
+        dense_target = np.arange(0, 5.0, 0.030)   # note every 30ms = 33 notes/s
+        result = biological_ceiling(default_params, dense_target, window_s=5.0, n_voices=95)
+        assert result["reachable_fraction"] == 1.0, (
+            "95 voices at 33 notes/s is well within capacity (95 × 15 notes/s max)")
 
 
 class TestMidiParsing:

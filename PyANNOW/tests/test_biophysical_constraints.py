@@ -110,14 +110,14 @@ class TestTypeA_ThresholdGate:
         assert result["reachable_fraction"] == pytest.approx(1.0, abs=0.01), (
             "Row 8: notes spaced 300 ms apart (>> τ_refrac=65 ms) must all be reachable")
 
-    def test_row8_dense_notes_below_ceiling(self, default_params):
-        """Row 8 (Type A): notes spaced 30 ms apart (< τ_refrac=65 ms) must be
-        only partially reachable — the refractory sets a hard speed limit."""
+    def test_row8_dense_notes_below_single_voice_ceiling(self, default_params):
+        """Row 8 (Type A): with 1 voice, notes 30 ms apart (< τ_refrac=65 ms) are
+        only partially reachable — the refractory sets a hard speed limit per voice."""
         from pyannow.targets.midi_target import biological_ceiling
         dense = np.arange(0, 5.0, 0.030)     # 30 ms between notes
-        result = biological_ceiling(default_params, dense, window_s=5.0)
+        result = biological_ceiling(default_params, dense, window_s=5.0, n_voices=1)
         assert result["reachable_fraction"] < 0.95, (
-            "Row 8: notes 30 ms apart should hit the refractory ceiling")
+            "Row 8: single-voice, notes 30 ms apart should hit the refractory ceiling")
 
     # ── Row 16 — m_∞ Boltzmann shape ─────────────────────────────────────
 

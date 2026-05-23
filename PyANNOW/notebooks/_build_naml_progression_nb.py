@@ -470,9 +470,12 @@ cells += [md(
     "| 8a | ODE PINN (L27) | Free mapping | Obeys oscillator ODE |\n"
     "| 8b | PDE PINN (L27 + NMPDE echo) | Per-muscle | Spatial wave coupling |\n",
     "### The biological ceiling\n",
-    "Even the best NAML model cannot exceed 57.7% onset coverage, "
-    "because the worm's BWM refractory period (~280 ms) and 8-voice limit are "
-    "fixed by evolution, not by our choice of ML method."
+    "With 8–95 independent BWM muscle groups each with a 65 ms refractory period "
+    "(EGL-19 Ca²⁺ activation + passive relaxation), the worm can physically produce "
+    "**all** of Chopin's notes by rate (~100% ceiling). "
+    "The true hard limit is **rhythmic regularity**: the locomotion circuit drives a "
+    "periodic travelling wave, while Chopin's timing is syncopated and musically varied. "
+    "No NAML method can change the body-wave oscillator — that is the irreducible biological constraint."
 )]
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -218,7 +218,7 @@ Simulation: 10 s window, 302-neuron synthetic activity, Chopin first 10 s.
 The biological system (302 neurons, 8 muscles) has severe dimensionality constraints that limit what NAML can achieve:
 - The worm's 302-D neural space effectively lives in 1-4 dimensions (locomotion subspace)
 - Chopin's musical feature space requires much more structure
-- The mapping is learnable but has a low ceiling (57.7% note reachability)
+- The mapping is learnable; with 8–95 independent voices the rate ceiling is ~100% — the true bottleneck is rhythmic regularity, not note rate
 
 NAML methods improve the mapping quality **within** these constraints. The PINN adds physical realism, which changes the optimisation objective — the result is more biologically constrained but not necessarily closer to Chopin by the onset-loss metric.
 | 5 | + Adam | L18-20 | ? | ? | TBD |
@@ -234,7 +234,7 @@ No matter how good our NAML model becomes, the worm faces hard limits:
 | Limit | Source | Musical consequence |
 |---|---|---|
 | 8 voices | 8 BWM segments | Max 8-note chords (Chopin uses more) |
-| 57.7% reachable | BWM refractory 280 ms | ~42% of Chopin notes physically unreachable |
+| ~100% rate-reachable | 8–95 voices × 65 ms refractory | Rate is not the limit — rhythmic regularity is |
 | Regular rhythm | Body-wave phase structure | Worm plays a regular grid; Chopin plays syncopated |
 
 The NAML methods improve mapping quality *within* these constraints. They cannot change the constraints themselves.

@@ -41,14 +41,19 @@ but any notebook cell that was executed _before_ the rename will still show "Rai
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (commit TBD) |
 | **Priority** | P0 |
 | **Severity** | Correctness — headline result "57.7%" is misleading |
 
 **Description:** `biological_ceiling()` in `midi_target.py` uses a greedy single-voice
 algorithm: checks if consecutive Chopin notes are ≥ τ_refrac apart. With 8 or 95 independent
-voices, the real capacity is `n_voices × (1/τ_refrac)` >> Chopin's 2.74 notes/s.
+voices, the real capacity is `n_voices × (1/τ_refrac)` >> Chopin's 4.40 notes/s.
 The true ceiling is far higher; the real bottleneck is **rhythmic regularity** not note rate.
+
+**Resolution:** Implemented `biological_ceiling_nvoice` greedy scheduler (now the default
+`biological_ceiling`). Old single-voice kept as `biological_ceiling_1voice`. Verified:
+8-voice ceiling = 100%, 95-voice ceiling = 100%. Updated all text from "57.7%" to "~100% rate-reachable".
+Tests updated to pass `n_voices=1` for the dense-sequence partial-ceiling check.
 
 **Affected files:**
 - `PyANNOW/src/pyannow/targets/midi_target.py` — replace `biological_ceiling()` with n-voice greedy
