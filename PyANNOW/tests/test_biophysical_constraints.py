@@ -301,23 +301,37 @@ class TestTypeC_DecayDamping:
             f"Row 17: AP upstroke ({t_rise:.1f} ms) should be faster than "
             f"50% recovery ({t_decay:.1f} ms) — matches piano note envelope")
 
+    @pytest.mark.xfail(
+        reason="ISSUE-003: modal synthesis decays in ~5 ms (way too fast for A4). "
+               "A real piano note at 440 Hz sustains >500 ms. "
+               "This test correctly identifies the bug — remove xfail when ISSUE-003 is fixed.",
+        strict=True,
+    )
     def test_row17_piano_string_attack_faster_than_decay(self):
-        """Row 17 (Type C): the rendered piano string must have an impulse-like attack
-        followed by a longer exponential decay — mirroring the biological AP."""
+        """Row 17 (Type C): the rendered piano string must sustain for at least 100 ms
+        after its attack peak — mirroring the biological AP which has a long refractory tail.
+
+        Measured via 5ms RMS envelope (robust to sinusoidal oscillation at f0).
+        Decay criterion: time from peak RMS to first window where RMS ≤ half-peak
+        must be ≥ 100 ms (a real A4 sustains ~500-1000 ms at moderate velocity).
+
+        Current failure: modal synthesis is so overdamped the string is silent in ~25 ms.
+        """
         from pyannow.composer.piano_synth import render_string
-        audio = render_string(f0=440.0, velocity=80, duration_s=1.0, fs=22050)
-        # Find the time to peak amplitude
-        i_peak = int(np.argmax(np.abs(audio)))
-        t_peak_ms = i_peak / 22050 * 1000
-        # Find time for amplitude to halve
-        half_amp = np.abs(audio[i_peak]) * 0.5
-        post_peak = np.where(np.abs(audio[i_peak:]) <= half_amp)[0]
-        if len(post_peak) == 0:
-            pytest.skip("Amplitude does not halve in 1s — very slow damping (OK)")
-        t_half_decay_ms = post_peak[0] / 22050 * 1000
-        assert t_peak_ms < t_half_decay_ms, (
-            f"Row 17: piano attack ({t_peak_ms:.1f} ms to peak) should be faster "
-            f"than decay ({t_half_decay_ms:.1f} ms to half-amplitude)")
+        fs = 22050
+        audio = render_string(f0=440.0, velocity=80, duration_s=2.0, fs=fs)
+        win = int(0.005 * fs)   # 5ms RMS windows
+        n_wins = len(audio) // win
+        rms = np.array([np.sqrt(np.mean(audio[i*win:(i+1)*win]**2)) for i in range(n_wins)])
+        i_peak = int(np.argmax(rms))
+        half = rms[i_peak] * 0.5
+        post = np.where((np.arange(n_wins) > i_peak) & (rms <= half))[0]
+        if len(post) == 0:
+            return   # amplitude never halves in 2s — very slow decay, test passes trivially
+        t_decay_ms = (post[0] - i_peak) * 5.0
+        assert t_decay_ms >= 100.0, (
+            f"Row 17: piano A4 half-decay is only {t_decay_ms:.0f} ms "
+            f"(expected ≥ 100 ms for a realistic string). See ISSUE-003.")
 
 
 # ═══════════════════════════════════════════════════════════════════════
