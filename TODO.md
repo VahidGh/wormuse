@@ -139,7 +139,7 @@ def synthesise_melody(events, duration_s=None, max_notes=None, ...):
 
 | Field | Value |
 |---|---|
-| **Status** | ✅ Resolved (commit TBD) |
+| **Status** | ✅ Resolved (commit 0bea860) |
 | **Priority** | P2 |
 | **Severity** | Biological realism / musical quality |
 
