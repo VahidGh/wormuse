@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wormuse-analytics — improving the worm→Chopin pipeline through Applied Statistics</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/black.css">
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+
+<style>
+  :root {
+    --accent:  #00d9ff;
+    --accent2: #ff6b6b;
+    --accent3: #ffd93d;
+    --green:   #6bcb77;
+    --bg-card: rgba(255,255,255,0.07);
+    --border:  rgba(255,255,255,0.15);
+  }
+  .reveal { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 28px; }
+  .reveal .slides section { box-sizing: border-box; overflow: hidden; padding: 8px 18px; text-align:left; }
+  .reveal h1 { font-size: 1.8em; color: var(--accent); margin: 0 0 .2em; }
+  .reveal h2 { font-size: 1.3em; margin: 0 0 .25em; color: var(--accent); }
+  .reveal h3 { font-size: 1.05em; margin: 0 0 .25em; color: var(--accent3); }
+  .reveal p  { margin: .15em 0; line-height: 1.4; }
+  .reveal ul { margin: .1em 0 .4em 1em; }
+  .reveal li { margin: 1px 0; font-size: .9em; line-height: 1.4; }
+
+  .title-slide  { text-align: center; }
+  .title-slide h1 { font-size: 2.0em; }
+  .title-slide .subtitle { font-size: 1em; opacity: .85; }
+  .title-slide .meta { font-size: .65em; opacity: .55; margin-top: 1.5em; }
+
+  .card-grid { display:grid; gap:10px; margin-top: 8px; }
+  .card-grid.two   { grid-template-columns: 1fr 1fr; }
+  .card-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .card { background:var(--bg-card); border:1px solid var(--border);
+          border-radius:8px; padding:10px 14px; }
+  .card h4 { color:var(--accent); margin:0 0 5px; font-size:.78em;
+             text-transform:uppercase; letter-spacing:.08em; }
+  .card p, .card li  { margin:0; font-size:.78em; line-height:1.45; opacity:.92; }
+  .card .big { font-size:1.8em; font-weight:700; color:var(--accent3); margin-bottom:3px; }
+
+  .reveal pre { font-size:.42em !important; border-radius:7px; margin:6px 0; }
+  .reveal pre code { padding:10px !important; max-height:260px; overflow-y:auto !important;
+                     scrollbar-width:thin; }
+
+  .hl  { color:var(--accent); font-weight:600; }
+  .hl2 { color:var(--accent3); font-weight:600; }
+  .hl3 { color:var(--green);   font-weight:600; }
+  .bad { color:var(--accent2); font-weight:600; }
+
+  .eq-box { background:rgba(0,217,255,.08); border:1px solid rgba(0,217,255,.3);
+            border-radius:7px; padding:9px 12px; margin:6px 0; }
+
+  table.compact { width: 100%; border-collapse: collapse; font-size: .68em; }
+  table.compact th, table.compact td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  table.compact th { color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+  table.compact td.tag { color: var(--accent2); font-family: monospace; font-size: .9em; }
+  table.compact td.tag.ok { color: var(--green); }
+  table.compact td.tag.warn { color: var(--accent3); }
+
+  .lecture-badge {
+    display:inline-block; padding: 2px 9px; border-radius: 14px;
+    background: rgba(0,217,255,.15); border: 1px solid var(--accent);
+    color: var(--accent); font-size: .65em; letter-spacing: .12em;
+    text-transform: uppercase; margin-right: 6px;
+  }
+  .pipeline-flow {
+    font-family: 'Menlo', monospace; font-size: .62em;
+    background: rgba(255,255,255,.03); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px; line-height: 1.3; white-space: pre;
+  }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ─────────────── Slide 1: Title ─────────────── -->
+<section class="title-slide">
+  <h1>wormuse-analytics</h1>
+  <p class="subtitle">Improving the <span class="hl">worm→Chopin pipeline</span> through Applied Statistics</p>
+  <p class="subtitle"><span class="hl3">Goal:</span> the best model we can build that teaches a <i>C. elegans</i> to play Chopin's Nocturne in C♯ minor.</p>
+  <p class="meta">
+    Polimi · AppStat 2026 · Companion to PyANNOW (NAML) · <strong style="color:var(--green)">v0.8.0</strong><br>
+    Engineering doc: <code>docs/STATISTICAL_DIAGNOSTICS.md</code><br>
+    Notebook: <code>notebooks/01_appstat_lecture_audit.ipynb</code><br>
+    21 PyANNOW issues tagged <code>[@appstat-audit]</code> — 11 resolved in v0.8.0
+  </p>
+</section>
+
+<!-- ─────────────── Slide 2: The goal ─────────────── -->
+<section>
+  <h2>The goal — and why metrics aren't enough</h2>
+  <p>
+    Teach a worm to play Chopin.  That means two things:
+  </p>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>A pipeline</h4>
+      <p>ion channels → spikes → muscles → MIDI → audio</p>
+      <p>PyANNOW already implements 8 NAML steps along this chain.</p>
+    </div>
+    <div class="card">
+      <h4>A scoring function</h4>
+      <p>Quantify "Chopin-likeness" rigorously enough that <span class="hl">optimising it produces music</span>.</p>
+      <p>PyANNOW reports `onset_loss` and `musical_f1`. Both are too coarse.</p>
+    </div>
+  </div>
+  <p style="margin-top: 12px;">
+    PyANNOW ISSUE-016 and ISSUE-017 patched the metric — but the underlying
+    <span class="bad">pipeline has 10 structural logic problems</span> that no metric
+    correction can fix.  Each AppStat lecture maps to a tool that addresses one of them.
+  </p>
+</section>
+
+<!-- ─────────────── Slide 3: The pipeline as it is today ─────────────── -->
+<section>
+  <h2>The current pipeline</h2>
+  <div class="pipeline-flow">
+ion-channel HH params (DEFAULT_PARAMS)
+        ↓ run_forward_fast
+  V_muscles (T, 96)  ──► generate_neural_activity_302() → X_neural (302, T) k≥4 ✅ v0.7.0
+        ↓                              ↓
+  onsets_base                    Step 1a RSVD (k=4)
+  (Step 0 baseline)                    ↓
+                           Step 1b Procrustes(standardize=True) → Z_aligned ✅ v0.8.0
+                                       ↓
+                           Step 2 PCA + KMeans
+                                       ↓
+                           Step 3 RidgeCV → C_pred
+                                       ↓
+                           Steps 4-6 MLP+Adam+L-BFGS → C_pred  ← beats baseline ✅
+                                       ↓
+                           Step 8a/b ODE/PDE PINN
+                                       ↓
+                    find_peaks(distance=280ms, height=mean) ← OPEN ISSUE-033
+                                       ↓
+                    pitch ← MUSCLE_PITCHES_96[k] (all 12 classes) ✅ v0.7.0
+                                       ↓
+                               audio · score (pitch_aware_f1) ✅ v0.8.0</div>
+  <p style="margin-top: 8px; font-size: .8em;">
+    <span class="hl3">v0.8.0 fixes ✅:</span> (a) 96-cell Boyle model, k≥4 PCs; (b) Procrustes standardized; (c) 100% pitch coverage. <span class="bad">Still open:</span> ISSUE-033 magic threshold.
+  </p>
+</section>
+
+<!-- ─────────────── Slide 4: The 10 logic problems ─────────────── -->
+<section>
+  <h2>10 pipeline logic problems</h2>
+  <table class="compact">
+    <tr><th>#</th><th>Problem</th><th>Fix by AppStat</th><th>Issue</th></tr>
+    <tr><td>1</td><td>302-neuron matrix is synthetic (8 blocks + noise)</td><td>L01 PCA biplot reveals rank ≈ 8</td><td class="tag">029</td></tr>
+    <tr><td>2</td><td>Step 0 mislabelled "random"</td><td>L00 IOI distribution shows it's deterministic body-wave</td><td class="tag">030</td></tr>
+    <tr><td>3</td><td>8-muscle pitch bottleneck</td><td>L06 pitch-aware F1 ceiling</td><td class="tag">031</td></tr>
+    <tr><td>4</td><td>Procrustes between unstandardized incommensurate spaces</td><td>L04 standardize-first; L01 biplot</td><td class="tag">032</td></tr>
+    <tr><td>5</td><td>Shared `find_peaks(height=mean)` across all steps</td><td>L05 calibrated logistic + Youden</td><td class="tag">033</td></tr>
+    <tr><td>6</td><td>Chopin features lossily compressed to k=8</td><td>L01 cumvar audit</td><td class="tag">034</td></tr>
+    <tr><td>7</td><td>Onset-only metric ignores pitch &amp; velocity</td><td>L06 pitch-aware F1 + velocity Pearson r</td><td class="tag">035</td></tr>
+    <tr><td>8</td><td>Step 8 PINN is oscillator-PINN, not ion-channel PINN</td><td>L07 RF baseline reveals what physics buys</td><td class="tag">036</td></tr>
+    <tr><td>9</td><td>Biological ceiling assumes any muscle = any pitch</td><td>L06 reachable-pitch confusion</td><td class="tag">037</td></tr>
+    <tr><td>10</td><td>No cross-validation anywhere</td><td>L06 StratifiedKFold + bootstrap CIs</td><td class="tag">038</td></tr>
+  </table>
+</section>
+
+<!-- ─────────────── Slide 5: L00 — Descriptive stats ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L00 / Lab I</span>Descriptive statistics</h2>
+  <p>The metric paradox is invisible from scalar numbers but obvious from distributions.</p>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>Closes logic #2</h4>
+      <p>Step 0's IOI distribution = sharp peak at one body-wave period (~220 ms).</p>
+      <p>Chopin's IOI = broad, high kurtosis.</p>
+      <p>Step 0 is not "random" — it's deterministic and structurally incompatible with Chopin.</p>
+    </div>
+    <div class="card">
+      <h4>What we add</h4>
+      <p><code>descriptive.collect_step_stats()</code> → DataFrame of `{n, ioi_mean, ioi_std, ioi_skew, ioi_kurtosis, ...}`</p>
+      <p><code>plot_ioi_distributions()</code> — KDE overlay</p>
+    </div>
+  </div>
+  <p style="margin-top: 10px;"><span class="hl2">ISSUE-022</span></p>
+</section>
+
+<!-- ─────────────── Slide 6: L01 + L02 ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L01-L02 / Lab II</span>Dim reduction — linear &amp; nonlinear</h2>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>L01 — PCA biplot</h4>
+      <p>Run PCA on the 302-neuron matrix; report cumvar at k=8.</p>
+      <p><span class="hl2">Expected:</span> cumvar @ k=8 ≈ 100% → the matrix has rank ≤ 8, not 302.</p>
+      <p>This <span class="bad">closes logic #1</span> visually.</p>
+    </div>
+    <div class="card">
+      <h4>L02 — t-SNE / UMAP</h4>
+      <p>2-D nonlinear projection coloured by KMeans label.</p>
+      <p>If colours mix, the motor primitives are arbitrary.</p>
+      <p><span class="hl3">Manifold sanity check</span> for Step 2.</p>
+    </div>
+  </div>
+  <p><span class="hl2">ISSUE-023 — biplot · ISSUE-024 — t-SNE/UMAP · ISSUE-034 — Chopin k=8 audit</span></p>
+</section>
+
+<!-- ─────────────── Slide 7: L03 ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L03 / Lab III-IV</span>Clustering — four methods compared</h2>
+  <table class="compact">
+    <tr><th>Method</th><th>PyANNOW</th><th>What it adds</th></tr>
+    <tr><td>KMeans</td><td class="tag ok">✅</td><td>(in Step 2)</td></tr>
+    <tr><td>Ward + dendrogram + cophenet</td><td class="tag">🔴</td><td>Is the k=4 hierarchy natural?</td></tr>
+    <tr><td>DBSCAN</td><td class="tag">🔴</td><td>Outlier worm-behavior detection</td></tr>
+    <tr><td>GMM (soft, BIC)</td><td class="tag">🔴</td><td>Smooth biological transitions</td></tr>
+  </table>
+  <p style="margin-top: 12px;">
+    <code>clustering.compare_methods()</code> returns silhouettes + pairwise ARI for all four.
+    GMM is the most biologically defensible (motor primitives transition gradually, not abruptly).
+  </p>
+  <p><span class="hl2">ISSUE-025</span></p>
+</section>
+
+<!-- ─────────────── Slide 8: L04 ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L04 / Lab V</span>Linear models + diagnostics</h2>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>PyANNOW Step 3</h4>
+      <p>✅ Ridge + RidgeCV; R² vs α curve</p>
+      <p><span class="bad">🔴 No diagnostics</span> — residuals, QQ, BP, DW, VIF, Cook</p>
+      <p><span class="bad">🔴 No Lasso</span> — we never check whether k=4 PCs are needed</p>
+    </div>
+    <div class="card">
+      <h4>What we add</h4>
+      <p><code>regression.diagnose_ridge()</code> — Lab V table per Chopin feature dim</p>
+      <p><code>regression.lasso_path_selection()</code> — true k_effective from LassoCV</p>
+      <p>Standardize before fitting (closes logic #4)</p>
+    </div>
+  </div>
+  <p><span class="hl2">ISSUE-026 · ISSUE-032</span></p>
+</section>
+
+<!-- ─────────────── Slide 9: L05 ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L05</span>Logistic onset detector — closes logic #5</h2>
+  <p>
+    PyANNOW's onset detection at every step is one line:
+  </p>
+  <div class="eq-box" style="font-family: 'Menlo', monospace; font-size: .75em;">
+    <code>peaks, _ = find_peaks(activ, distance=int(0.28/0.5e-3), height=activ.mean())</code>
+  </div>
+  <p>
+    That is <span class="bad">a 1-feature classifier with a hardcoded threshold</span>.  Different
+    step activations → different ideal thresholds, but the same `mean()` rule is used everywhere.
+  </p>
+  <p>
+    We swap for a calibrated <code>LogisticRegression(class_weight='balanced')</code> with
+    Youden's-J or best-F1 threshold tuning.  The <span class="hl3">gap between calibrated
+    F1 and PyANNOW's reported F1</span> measures how much each step's poor score was
+    caused by the hardcoded threshold rather than the activation itself.
+  </p>
+  <p><span class="hl2">ISSUE-027 · ISSUE-033</span></p>
+</section>
+
+<!-- ─────────────── Slide 10: L06 ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L06 / Lab VI</span>Classification metrics — full Lab VI</h2>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>Curves &amp; CIs</h4>
+      <p>F1 vs tolerance {10, 25, 50, 100, 200, 400} ms</p>
+      <p>PR overlay (preferred under heavy imbalance)</p>
+      <p>ROC overlay + AUC</p>
+      <p>Bootstrap 95% CI + paired-bootstrap H₀ test</p>
+      <p>StratifiedKFold over Chopin sub-windows</p>
+    </div>
+    <div class="card">
+      <h4>Pitch-aware F1 — the wormuse metric</h4>
+      <p><span class="hl3">Onset matched in BOTH time AND pitch</span></p>
+      <p>Plain F1 ignores wrong notes; pitch-aware F1 doesn't.</p>
+      <p>Bipartite matching: greedy by time, must share pitch-class.</p>
+      <p><span class="bad">Closes logic #7</span></p>
+    </div>
+  </div>
+  <p><span class="hl2">ISSUE-018, 019, 020, 021, 035</span></p>
+</section>
+
+<!-- ─────────────── Slide 11: L07 ─────────────── -->
+<section>
+  <h2><span class="lecture-badge">L07</span>Random Forest — model-agnostic ceiling</h2>
+  <p>
+    PyANNOW jumps from Linear (Ridge) to MLP (Adam) to L-BFGS to PINN — a deep-model escalation.
+    AppStat L07 inserts a basic question before any of that:
+  </p>
+  <p style="text-align: center; margin: 16px 0;">
+    <span class="hl">Does a stock Random Forest already match the MLP?</span>
+  </p>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>If RF F1 ≥ MLP F1</h4>
+      <p>Steps 4-6 are <span class="bad">buying nothing</span>.</p>
+      <p>The deep model is over-engineering; ship the RF.</p>
+    </div>
+    <div class="card">
+      <h4>If RF F1 ≪ MLP F1</h4>
+      <p>The MLP captures <span class="hl3">genuine nonlinear structure</span> that RF can't.</p>
+      <p>Justifies the extra complexity.</p>
+    </div>
+  </div>
+  <p style="margin-top: 12px;"><span class="hl2">ISSUE-028 · ISSUE-036</span> (Step 8 PINN: which physics is it?)</p>
+</section>
+
+<!-- ─────────────── Slide 12: Composite score ─────────────── -->
+<section>
+  <h2>The composite score — the wormuse goal made measurable</h2>
+  <p>A worm-Chopin model is "Chopin-like" iff <i>every</i> floor below is passed:</p>
+  <table class="compact">
+    <tr><th>Component</th><th>What it measures</th><th>Floor</th></tr>
+    <tr><td>pitch_aware_f1 @ 50 ms</td><td>onsets matched in BOTH time AND pitch</td><td>≥ 0.20</td></tr>
+    <tr><td>AUC-PR (binned onset classification)</td><td>threshold-free quality of the activation</td><td>≥ 0.30</td></tr>
+    <tr><td>ioi_similarity (already in pyannow)</td><td>rhythmic distribution overlap</td><td>≥ 0.30</td></tr>
+    <tr><td>velocity_correlation</td><td>Pearson r over matched-note velocities (dynamics)</td><td>≥ 0.20</td></tr>
+    <tr><td>bootstrap 95 % CI</td><td>uncertainty around every claim</td><td>CI excludes Step 0</td></tr>
+  </table>
+  <p style="margin-top: 12px; font-size: .85em;">
+    Reported by <code>wormuse_analytics.pipeline.ImprovedPipeline.score_all()</code>.
+    None of these is currently in PyANNOW's `losses` dict.
+  </p>
+</section>
+
+<!-- ─────────────── Slide 13: 21 issues ─────────────── -->
+<section>
+  <h2>21 PyANNOW issues — closing each gap</h2>
+  <table class="compact">
+    <tr><th>ID</th><th>Title</th><th>Lec</th><th>Status</th></tr>
+    <tr><td class="tag ok">✅ 018</td><td>Builder/notebook desync</td><td>L06 (infra)</td><td class="tag ok">v0.7.0</td></tr>
+    <tr><td class="tag warn">019</td><td>Cell 20 left panel still misleads</td><td>L06</td><td>open</td></tr>
+    <tr><td class="tag ok">✅ 020</td><td>Multi-tol F1 + PR + ROC sweep</td><td>L06</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 021</td><td>Bootstrap CIs for per-step F1</td><td>L06</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag warn">022</td><td>Descriptive stats of outputs</td><td>L00</td><td>open</td></tr>
+    <tr><td class="tag warn">023</td><td>PCA biplot + standardization</td><td>L01</td><td>open</td></tr>
+    <tr><td class="tag warn">024</td><td>t-SNE / UMAP manifold view</td><td>L02</td><td>open</td></tr>
+    <tr><td class="tag warn">025</td><td>Compare four clustering methods</td><td>L03</td><td>open</td></tr>
+    <tr><td class="tag warn">026</td><td>Lab V diagnostics on Ridge</td><td>L04</td><td>open</td></tr>
+    <tr><td class="tag warn">027</td><td>Logistic onset detector</td><td>L05</td><td>open</td></tr>
+    <tr><td class="tag warn">028</td><td>RF baseline + permutation importance</td><td>L07</td><td>open</td></tr>
+    <tr><td class="tag ok">✅ 029</td><td>Synthetic 302-neuron matrix</td><td>L01 (logic #1)</td><td class="tag ok">v0.7.0</td></tr>
+    <tr><td class="tag warn">030</td><td>Step 0 mislabelled "random"</td><td>L00 (logic #2)</td><td>open</td></tr>
+    <tr><td class="tag ok">✅ 031</td><td>8-muscle pitch bottleneck</td><td>L06 (logic #3)</td><td class="tag ok">v0.7.0</td></tr>
+    <tr><td class="tag ok">✅ 032</td><td>Procrustes feature mismatch</td><td>L04 (logic #4)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag warn">033</td><td>Magic-threshold peak detector</td><td>L05 (logic #5)</td><td>open — P1</td></tr>
+    <tr><td class="tag ok">✅ 034</td><td>Chopin lossy k=8 compression</td><td>L01 (logic #6)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 035</td><td>Pitch-aware F1 missing</td><td>L06 (logic #7)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 036</td><td>Step 8 PINN ≠ ion-channel PINN</td><td>L04 (logic #8)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 037</td><td>Biological ceiling overstated</td><td>L06 (logic #9)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 038</td><td>No cross-validation anywhere</td><td>L06 (logic #10)</td><td class="tag ok">v0.8.0</td></tr>
+  </table>
+  <p style="margin-top: 6px; font-size: .8em;"><span class="hl3">11 resolved ✅</span> (7 in v0.7.0, 4 in v0.8.0) · 10 open · one md per issue under <code>docs/proposed_pyannow_issues/</code></p>
+</section>
+
+<!-- ─────────────── Slide 14: v0.8.0 results ─────────────── -->
+<section>
+  <h2>v0.8.0 measured results — what the fixes achieved</h2>
+  <table class="compact">
+    <tr><th>Step</th><th>Method</th><th>F1 (pitch-aware)</th><th>vs baseline</th></tr>
+    <tr><td>0</td><td>Rule-based baseline</td><td>0.186</td><td>—</td></tr>
+    <tr><td>1</td><td>SVD + Procrustes (standardize=True)</td><td class="tag">0.000</td><td>residual 89.8→4.06 ✅; ISSUE-033 open</td></tr>
+    <tr><td>2</td><td>K-means</td><td class="tag warn">0.110</td><td>−0.076</td></tr>
+    <tr><td>3</td><td>Ridge</td><td class="tag">0.000</td><td>pending investigation</td></tr>
+    <tr><td><strong>4-6</strong></td><td><strong>MLP + Adam + L-BFGS</strong></td><td class="tag ok"><strong>0.193</strong></td><td class="tag ok"><strong>+0.007 first beat ↑</strong></td></tr>
+  </table>
+  <div class="card-grid two" style="margin-top:10px;font-size:.78em">
+    <div class="card">
+      <h4>Key fix: ISSUE-032 Procrustes</h4>
+      <p><code>procrustes_align(standardize=True)</code> — z-score W_k before SVD.</p>
+      <p>PC scale imbalance was 6.9×. Residual: <span class="bad">89.807</span> → <span class="hl3">4.059</span>.</p>
+    </div>
+    <div class="card">
+      <h4>Key fix: ISSUE-034 Auto-k</h4>
+      <p><code>build_chopin_features(k_chopin=None)</code> — 90% cumvar auto-selection.</p>
+      <p>For 10s clip: k=5 captures 97.7% variance (was k=8 fixed).</p>
+    </div>
+  </div>
+  <p style="margin-top:8px;font-size:.8em;"><span class="bad">Next priority:</span> ISSUE-033 — logistic onset detector to fix Step 1 regression.</p>
+</section>
+
+<!-- ─────────────── Slide 15: Closing ─────────────── -->
+<section>
+  <h2>What this gives wormuse</h2>
+  <p style="font-size: 1em;">
+    A pipeline that <span class="hl">measurably</span> improves toward Chopin,
+    with <span class="hl3">uncertainty quantified</span>, <span class="hl3">logic problems explicit</span>,
+    and <span class="hl3">deep-model claims falsifiable</span>.
+  </p>
+  <p style="margin-top: 12px;">
+    The 21 <code>[@appstat-audit]</code> issues form a roadmap: close them in priority order
+    (P1 first) and PyANNOW's notebook 03 ends up reporting a scalar pitch-aware F1 that
+    <span class="hl">actually correlates with how Chopin-like the audio sounds</span>.
+  </p>
+  <p style="margin-top: 20px; opacity: .7; font-size: .85em;">
+    For full details: <code>docs/STATISTICAL_DIAGNOSTICS.md</code>.<br>
+    For executable demonstration: <code>notebooks/01_appstat_lecture_audit.ipynb</code>.<br>
+    For drop-in PyANNOW issues: <code>docs/proposed_pyannow_issues/ISSUE-{018..038}.md</code>.
+  </p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    controls: true,
+    progress: true,
+    transition: 'fade',
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+  });
+</script>
+</body>
+</html>

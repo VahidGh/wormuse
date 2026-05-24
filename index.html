@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Can a Worm Play Chopin? | wormuse v1.0.0</title>
+<meta name="description" content="A C. elegans–driven musical simulator: 302 neurons → Boyle 4×24 model → physical piano. NAML 10-step progression. Politecnico di Milano 2025-26.">
+<meta property="og:title" content="Can a Worm Play Chopin? | wormuse">
+<meta property="og:description" content="302-neuron C. elegans simulated by OpenWorm, wired into a physical piano. NAML algorithms reach F1=0.933 matching Chopin.">
+
+<style>
+/* ── Reset & tokens ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent:  #00d9ff;
+  --accent2: #ff6b6b;
+  --accent3: #ffd93d;
+  --green:   #6bcb77;
+  --purple:  #c084fc;
+  --bg:      #050a15;
+  --bg2:     #08111f;
+  --bg-card: rgba(255,255,255,0.05);
+  --border:  rgba(255,255,255,0.11);
+  --text:    rgba(255,255,255,0.88);
+  --muted:   rgba(255,255,255,0.5);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px; line-height: 1.6;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Navigation ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(5,10,21,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.nav-brand {
+  font-size: 1.05em; font-weight: 700; color: var(--accent);
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.nav-brand:hover { text-decoration: none; }
+.nav-links { display: flex; gap: 26px; font-size: .88em; flex-wrap: wrap; }
+.nav-links a { color: var(--muted); transition: color .15s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+/* ── Layout ── */
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Hero ── */
+.hero {
+  padding: 76px 24px 56px;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% -10%, #0d2540 0%, var(--bg) 65%);
+  border-bottom: 1px solid var(--border);
+}
+.hero-label {
+  font-size: .72em; letter-spacing: .24em; color: var(--accent);
+  text-transform: uppercase; margin-bottom: 16px; display: block;
+}
+.hero h1 {
+  font-size: clamp(2em, 5vw, 3.5em);
+  color: var(--accent); line-height: 1.15; margin-bottom: 14px;
+}
+.hero .sub {
+  font-size: 1.08em; color: var(--muted); max-width: 660px;
+  margin: 0 auto 28px; line-height: 1.75;
+}
+.badges {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.badge {
+  padding: 3px 11px; border-radius: 4px;
+  font-size: .72em; font-family: monospace;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+}
+.badge.c  { border-color: rgba(0,217,255,.4);  color: var(--accent); }
+.badge.g  { border-color: rgba(107,203,119,.4); color: var(--green); }
+.badge.p  { border-color: rgba(192,132,252,.4); color: var(--purple); }
+
+/* ── Buttons ── */
+.btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 22px; border-radius: 6px;
+  font-size: .9em; font-weight: 600;
+  transition: background .15s, transform .1s;
+  border: 1px solid transparent;
+}
+.btn:hover { transform: translateY(-1px); text-decoration: none; }
+.btn-primary { background: var(--accent); color: #050a15; border-color: var(--accent); }
+.btn-primary:hover { background: #33e5ff; }
+.btn-secondary { background: transparent; color: var(--accent); border-color: rgba(0,217,255,.45); }
+.btn-secondary:hover { background: rgba(0,217,255,.1); }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+.btn-ghost:hover { color: var(--text); background: rgba(255,255,255,.06); }
+
+/* ── Section ── */
+.section { padding: 64px 24px; }
+.section.alt { background: var(--bg2); }
+.slabel {
+  font-size: .7em; letter-spacing: .2em; color: var(--accent);
+  text-transform: uppercase; display: block; margin-bottom: 8px;
+}
+.section h2 { font-size: 1.85em; margin-bottom: 10px; color: white; }
+.lead {
+  color: var(--muted); max-width: 760px;
+  margin-bottom: 40px; font-size: 1em; line-height: 1.75;
+}
+
+/* ── Stat cards ── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px; margin-bottom: 0;
+}
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px; text-align: center;
+}
+.stat-num { font-size: 2em; font-weight: 700; }
+.stat-lbl { font-size: .78em; color: var(--muted); margin-top: 2px; }
+
+/* ── Module cards ── */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+.module-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+  transition: border-color .2s, background .2s;
+}
+.module-card:hover { background: rgba(255,255,255,.07); }
+.module-card.naml    { border-top: 3px solid var(--accent); }
+.module-card.appstat { border-top: 3px solid var(--green); }
+.module-card.amsc    { border-top: 3px solid var(--purple); opacity: .72; }
+.mod-icon { font-size: 1.9em; }
+.mod-tag {
+  font-size: .66em; letter-spacing: .1em; text-transform: uppercase;
+  padding: 2px 9px; border-radius: 10px; display: inline-block;
+  width: fit-content;
+}
+.t-naml    { background: rgba(0,217,255,.1);   color: var(--accent); border: 1px solid rgba(0,217,255,.3); }
+.t-appstat { background: rgba(107,203,119,.1); color: var(--green);  border: 1px solid rgba(107,203,119,.3); }
+.t-amsc    { background: rgba(192,132,252,.1); color: var(--purple); border: 1px solid rgba(192,132,252,.3); }
+.module-card h3 { font-size: 1.1em; color: white; }
+.module-card p  { font-size: .87em; color: var(--muted); flex: 1; line-height: 1.6; }
+.mod-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.lbtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 13px; border-radius: 5px;
+  font-size: .78em; font-weight: 600;
+  transition: background .15s;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+}
+.lbtn:hover { background: rgba(255,255,255,.11); text-decoration: none; }
+.lbtn.pres { border-color: rgba(0,217,255,.35); color: var(--accent); }
+.lbtn.pres:hover { background: rgba(0,217,255,.1); }
+.lbtn.nb   { border-color: rgba(255,217,61,.3); color: var(--accent3); }
+.lbtn.nb:hover { background: rgba(255,217,61,.08); }
+.lbtn.gh   { border-color: rgba(255,255,255,.2); color: var(--muted); }
+.coming { font-size: .8em; color: var(--muted); font-style: italic; padding: 6px 0; }
+
+/* ── Pipeline steps ── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: 10px;
+}
+.spill {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 11px 14px;
+  border-left: 3px solid var(--accent);
+}
+.spill.best { border-left-color: var(--green); background: rgba(107,203,119,.05); }
+.spill.full { border-left-color: var(--accent); background: rgba(0,217,255,.05); }
+.snum  { font-size: .68em; color: var(--accent); font-weight: 700; letter-spacing: .08em; margin-bottom: 2px; }
+.sname { font-size: .85em; font-weight: 600; margin: 2px 0; }
+.sf1   { font-size: .75em; color: var(--green); font-weight: 600; }
+.sdim  { font-size: .7em; color: var(--muted); margin-top: 2px; }
+
+/* ── Notebooks table ── */
+.nb-wrap { overflow-x: auto; }
+table.nbt { width: 100%; border-collapse: collapse; font-size: .88em; min-width: 600px; }
+table.nbt th {
+  text-align: left; padding: 10px 14px;
+  color: var(--accent); font-size: .75em;
+  text-transform: uppercase; letter-spacing: .1em;
+  border-bottom: 1px solid var(--border);
+}
+table.nbt td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: top; }
+table.nbt tr:last-child td { border-bottom: none; }
+table.nbt tr:hover td { background: rgba(255,255,255,.03); }
+.ntag {
+  font-size: .7em; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+  display: inline-block; white-space: nowrap;
+}
+.open-btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.open-btn {
+  display: inline-block; padding: 4px 11px; border-radius: 4px;
+  font-size: .75em; font-weight: 600;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--muted);
+  transition: background .15s;
+  white-space: nowrap;
+}
+.open-btn:hover { text-decoration: none; background: rgba(255,255,255,.12); color: var(--text); }
+.open-btn.nb { border-color: rgba(255,217,61,.3); color: var(--accent3); }
+.open-btn.nb:hover { background: rgba(255,217,61,.08); }
+.open-btn.gh { border-color: rgba(255,255,255,.2); color: var(--muted); }
+
+/* ── Footer ── */
+footer {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  padding: 44px 24px; text-align: center;
+  font-size: .83em; color: var(--muted);
+}
+.flinks { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+.flinks a { color: var(--muted); }
+.flinks a:hover { color: var(--accent); }
+.flogo { font-size: 1.6em; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ NAV ═══ -->
+<nav>
+  <a class="nav-brand" href="#">🐛 wormuse</a>
+  <div class="nav-links">
+    <a href="#modules">Modules</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#notebooks">Notebooks</a>
+    <a href="https://github.com/VahidGh/wormuse" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ HERO ═══ -->
+<section class="hero">
+  <span class="hero-label">Politecnico di Milano · NAML 2025-26 · PyANNOW v1.0.0</span>
+  <h1>Can a Worm Play Chopin?</h1>
+  <p class="sub">
+    The 302-neuron nervous system of <em>C. elegans</em>, simulated by OpenWorm,
+    wired into a physical piano model — each body wall muscle contraction triggers
+    a hammer strike. NAML algorithms close the gap to F1&nbsp;=&nbsp;0.933 matching Chopin.
+  </p>
+
+  <!-- Worm → Piano → Music SVG -->
+  <svg viewBox="0 0 560 88" style="max-width:540px;height:88px;margin:0 auto 28px;display:block">
+    <!-- Worm body -->
+    <ellipse cx="68" cy="44" rx="58" ry="24" fill="none" stroke="rgba(0,217,255,.28)" stroke-width="1.5"/>
+    <circle cx="68" cy="44" r="19" fill="rgba(0,217,255,.1)" stroke="#00d9ff" stroke-width="1.5"/>
+    <text x="68" y="41" text-anchor="middle" fill="#00d9ff" font-size="7" font-weight="bold">302</text>
+    <text x="68" y="51" text-anchor="middle" fill="rgba(0,217,255,.65)" font-size="5.5">neurons</text>
+    <!-- Body segments: travelling wave -->
+    <rect x="97"  y="34" width="17" height="20" rx="2" fill="rgba(0,217,255,.75)" stroke="#00d9ff" stroke-width="1"/>
+    <rect x="117" y="34" width="17" height="20" rx="2" fill="rgba(255,107,107,.5)" stroke="#ff6b6b" stroke-width="0.8"/>
+    <rect x="137" y="34" width="17" height="20" rx="2" fill="rgba(0,217,255,.4)"  stroke="#00d9ff" stroke-width="0.7"/>
+    <rect x="157" y="34" width="17" height="20" rx="2" fill="rgba(255,107,107,.35)" stroke="#ff6b6b" stroke-width="0.6"/>
+    <!-- Arrow PyANNOW -->
+    <path d="M183 44 L228 44" stroke="#ffd93d" stroke-width="2" marker-end="url(#a1)"/>
+    <defs>
+      <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#ffd93d"/>
+      </marker>
+    </defs>
+    <text x="206" y="37" text-anchor="middle" fill="#ffd93d" font-size="7.5">PyANNOW</text>
+    <text x="206" y="57" text-anchor="middle" fill="rgba(255,217,61,.55)" font-size="6">v1.0.0</text>
+    <!-- Piano keys -->
+    <rect x="238" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="256" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="274" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="292" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="310" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="328" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="346" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
+    <rect x="252" y="16" width="10" height="32" rx="2" fill="#111"/>
+    <rect x="270" y="16" width="10" height="32" rx="2" fill="#111"/>
+    <rect x="306" y="16" width="10" height="32" rx="2" fill="#111"/>
+    <rect x="324" y="16" width="10" height="32" rx="2" fill="#111"/>
+    <rect x="342" y="16" width="10" height="32" rx="2" fill="#111"/>
+    <!-- Arrow to result -->
+    <path d="M372 44 L415 44" stroke="#6bcb77" stroke-width="2" marker-end="url(#a2)"/>
+    <defs>
+      <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#6bcb77"/>
+      </marker>
+    </defs>
+    <text x="393" y="37" text-anchor="middle" fill="#6bcb77" font-size="7">F1=0.933</text>
+    <text x="393" y="57" text-anchor="middle" fill="rgba(107,203,119,.55)" font-size="6">10 NAML steps</text>
+    <!-- Music notes -->
+    <text x="440" y="62" font-size="40" fill="#6bcb77">♪</text>
+    <text x="484" y="50" font-size="26" fill="rgba(107,203,119,.6)">♩</text>
+    <text x="518" y="66" font-size="18" fill="rgba(107,203,119,.38)">♪</text>
+  </svg>
+
+  <div class="badges">
+    <span class="badge c">v1.0.0</span>
+    <span class="badge c">Python 3.10-3.13</span>
+    <span class="badge g">NAML 2025-26</span>
+    <span class="badge g">AppStat 2026</span>
+    <span class="badge p">Politecnico di Milano</span>
+    <span class="badge">OpenWorm · C. elegans</span>
+    <span class="badge">MIT</span>
+  </div>
+  <div class="btn-row">
+    <a class="btn btn-primary"    href="#modules">Explore modules</a>
+    <a class="btn btn-secondary"  href="https://github.com/VahidGh/wormuse" target="_blank">⭐ GitHub</a>
+    <a class="btn btn-ghost"      href="#notebooks">📓 Notebooks</a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ ABOUT ═══ -->
+<section class="section alt" id="about">
+  <div class="container">
+    <span class="slabel">The project</span>
+    <h2>Biology + Mathematics + Music</h2>
+    <p class="lead">
+      <em>C. elegans</em> has exactly 302 neurons and 96 body wall muscles —
+      the simplest animal with a fully mapped connectome (White et al. 1986).
+      <strong>wormuse</strong> turns that connectome into a composer:
+      each muscle contraction drives a piano hammer through a physical string model,
+      and NAML algorithms learn to align the worm's body wave to Chopin's nocturne.
+    </p>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--accent)">302</div>
+        <div class="stat-lbl">C. elegans neurons<br>(complete connectome)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--green)">96</div>
+        <div class="stat-lbl">body wall muscles<br>→ 96 piano pitches</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--accent3)">10</div>
+        <div class="stat-lbl">NAML algorithm<br>steps (v1.0.0)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--green)">0.933</div>
+        <div class="stat-lbl">best musical F1<br>(Step 9 Worm+Time)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--accent)">229 s</div>
+        <div class="stat-lbl">full Chopin piece<br>generated (Step 10)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--purple)">3</div>
+        <div class="stat-lbl">PoliMi courses<br>NAML · AppStat · AMSC</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ MODULES ═══ -->
+<section class="section" id="modules">
+  <div class="container">
+    <span class="slabel">Sub-projects</span>
+    <h2>Modules &amp; Presentations</h2>
+    <p class="lead">Each module targets a different PoliMi course and a different layer of the pipeline.
+    Presentations open in-browser (Reveal.js · CDN-only · works anywhere).
+    Notebooks open in nbviewer — no install required.</p>
+
+    <div class="modules-grid">
+
+      <!-- ── PyANNOW / NAML ── -->
+      <div class="module-card naml">
+        <div class="mod-icon">🧠</div>
+        <span class="mod-tag t-naml">NAML 2025-26 · Prof. Miglio</span>
+        <h3>PyANNOW</h3>
+        <p>
+          10-step journey from noise to Chopin:<br>
+          SVD → Procrustes → K-means → Ridge → MLP → Adam → L-BFGS →
+          Random Forest → ODE/PDE PINN → Worm+Time hybrid MLP (F1=0.933) →
+          full-piece NB04+Step9b generalization (229s WAV).<br><br>
+          Boyle 4×24 model · 96-cell simulation ·
+          Fourier time encoding · modal piano synthesis (40 modes, 22050 Hz).
+        </p>
+        <div class="mod-links">
+          <a class="lbtn pres" href="PyANNOW/presentation/">📊 NAML Presentation</a>
+          <a class="lbtn nb"
+             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/03_pyannow_naml_progression.ipynb"
+             target="_blank">📓 NB03 — Full progression</a>
+          <a class="lbtn nb"
+             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/04_chopin_score_net.ipynb"
+             target="_blank">📓 NB04 — Chopin score net</a>
+          <a class="lbtn nb"
+             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb"
+             target="_blank">📓 NB02 — Optimizer</a>
+          <a class="lbtn gh"
+             href="https://github.com/VahidGh/wormuse/tree/main/PyANNOW"
+             target="_blank">⬡ Source</a>
+        </div>
+      </div>
+
+      <!-- ── wormuse-analytics / AppStat ── -->
+      <div class="module-card appstat">
+        <div class="mod-icon">📊</div>
+        <span class="mod-tag t-appstat">AppStat 2026 · Profs. Beraha &amp; Andre</span>
+        <h3>wormuse-analytics</h3>
+        <p>
+          Applied Statistics pipeline for worm-music data:<br>
+          PCA + t-SNE + UMAP on neural activity →
+          K-means / DBSCAN / GMM clustering of motor states →
+          OLS + Ridge diagnostics (VIF · Breusch-Pagan · Durbin-Watson) →
+          Logistic regression + Random Forest classification →
+          ROC/AUC for onset detection quality →
+          Statistical validation of the NAML pipeline.
+        </p>
+        <div class="mod-links">
+          <a class="lbtn pres" href="wormuse-analytics/presentation/">📊 AppStat Presentation</a>
+          <a class="lbtn nb"
+             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/wormuse-analytics/notebooks/01_appstat_lecture_audit.ipynb"
+             target="_blank">📓 NB01 — Lecture audit</a>
+          <a class="lbtn gh"
+             href="https://github.com/VahidGh/wormuse/tree/main/wormuse-analytics"
+             target="_blank">⬡ Source</a>
+        </div>
+      </div>
+
+      <!-- ── wormuse-sim / AMSC ── -->
+      <div class="module-card amsc">
+        <div class="mod-icon">🔧</div>
+        <span class="mod-tag t-amsc">AMSC · Prof. Formaggia</span>
+        <h3>wormuse-sim</h3>
+        <p>
+          C++ Sibernetic wrapper (RAII · shared-library ABI) →
+          OpenWorm Docker integration (Sibernetic SPH + C302 neural) →
+          MPI distributed parameter search →
+          Azure NC24-A100 GPU acceleration of the PINN training loop →
+          Piano FEM modal synthesis upgrade (Chabassier 2014).<br><br>
+          <em>Presentation and notebooks in a future release.</em>
+        </p>
+        <div class="mod-links">
+          <span class="coming">📌 In development — AMSC project (2026)</span>
+          <a class="lbtn gh"
+             href="https://github.com/VahidGh/wormuse/tree/main/wormuse-sim"
+             target="_blank">⬡ Source</a>
+        </div>
+      </div>
+
+    </div><!-- modules-grid -->
+
+    <p style="font-size:.8em;color:var(--muted);margin-top:20px">
+      <strong>Note on audio:</strong>
+      The NAML presentation includes HTML5 audio players that stream directly from
+      <a href="https://github.com/VahidGh/wormuse/releases/tag/v1.0.0" style="color:var(--accent)">GitHub Releases v1.0.0</a>
+      — no download required. To generate the audio locally, run Step 10 in
+      <code style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:3px">03_pyannow_naml_progression.ipynb</code>
+      which produces <code>step_outputs/worm_mlp_full.wav</code> and <code>chopin_synth_full.wav</code>.
+      All slides, equations, and code are fully functional online.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ PIPELINE ═══ -->
+<section class="section alt" id="pipeline">
+  <div class="container">
+    <span class="slabel">Algorithm progression</span>
+    <h2>PyANNOW — 10 NAML Steps</h2>
+    <p class="lead">Each step introduces one new method from the NAML course and measures its
+    impact on musical F1 (onset timing accuracy, ±50 ms tolerance).
+    Step 0 deterministic body-wave is the floor; Step 9 Worm+Time MLP is the best.</p>
+
+    <div class="steps-grid">
+      <div class="spill">
+        <div class="snum">STEP 0</div>
+        <div class="sname">Body-wave baseline</div>
+        <div class="sf1">F1 = 0.217</div>
+        <div class="sdim">Deterministic · IOI=0.447</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEP 1a/b · L06/L09</div>
+        <div class="sname">SVD + Procrustes</div>
+        <div class="sf1">F1 = 0.095 – 0.186</div>
+        <div class="sdim">302-D → k=4 PCs · Eckart-Young theorem</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEP 2 · L08/L10</div>
+        <div class="sname">K-means clustering</div>
+        <div class="sf1">F1 = 0.109</div>
+        <div class="sdim">Motor primitives · unsupervised</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEP 3 · L07/L11</div>
+        <div class="sname">Ridge regression</div>
+        <div class="sf1">F1 = 0.286</div>
+        <div class="sdim">▲ first supervised · beats baseline</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEPS 4-6 · L14-22</div>
+        <div class="sname">MLP + Adam + L-BFGS</div>
+        <div class="sf1">F1 ≈ 0.25</div>
+        <div class="sdim">JAX autodiff · tanh · 2-stage optimiser</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEP 7 · AppStat Lec07</div>
+        <div class="sname">Random Forest</div>
+        <div class="sf1">F1 = 0.872</div>
+        <div class="sdim">▲▲ 100 trees · OOB=0.829 · huge leap</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEP 8a/b · L14+L27</div>
+        <div class="sname">ODE + PDE PINN</div>
+        <div class="sf1">Physics focus</div>
+        <div class="sdim">Locomotion ODE · 1D wave eq. along body</div>
+      </div>
+      <div class="spill best">
+        <div class="snum">STEP 9 · NB04 + AppStat ★</div>
+        <div class="sname">Worm+Time hybrid MLP</div>
+        <div class="sf1">F1 = 0.933  ★ BEST</div>
+        <div class="sdim">Fourier(27-D) + worm PCA · 10s window<br>+8.7pp above NB04 time-only ceiling</div>
+      </div>
+      <div class="spill">
+        <div class="snum">STEP 9b · L27</div>
+        <div class="sname">Physics-residual MLP</div>
+        <div class="sf1">F1 ≈ 0.933</div>
+        <div class="sdim">+ ODE residual feature · tied with Step 9</div>
+      </div>
+      <div class="spill full">
+        <div class="snum">STEP 10 · NB04+Step9b</div>
+        <div class="sname">Full-piece 229s generalization</div>
+        <div class="sf1">Full-length WAV 🎵</div>
+        <div class="sdim">Train on full piece · t/T∈[0,1] always · no extrapolation</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ NOTEBOOKS ═══ -->
+<section class="section" id="notebooks">
+  <div class="container">
+    <span class="slabel">All notebooks</span>
+    <h2>Jupyter Notebooks</h2>
+    <p class="lead">
+      Open in <strong>nbviewer</strong> (rendered, no install needed) or
+      view directly on <strong>GitHub</strong> (native .ipynb rendering).
+      Run locally: clone the repo and
+      <code style="background:rgba(255,255,255,.08);padding:2px 8px;border-radius:4px">pip install pyannow &amp;&amp; jupyter lab</code>
+    </p>
+    <div class="nb-wrap">
+    <table class="nbt">
+      <thead>
+        <tr>
+          <th>Notebook</th>
+          <th>Module</th>
+          <th>Key topics</th>
+          <th>Open</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>
+            <strong>03_pyannow_naml_progression</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">Main PyANNOW notebook · Steps 0-10 · fully executed</span>
+          </td>
+          <td><span class="ntag t-naml">NAML</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            SVD · K-means · Ridge · MLP · Adam · L-BFGS ·
+            RF · PINN (ODE+PDE) · Worm+Time MLP ·
+            NB04+Step9b full-piece · F1=0.933
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/03_pyannow_naml_progression.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/PyANNOW/notebooks/03_pyannow_naml_progression.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <strong>04_chopin_score_net</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">NB04 · pure Fourier time-net · F1=0.858 ceiling</span>
+          </td>
+          <td><span class="ntag t-naml">NAML</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            Fourier positional encoding · full-piece training ·
+            NB04 recipe · onset detection · worm biology headroom proof
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/04_chopin_score_net.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/PyANNOW/notebooks/04_chopin_score_net.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <strong>02_chopin_worm_optimizer</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">Parameter optimiser for the Boyle worm model</span>
+          </td>
+          <td><span class="ntag t-naml">NAML</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            Boyle 4×24 model · ion-channel parameters ·
+            Nelder-Mead · Adam · onset loss surface
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <strong>01_appstat_lecture_audit</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">AppStat methods applied to worm-music data</span>
+          </td>
+          <td><span class="ntag t-appstat">AppStat</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            PCA · t-SNE · UMAP · clustering (K-means/DBSCAN/GMM) ·
+            OLS + VIF · RF · ROC/AUC · statistical validation
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/wormuse-analytics/notebooks/01_appstat_lecture_audit.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/wormuse-analytics/notebooks/01_appstat_lecture_audit.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <strong>scientific_foundation_demo</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">Mathematical foundations · cross-system equivalence</span>
+          </td>
+          <td><span class="ntag" style="background:rgba(192,132,252,.1);color:var(--purple);border:1px solid rgba(192,132,252,.3)">docs</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            Worm ODE ↔ piano PDE structural correspondence ·
+            PINN residual · Boyle model derivation · 20-row equivalence table
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/docs/scientific_foundation_demo.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/docs/scientific_foundation_demo.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+    </div><!-- nb-wrap -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ FOOTER ═══ -->
+<footer>
+  <div class="container">
+    <div class="flogo">🐛 🎹</div>
+    <div class="flinks">
+      <a href="https://github.com/VahidGh/wormuse" target="_blank">GitHub</a>
+      <a href="https://github.com/VahidGh/wormuse/blob/main/README.md" target="_blank">README</a>
+      <a href="https://github.com/VahidGh/wormuse/blob/main/CHANGELOG.md" target="_blank">Changelog</a>
+      <a href="https://github.com/VahidGh/wormuse/blob/main/docs/SCIENTIFIC_FOUNDATION.md" target="_blank">Science docs</a>
+      <a href="https://openworm.org" target="_blank">OpenWorm ↗</a>
+    </div>
+    <p>
+      <strong style="color:var(--text)">Vahid Ghayoomie</strong> · Politecnico di Milano<br>
+      <strong style="color:var(--accent)">NAML 2025-26</strong> (Prof. Miglio) ·
+      <strong style="color:var(--green)">AppStat 2026</strong> (Profs. Beraha &amp; Andre) ·
+      <strong style="color:var(--purple)">AMSC</strong> (Prof. Formaggia)<br>
+      Built with <a href="https://claude.ai/code" target="_blank">Claude Code</a> ·
+      wormuse v1.0.0 · MIT License · 2026
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
