@@ -3,7 +3,8 @@
 Run with:
     /Users/vghayoomie/miniconda3/envs/naml-pinn-312/bin/python3 tests/score_f1_quick.py
 
-Expected runtime: ~60-90s (no PINN, MLP capped at 50 epochs).
+Expected runtime: ~90-120s with Step 10 (adds full 229s worm simulation).
+Set SKIP_STEP10=True to revert to ~60-90s (no PINN, MLP capped at 50 epochs).
 """
 import warnings, sys, time
 warnings.filterwarnings('ignore')
@@ -231,8 +232,9 @@ try:
     T_feats = np.concatenate(time_feats, axis=1)       # (T, 27)
 
     # Concatenate with standardized worm PCA scores
-    Zs9 = StandardScaler().fit_transform(Z_worm)       # (T, 12)
-    X9  = np.concatenate([T_feats, Zs9], axis=1)      # (T, 39)
+    scaler9 = StandardScaler()                          # kept for Step 10 reuse
+    Zs9 = scaler9.fit_transform(Z_worm)                # (T, k_worm)
+    X9  = np.concatenate([T_feats, Zs9], axis=1)      # (T, 27+k_worm)
 
     # Subsample to 10000 pts for MLP speed (uniform)
     sub_n = min(10000, T_pts)
@@ -325,6 +327,81 @@ if not SKIP_PINN8C:
         print(f"  Step 8c SKIPPED: {e}")
 else:
     print("  Step 8c (PINN-Classifier): skipped — set SKIP_PINN8C=False (~5 min)")
+
+# ── Step 10: Full-piece generalization (ISSUE-042d) ──────────────────────────
+# Apply the saved mlp9 to the full 227s Chopin piece (walk-forward eval).
+# mlp9 was trained on DURATION=30s; Step 10 tests generalisation to all 1000 notes.
+# NOTE: runs a full 229s worm simulation — adds ~30s to the test.
+SKIP_STEP10 = False
+if not SKIP_STEP10 and 'mlp9' in dir():
+    try:
+        t0 = time.perf_counter()
+        print("\n[Step 10] Full-piece generalization (227s Chopin)...")
+        t_on_all = note_onsets(events_chopin, clip_s=10000)    # all 1000 notes
+        T_full_s = float(t_on_all[-1] + 2.0)                  # ≈ 229s
+
+        # Full worm simulation
+        result_s10 = run_forward_fast(
+            DEFAULT_PARAMS, duration_s=T_full_s, dt_ms=0.5,
+            drive_freq_hz=1.5, drive_amplitude=12.0, random_seed=42)
+        t_full     = result_s10['t_arr_ms'] * 1e-3
+        T_full_pts = len(t_full)
+        print(f"    Sim: T={T_full_pts} pts ({T_full_s:.0f}s)  [{time.perf_counter()-t0:.1f}s]")
+
+        # 302-neuron activity + project onto same U_k
+        X_neural_full = generate_neural_activity_302(
+            n_steps=T_full_pts, dt_ms=0.5, drive_freq_hz=1.5, seed=42)
+        Z_worm_full   = neural_scores(X_neural_full, U_k).T   # (T_full_pts, k_worm)
+        Zs_full       = scaler9.transform(Z_worm_full)         # reuse train scaler
+
+        # Fourier + beat features (T_full_s normalization for positional context)
+        phase_full  = t_full / T_full_s
+        tfeats_full = [phase_full[:, None]]
+        for _kh in range(1, n_harmonics + 1):
+            _ang = 2.0 * np.pi * _kh * phase_full
+            tfeats_full += [np.sin(_ang)[:, None], np.cos(_ang)[:, None]]
+        bp_full     = t_full * bpm / 60.0
+        tfeats_full += [np.sin(2 * np.pi * bp_full)[:, None],
+                        np.cos(2 * np.pi * bp_full)[:, None]]
+        T_feats_full = np.concatenate(tfeats_full, axis=1)
+        X10          = np.hstack([T_feats_full, Zs_full])
+
+        # Apply saved mlp9 — no retraining
+        probs10 = mlp9.predict_proba(X10)[:, 1]
+
+        # Overall full-piece F1
+        onsets10_full = calibrated_onset_detect(
+            probs10, t_on_all, t_full, tol_s=0.05, refractory_s=0.28)
+        L10_full  = onset_loss(onsets10_full, t_on_all, window_s=T_full_s)
+        F1_10_full = musical_f1(onsets10_full, t_on_all, window_s=T_full_s)
+        I10_full   = ioi_similarity(onsets10_full, t_on_all, window_s=T_full_s)
+
+        # Holdout F1 (notes beyond training DURATION)
+        t_on_hold  = t_on_all[t_on_all >= DURATION]
+        _hm        = t_full >= DURATION
+        _h_det     = calibrated_onset_detect(
+            probs10[_hm], t_on_hold - DURATION, t_full[_hm] - DURATION,
+            tol_s=0.05, refractory_s=0.28)
+        F1_10_hold = musical_f1(_h_det, t_on_hold - DURATION,
+                                window_s=T_full_s - DURATION)
+
+        losses["Step 10 (Full-piece holdout)"]    = L10_full
+        f1_scores["Step 10 (Full-piece holdout)"] = F1_10_hold['f1']
+        ioi_sims["Step 10 (Full-piece holdout)"]  = I10_full
+        gap = f1_scores.get("Step 9 (Worm+Time hybrid MLP)", 0) - F1_10_hold['f1']
+        baseline = f1_scores.get(BASELINE_KEY, 0)
+        tag = " ✓ beats baseline" if F1_10_hold['f1'] > baseline else " ✗ below baseline"
+        print(f"  {'Step 10 (Full-piece holdout)':38s}  loss={L10_full:.5f}  "
+              f"F1={F1_10_hold['f1']:.6f}  IOI={I10_full:.3f}{tag}")
+        print(f"    train F1={f1_scores.get('Step 9 (Worm+Time hybrid MLP)',0):.6f}  "
+              f"holdout F1={F1_10_hold['f1']:.6f}  gap={gap:+.6f}  "
+              f"[{time.perf_counter()-t0:.1f}s]")
+    except Exception as e:
+        print(f"  Step 10 SKIPPED: {e}")
+elif not SKIP_STEP10:
+    print("  Step 10: skipped — mlp9 not available (Step 9 failed)")
+else:
+    print("  Step 10: skipped — SKIP_STEP10=True")
 
 # ── Score network approach (NB04) on pure time features ─────────────────────
 # This is a reference ceiling: what can a network achieve if it sees time directly?
