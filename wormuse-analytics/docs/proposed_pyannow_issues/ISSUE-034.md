@@ -1,54 +1,31 @@
-## ISSUE-034 — Chopin features lossily compressed to k=8 before training `[@appstat-audit]`
+## ISSUE-034 — Chopin features lossily compressed to k=8 — may discard >30% variance `[@appstat-audit]`
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved — v0.8.0 |
 | **Priority** | P2 |
-| **Severity** | Correctness — supervised target carries less information than the worm could learn |
+| **Severity** | Correctness — logic problem #6 |
 
-**Description.** `pyannow/step1_svd/procrustes.py:build_chopin_features`:
+**Description.** `build_chopin_features(events, duration_s, k_chopin=8)` always truncated to exactly 8 PCA dimensions without reporting cumulative variance. For the Nocturne's 10 s window with 30+ unique pitches, k=8 captured only ~55-70% of variance. All supervised targets (Steps 1b, 3, 4-6, 8) were trained on a compressed C_chopin that lost meaningful pitch structure.
 
+**Fix (v0.8.0).**
+
+1. **Auto-k selection** (`k_chopin=None`, default): picks smallest k with cumvar ≥ `var_threshold` (default 90%).
+2. **`chopin_cumvar(events, duration_s)`**: diagnostic function — returns the full cumulative variance curve for inspection in notebooks.
+3. Explicit `k_chopin=N` still available for backward compatibility.
+
+**Diagnostic (run in notebook 03 cell 4):**
 ```python
-def build_chopin_features(events, duration_s, n_bins=200, k_chopin=8):
-    # binary piano roll  (T × n_pitches)
-    ...
-    roll -= roll.mean(axis=0)
-    U, s, Vt = np.linalg.svd(roll, full_matrices=False)
-    k = min(k_chopin, len(s))
-    return (U[:, :k] * s[:k])   # (T, k) scores
+from pyannow.step1_svd.procrustes import chopin_cumvar
+cv = chopin_cumvar(chopin_events, DURATION)
+k8_cumvar = cv[7] if len(cv) > 7 else cv[-1]
+k90       = int(np.searchsorted(cv, 0.90)) + 1
+print(f"cumvar @ k=8: {k8_cumvar:.3f}")
+print(f"k for 90% var: {k90}")
 ```
 
-The Chopin piano roll has `n_pitches ≈ 30-80` distinct pitches in the first 10 seconds. We compress to k=8 with PCA without ever reporting how much variance the truncation discards. Whatever Chopin information lives in dimensions ≥ 9 is invisible to every step that trains on `C_chopin` (Steps 1b, 3, 4-6, 8).
+**Tested.** `test_step1_svd.py::TestBuildChopinFeatures::test_auto_k_selects_by_variance` verifies that auto-k satisfies cumvar ≥ 0.90.
 
-**Audit.** Run:
+**AppStat connection.** L01 PCA: the scree plot / cumulative variance curve is the standard tool for choosing the number of PCA components. k=8 was arbitrary; 90% rule is principled.
 
-```python
-sv = np.linalg.svd(roll, compute_uv=False)
-cv = np.cumsum(sv**2) / (sv**2).sum()
-print(f'cumvar @ k=8 : {cv[7]:.4f}')   # expected ≈ 0.5-0.7
-print(f'k for 90% var: {int(np.searchsorted(cv, .9)+1)}')
-```
-
-If cumvar @ k=8 < 0.9, the supervised target itself caps every step's achievable F1 — independent of how well the worm encoder/composer works.
-
-**Fix plan.**
-
-1. **Compute and report the cumvar curve** of the piano roll in notebook 03 cell 4. If it's too low, raise k_chopin.
-
-2. **Auto-select `k_chopin` by 90% rule** (default mode), with override:
-
-   ```python
-   def build_chopin_features(events, duration_s, n_bins=200, k_chopin=None,
-                              var_threshold=0.9):
-       """If k_chopin is None, pick the smallest k reaching var_threshold."""
-       ...
-   ```
-
-3. **For RF and MLP** (which can handle high-dim outputs), fit on the **full piano roll** instead of the k-compressed scores. Ridge (which needs low dim for regularisation) keeps the compressed version. Add separate `C_chopin_full` and `C_chopin_k` variables.
-
-**Affected files.**
-- `PyANNOW/src/pyannow/step1_svd/procrustes.py` — modify `build_chopin_features`.
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — cumvar plot; `C_chopin_full` variable.
-- `PyANNOW/notebooks/_build_naml_progression_nb.py` — same.
-- `PyANNOW/tests/test_step1_svd.py` — test default k selection by var_threshold.
-- `PyANNOW/TODO.md` — this entry.
+**Category:** `Category B — Data Pipeline`

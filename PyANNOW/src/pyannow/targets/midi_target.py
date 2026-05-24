@@ -322,3 +322,235 @@ def ioi_similarity(worm_onsets: np.ndarray,
     ht, _ = np.histogram(ioi_t, bins=bins, density=True)
     bin_width = bins[1] - bins[0]
     return float(np.minimum(hw, ht).sum() * bin_width)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pitch-aware metrics  (ISSUE-035, ISSUE-020, ISSUE-021, ISSUE-037)  v0.8.0
+# ─────────────────────────────────────────────────────────────────────────────
+
+def pitch_aware_f1(
+    worm_onsets:    np.ndarray,
+    worm_pitches:   np.ndarray,
+    chopin_onsets:  np.ndarray,
+    chopin_pitches: np.ndarray,
+    tol_s:          float = 0.05,
+    window_s:       float = 15.0,
+    same_pitch_class: bool = True,
+) -> dict:
+    """F1 requiring matches in BOTH time (±tol_s) AND pitch (exact or pitch-class).
+
+    A worm note (t_w, p_w) matches a Chopin note (t_c, p_c) iff:
+        |t_w − t_c| ≤ tol_s   AND   pitch_match(p_w, p_c)
+
+    where pitch_match is exact MIDI equality when same_pitch_class=False,
+    or same pitch-class (p mod 12) when same_pitch_class=True.
+
+    The latter is pragmatic for the 96-cell Boyle model: each muscle fires a
+    fixed chromatic pitch, so pitch-class matching gives credit when the worm
+    hits the right note but in the wrong octave.
+
+    Matching is greedy in time order with no double-claims (each Chopin note
+    can be claimed by at most one worm note and vice versa).
+
+    Parameters
+    ----------
+    worm_onsets    : (N,) sorted onset times in seconds
+    worm_pitches   : (N,) MIDI pitch for each worm onset
+    chopin_onsets  : (M,) sorted Chopin onset times in seconds
+    chopin_pitches : (M,) MIDI pitch for each Chopin onset
+    tol_s          : timing tolerance in seconds (default 50 ms)
+    window_s       : analysis window (seconds)
+    same_pitch_class : if True, match by pitch-class (p mod 12) instead of exact
+
+    Returns
+    -------
+    dict: f1, precision, recall, tp, n_worm, n_chopin, pitch_acc
+    """
+    # Clip to window
+    mask_w = worm_onsets   <= window_s
+    mask_c = chopin_onsets <= window_s
+    w_t = np.asarray(worm_onsets[mask_w],   dtype=float)
+    w_p = np.asarray(worm_pitches[mask_w],  dtype=int)
+    c_t = np.asarray(chopin_onsets[mask_c], dtype=float)
+    c_p = np.asarray(chopin_pitches[mask_c], dtype=int)
+
+    if len(w_t) == 0 or len(c_t) == 0:
+        return {"f1": 0.0, "precision": 0.0, "recall": 0.0,
+                "tp": 0, "n_worm": int(len(w_t)), "n_chopin": int(len(c_t)),
+                "pitch_acc": 0.0}
+
+    def _pitch_match(p1: int, p2: int) -> bool:
+        return (p1 % 12 == p2 % 12) if same_pitch_class else (p1 == p2)
+
+    # Greedy one-to-one matching (sort by worm onset time)
+    claimed_c = np.zeros(len(c_t), dtype=bool)
+    claimed_w = np.zeros(len(w_t), dtype=bool)
+    tp = 0
+
+    order = np.argsort(w_t)
+    for wi in order:
+        t_w, p_w = w_t[wi], w_p[wi]
+        # Find unclaimed Chopin notes within time tolerance
+        cands = np.where(
+            (~claimed_c) & (np.abs(c_t - t_w) <= tol_s)
+        )[0]
+        if len(cands) == 0:
+            continue
+        # Among candidates check pitch match
+        pitch_ok = [ci for ci in cands if _pitch_match(p_w, c_p[ci])]
+        if not pitch_ok:
+            continue
+        # Claim the closest-in-time pitch-matching Chopin note
+        best = pitch_ok[np.argmin(np.abs(c_t[pitch_ok] - t_w))]
+        claimed_c[best] = True
+        claimed_w[wi]   = True
+        tp += 1
+
+    precision = tp / len(w_t)
+    recall    = tp / len(c_t)
+    f1 = (2.0 * precision * recall / (precision + recall)
+          if (precision + recall) > 0 else 0.0)
+
+    # Pitch accuracy: among timing-only matches, fraction with correct pitch
+    # (diagnostic — tells us if timing is right but pitch is wrong)
+    tp_timing = int(sum(
+        1 for wn in w_t if np.any(np.abs(c_t - wn) <= tol_s)
+    ))
+    pitch_acc = tp / max(1, tp_timing)
+
+    return {
+        "f1":        f1,
+        "precision": precision,
+        "recall":    recall,
+        "tp":        tp,
+        "n_worm":    int(len(w_t)),
+        "n_chopin":  int(len(c_t)),
+        "pitch_acc": pitch_acc,
+    }
+
+
+def biological_pitch_ceiling(
+    muscle_pitches: np.ndarray,
+    target_pitches: np.ndarray,
+    same_pitch_class: bool = True,
+) -> dict:
+    """Fraction of Chopin pitches reachable by the worm's fixed muscle-pitch map.
+
+    Each worm muscle cell fires a fixed MIDI pitch (MUSCLE_PITCHES_96).  A
+    Chopin target pitch p_c is "reachable" iff there exists at least one muscle
+    with pitch p_m such that pitch_match(p_m, p_c) is True.
+
+    This is the **pitch ceiling** — the maximum pitch-aware recall the worm can
+    ever achieve.  With the 96-cell Boyle model (MIDI 24-119, all 12 pitch
+    classes × 8 octaves), every pitch class is covered so the pitch ceiling
+    ≈ 100%.  With the legacy 8-cell model (8 fixed C#m pitches), ≈ 40% of
+    Chopin pitches are unreachable.
+
+    Parameters
+    ----------
+    muscle_pitches : MIDI pitch for each muscle (e.g. MUSCLE_PITCHES_96)
+    target_pitches : MIDI pitches in the Chopin score
+    same_pitch_class : if True, match by pitch-class (covers octave transpositions)
+
+    Returns
+    -------
+    dict: reachable_fraction, reachable_N, total_N, unique_reachable_classes,
+          unique_target_classes, n_muscles
+    """
+    target = np.asarray(target_pitches, dtype=int)
+    muscles = np.asarray(muscle_pitches, dtype=int)
+
+    if same_pitch_class:
+        muscle_classes = set(int(p) % 12 for p in muscles)
+        reachable = np.array([int(p) % 12 in muscle_classes for p in target])
+    else:
+        muscle_set = set(int(p) for p in muscles)
+        reachable = np.array([int(p) in muscle_set for p in target])
+
+    reachable_N = int(reachable.sum())
+    total_N     = len(target)
+
+    return {
+        "reachable_fraction":      reachable_N / max(1, total_N),
+        "reachable_N":             reachable_N,
+        "total_N":                 total_N,
+        "unique_reachable_classes": len(set(int(p) % 12 for p in target[reachable])),
+        "unique_target_classes":    len(set(int(p) % 12 for p in target)),
+        "n_muscles":               len(muscles),
+    }
+
+
+def precision_recall_at_tolerances(
+    worm_onsets:   np.ndarray,
+    target_onsets: np.ndarray,
+    tols:          tuple = (0.025, 0.05, 0.10, 0.20),
+    window_s:      float = 15.0,
+) -> list[dict]:
+    """Compute precision, recall, and F1 across multiple timing tolerances.
+
+    Returns a list of dicts (one per tolerance) with keys:
+        tol_s, precision, recall, f1
+
+    Use this to build a multi-tolerance curve (AppStat L06: ROC/PR analogue).
+    A robust onset detector should maintain F1 ≥ 0.20 even at tol_s=50 ms.
+    """
+    results = []
+    for tol in tols:
+        r = musical_f1(worm_onsets, target_onsets, tol_s=tol, window_s=window_s)
+        results.append({
+            "tol_s":     tol,
+            "precision": r["precision"],
+            "recall":    r["recall"],
+            "f1":        r["f1"],
+        })
+    return results
+
+
+def bootstrap_musical_f1(
+    worm_onsets:   np.ndarray,
+    target_onsets: np.ndarray,
+    n_boot:        int   = 500,
+    tol_s:         float = 0.05,
+    window_s:      float = 15.0,
+    ci:            float = 0.95,
+    seed:          int   = 42,
+) -> dict:
+    """Bootstrap 95% CI for musical_f1 (AppStat L06 — bootstrap CIs).
+
+    Strategy: resample Chopin note onsets with replacement (the target
+    distribution), recompute F1 each time.  This gives a non-parametric CI
+    that reflects the sensitivity of the score to which Chopin notes are
+    evaluated.
+
+    Parameters
+    ----------
+    n_boot : number of bootstrap replicates (default 500)
+    ci     : confidence level (default 0.95)
+
+    Returns
+    -------
+    dict: mean_f1, ci_low, ci_high, std_f1, n_boot
+    """
+    rng = np.random.default_rng(seed)
+    t = target_onsets[target_onsets <= window_s]
+    w = worm_onsets[worm_onsets <= window_s]
+
+    if len(t) == 0 or len(w) == 0:
+        return {"mean_f1": 0.0, "ci_low": 0.0, "ci_high": 0.0,
+                "std_f1": 0.0, "n_boot": n_boot}
+
+    f1s = []
+    for _ in range(n_boot):
+        t_boot = rng.choice(t, size=len(t), replace=True)
+        r = musical_f1(w, np.sort(t_boot), tol_s=tol_s, window_s=window_s)
+        f1s.append(r["f1"])
+
+    f1s = np.array(f1s)
+    alpha = (1.0 - ci) / 2.0
+    return {
+        "mean_f1": float(f1s.mean()),
+        "ci_low":  float(np.quantile(f1s, alpha)),
+        "ci_high": float(np.quantile(f1s, 1.0 - alpha)),
+        "std_f1":  float(f1s.std()),
+        "n_boot":  n_boot,
+    }

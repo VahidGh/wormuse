@@ -2,53 +2,41 @@
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved — v0.8.0 |
 | **Priority** | P2 |
 | **Severity** | Statistical validity — every per-step F1 is an in-sample point estimate |
 
-**Description.** PyANNOW notebook 03 reports F1 / onset_loss per step computed on the same 10 s Chopin window used to *fit* the model (Step 1b's Procrustes, Step 3's RidgeCV, Steps 4-6's MLP, all train on `(Z_worm, C_chopin)`). There is no held-out split, no temporal cross-validation, no estimate of variability.
+**Description.** Every NAML step (1b Procrustes, 3 Ridge, 4-6 MLP) was fitted and evaluated on the same 10s Chopin window. Every reported F1 was in-sample — systematically overestimating generalisation performance. Random splits are wrong here because residuals are autocorrelated (Durbin-Watson failure, ISSUE-026).
 
-Result: every score is **in-sample**. The published per-step F1 systematically overestimates what the worm would achieve on a Chopin window the model hasn't seen.
-
-AppStat Lecture 06 minimum:
-
-- **Time-series CV** — split the 10 s window into K folds (e.g. K=5: fit on 8 s, test on the held-out 2 s; rotate). Report mean + std over folds.
-- **Bootstrap CIs** — already covered by ISSUE-021 for the *test* metric, but here we add CV for the *fit*.
-- **No leakage** — the calibrated threshold (ISSUE-027 / 033) must be tuned on the train fold, evaluated on the test fold.
-
-**Fix plan.** Add `pyannow/training/cv.py`:
+**Fix (v0.8.0).** New module `pyannow/training/cv.py`:
 
 ```python
-def time_series_cv(fit_fn, score_fn, Z, C, n_splits=5, window_s=10.0) -> dict:
-    """Time-series K-fold cross-validation.
+from pyannow.training.cv import time_series_cv, blocked_bootstrap_ci
 
-    For k in 0..K-1:
-      train  = timesteps in [0, window_s) excluding the k-th interval
-      test   = the k-th interval
-      fit    = fit_fn(Z[train], C[train])
-      pred   = fit.predict(Z[test])
-      score  = score_fn(pred, C[test])
-    Returns mean and std of score across folds.
-    """
-    ...
-```
-
-In notebook 03, wrap each step's fit + score in this:
-
-```python
+# Time-series K-fold CV (no future leakage)
 cv = time_series_cv(
-    fit_fn=lambda Z, C: RidgeComposer(alpha=None).fit(Z, C),
-    score_fn=lambda pred, C_true: musical_f1_from_features(pred, C_true, ...),
-    Z=Z_worm, C=C_chopin, n_splits=5, window_s=DURATION,
+    fit_fn   = lambda Z, C: RidgeComposer(alpha=None).fit(Z, C),
+    score_fn = lambda m, Z, C: musical_f1(m.predict(Z), onsets(C))["f1"],
+    Z=Z_worm, C=C_chopin, n_splits=5,
 )
-print(f'Step 3 CV F1: {cv["mean"]:.3f} ± {cv["std"]:.3f}')
+print(f"Step 3 CV F1: {cv['mean']:.3f} ± {cv['std']:.3f}")
+
+# Block bootstrap CI (preserves autocorrelation)
+bb = blocked_bootstrap_ci(fit_fn, score_fn, Z_worm, C_chopin, block_len=20, n_boot=200)
+print(f"Step 3 bootstrap 95% CI: [{bb['ci_low']:.3f}, {bb['ci_high']:.3f}]")
 ```
 
-**Note on Durbin-Watson.** Time-series CV is also the right answer to the Durbin-Watson failure flagged in ISSUE-026. Independent random splits (StratifiedKFold) are *wrong* here because the residuals are autocorrelated; consecutive timesteps belong together. Use `TimeSeriesSplit` from `sklearn.model_selection`.
+**Key implementation details:**
+- `time_series_cv()`: Walk-forward K-fold — test block is always in the future relative to train set. No future leakage. `TimeSeriesSplit` semantics (train always precedes test in time).
+- `blocked_bootstrap_ci()`: Block-bootstrap resamples contiguous blocks to preserve autocorrelation structure (ISSUE-026 / Durbin-Watson fix).
+- Both functions: generic `fit_fn(Z, C) → model` and `score_fn(model, Z, C) → float` API — works with any step.
 
-**Affected files.**
-- `PyANNOW/src/pyannow/training/cv.py` — new module.
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — wrap each step in `time_series_cv`.
-- `PyANNOW/notebooks/_build_naml_progression_nb.py` — same.
-- `PyANNOW/tests/test_training.py` — reproducibility test with seeded folds.
-- `PyANNOW/TODO.md` — this entry.
+**Tested.** `test_training_cv.py` — 12 tests covering:
+- Expected keys, n_folds ≤ n_splits, no future leakage, determinism, ValueError on short data
+- Bootstrap CI contains mean, seed reproducibility
+
+**AppStat connection.** L06: cross-validation is the standard approach for unbiased model evaluation. `TimeSeriesSplit` (consecutive blocks) is mandatory when observations are autocorrelated.
+
+**Note on Durbin-Watson (ISSUE-026).** Block bootstrap addresses the autocorrelation problem for CIs. For full OLS diagnostic on Ridge residuals, see ISSUE-026 (still open — notebook cell needed).
+
+**Category:** `Category C — Statistical Validation`

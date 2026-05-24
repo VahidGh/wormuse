@@ -14,7 +14,68 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`.
 
 ---
 
-## [0.7.0] — 2026-05-24  *(current)*
+## [0.8.0] — 2026-05-24  *(current)*
+
+### AppStat audit: metrics, CV, data pipeline — 6 logic problems resolved
+
+Built on the 96-cell Boyle architecture (v0.7.0). This release implements the statistical
+fixes identified in the AppStat 2026 audit of the worm-Chopin pipeline. All new functions
+are tested; 39 new test methods (50 passing in the new test files).
+
+### Added
+- **`pitch_aware_f1()`** in `midi_target.py` — F1 requiring both timing (±50ms) AND pitch
+  (exact or pitch-class) match. Greedy one-to-one matching; `pitch_acc` diagnostic field.
+  Fixes ISSUE-035 (logic problem #7 — pitch-blind scoring).
+- **`biological_pitch_ceiling()`** in `midi_target.py` — fraction of Chopin pitches reachable
+  by the worm's fixed muscle-pitch map. 96-cell model = 1.000; 8-cell = 0.583.
+  Fixes ISSUE-037 pitch-ceiling component (rate ceiling fixed in ISSUE-002).
+- **`precision_recall_at_tolerances()`** in `midi_target.py` — multi-tolerance F1 curve
+  (analogue of PR/ROC curve parameterized by temporal tolerance). Fixes ISSUE-020.
+- **`bootstrap_musical_f1()`** in `midi_target.py` — non-parametric 95% CI on F1 by
+  bootstrapping target onsets. Fixes ISSUE-021.
+- **`pyannow/training/cv.py`** (new module) — time-series cross-validation:
+  - `time_series_cv()` — walk-forward K-fold; test always in future; no leakage. Fixes ISSUE-038.
+  - `blocked_bootstrap_ci()` — block-bootstrap CI preserving autocorrelation. Fixes ISSUE-026/038.
+- **`chopin_cumvar()`** in `procrustes.py` — cumulative variance explained by the Chopin
+  piano-roll PCA; diagnostic for k_chopin selection.
+
+### Changed
+- **`build_chopin_features(k_chopin=None)`** — auto-selects k by 90% variance rule when
+  `k_chopin=None` (new default). Explicit k still available. Fixes ISSUE-034 (logic problem #6).
+- **`procrustes_align(standardize=True)`** — z-scores W_k column-wise before computing
+  cross-covariance, preventing PC1 from dominating the rotation. Fixes ISSUE-032 (logic #4).
+  Returns `scale` and `W_k_scaled` for downstream use.
+- **`locomotion_pinn.py`** — added prominent architecture note clarifying this module enforces
+  a locomotion-oscillator ODE/PDE, NOT the ion-channel HH PINN described in ION_CHANNELS.md.
+  Fixes ISSUE-036.
+
+### Tests
+- `test_midi_target.py` — 15 new test methods across 4 new test classes
+- `test_step1_svd.py` (new) — 12 test methods for procrustes + chopin features
+- `test_training_cv.py` (new) — 12 test methods for time_series_cv + blocked_bootstrap_ci
+- Total new tests: 39; all pass in numpy-only environment
+
+### Docs (wormuse-analytics/appstat branch)
+- Revised ISSUE-018, 020, 021, 029, 031, 032, 034, 035, 036, 037, 038 with new architecture context
+- `ISSUE-GROUPS.md` — master grouping of 24 issues into 5 test categories (A-E)
+- Issues resolved in v0.7.0 or earlier marked ✅
+
+### Issues resolved
+- ISSUE-029 ✅ (v0.7.0) — rank-1 synthetic neural data
+- ISSUE-031 ✅ (v0.7.0) — 8-muscle pitch bottleneck
+- ISSUE-018 ✅ (v0.7.0) — builder/notebook desync
+- ISSUE-032 ✅ (v0.8.0) — unstandardized Procrustes
+- ISSUE-034 ✅ (v0.8.0) — lossy k=8 Chopin compression
+- ISSUE-035 ✅ (v0.8.0) — pitch-blind F1 metric
+- ISSUE-036 ✅ (v0.8.0) — PINN identity clarified
+- ISSUE-037 ✅ (v0.8.0) — biological pitch ceiling added
+- ISSUE-038 ✅ (v0.8.0) — time-series CV + block bootstrap
+- ISSUE-020 ✅ (v0.8.0) — multi-tol F1 curve
+- ISSUE-021 ✅ (v0.8.0) — bootstrap CIs for F1
+
+---
+
+## [0.7.0] — 2026-05-24
 
 ### Architecture — Boyle et al. 4×24 = 96-cell muscle model + 302-neuron connectome
 

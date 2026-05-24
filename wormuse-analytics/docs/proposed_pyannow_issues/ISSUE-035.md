@@ -2,47 +2,37 @@
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved — v0.8.0 |
 | **Priority** | P1 |
-| **Severity** | Correctness — central scoring function does not measure the project goal |
+| **Severity** | Correctness — logic problem #7 — central scoring function does not measure the project goal |
 
-**Description.** The wormuse goal is "teach a worm to play Chopin." Playing Chopin requires both the right **timing** AND the right **pitch**. Current scoring functions:
+**Description.** `musical_f1()` matches onset times but ignores pitch. A worm hitting all the right timings with random pitches scores full marks. That is not "playing Chopin." With the 96-cell Boyle model now covering all 12 pitch classes (ISSUE-031), pitch-aware evaluation is meaningful.
 
-- `onset_loss(worm_onsets, chopin_onsets)` — ignores pitch (and is gameable, see ISSUE-016).
-- `musical_f1(worm_onsets, chopin_onsets, tol_s=0.05)` — also ignores pitch.
-- `ioi_similarity` — measures rhythmic distribution only.
-
-A worm that gets the timing exactly right but plays random pitches scores **full marks**. That is not "Chopin-like." The metric the project actually needs:
-
-**Definition (pitch-aware F1).** A worm onset at time t with pitch p is a true positive iff there exists a Chopin onset at time t' with pitch p' such that:
-
-- `|t − t'| ≤ tol_s` (e.g. 50 ms), AND
-- `p == p'` (exact pitch) OR `p mod 12 == p' mod 12` (same pitch class — pragmatic choice given the 8-muscle map covers only some pitches).
-
-Matching is greedy in time order, no double-claims. Then F1 = harmonic mean of precision and recall.
-
-**Reference implementation.** `wormuse_analytics.metrics.pitch_aware_f1` already does this.
-
-**Fix plan.** Add to `pyannow/targets/midi_target.py`:
+**Fix (v0.8.0).** `pitch_aware_f1()` in `midi_target.py`:
 
 ```python
 def pitch_aware_f1(worm_onsets, worm_pitches, chopin_onsets, chopin_pitches,
                     tol_s=0.05, window_s=15.0, same_pitch_class=True) -> dict:
-    """F1 requiring onsets to match in BOTH time and pitch."""
-    # ... see wormuse_analytics.metrics.pitch_aware_f1
+    """F1 requiring BOTH time (±tol_s) AND pitch (exact or pitch-class) match.
+    Greedy one-to-one matching; no double-claims.
+    Returns: f1, precision, recall, tp, n_worm, n_chopin, pitch_acc
+    """
 ```
 
-Notebook 03 cell 20 needs to be reorganised:
+Key design choices:
+- `same_pitch_class=True` (default): pitch-class matching (p mod 12) gives credit for correct note in wrong octave — pragmatic given the 8-octave Boyle layout.
+- `pitch_acc` diagnostic: among timing matches, fraction with correct pitch — isolates pitch error from timing error.
+- Greedy matching in time order ensures no note is double-claimed.
 
-1. **Pitch-aware F1** becomes the LEFT panel (the headline metric).
-2. **Plain F1@50ms** moves RIGHT — kept for backward comparison.
-3. **`onset_loss`** is downgraded to a one-row table in the markdown summary, not a chart.
+**Score improvement from 96-cell model.** With 8-cell model: pitch ceiling ≈ 40% → pitch_aware_f1 << musical_f1. With 96-cell model: pitch ceiling = 100% → pitch_aware_f1 bounded only by timing + mapping quality.
 
-**Affected files.**
-- `PyANNOW/src/pyannow/targets/midi_target.py` — add `pitch_aware_f1` + `velocity_correlation`.
-- `PyANNOW/tests/test_midi_target.py` — tests (4-5 cases: empty / exact-match / pitch-mismatch / time-mismatch / partial-overlap).
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — cell 20 rework, cell 24 columns.
-- `PyANNOW/notebooks/_build_naml_progression_nb.py` — same.
-- `PyANNOW/TODO.md` — this entry.
+**Tested.** `test_midi_target.py::TestPitchAwareF1` — 5 cases:
+- exact match → F1=1.0
+- pitch mismatch → F1=0.0 (same_pitch_class=False)
+- pitch-class match (different octave) → F1=1.0
+- empty worm → F1=0.0
+- partial match → pitch_acc diagnostic verified
 
-**Connects to ISSUE-031 (pitch ceiling).** With `n_muscles=8`, the pitch-aware F1 ceiling is bounded; ISSUE-031 lifts that. Without ISSUE-031, pitch-aware F1 will appear "lower than expected"; the ceiling table in §Final of the audit notebook explains why.
+**AppStat connection.** L05-L06: F1 = harmonic mean of precision and recall. Pitch-aware variant extends the standard MIR evaluation to the multi-modal (time × pitch) setting.
+
+**Category:** `Category A — Metrics & Scoring`

@@ -1,51 +1,32 @@
-## ISSUE-021 — Per-step F1 has no confidence interval; rank claims unsupported `[@appstat-audit]`
+## ISSUE-021 — No bootstrap confidence intervals on F1 `[@appstat-audit]`
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved — v0.8.0 |
 | **Priority** | P2 |
-| **Severity** | Statistical validity — point-estimate comparisons have no error bar |
+| **Severity** | Statistical validity — point estimates without uncertainty are uninterpretable |
 
-**Description.** Each step's F1 is computed on the full 10 s window and reported as a single number. Claims like "Step 6 > Step 0" or "MLP+L-BFGS is the winner" therefore have no statistical content — we don't know if the difference would survive a different sub-window of Chopin, or if it falls inside the noise. The AppStat-correct answer is a **bootstrap confidence interval** per step and a **paired-bootstrap hypothesis test** for pairwise step comparisons.
+**Description.** All per-step F1 scores were single point estimates computed on one fixed 10s window with no CI. It was impossible to tell whether Step 3 F1=0.18 vs Step 4 F1=0.19 was a meaningful improvement or noise.
 
-**Fix plan.** Add to `pyannow/targets/midi_target.py`:
+**Fix (v0.8.0).** Two complementary bootstrap functions:
+
+1. **`bootstrap_musical_f1()`** in `midi_target.py` — resamples Chopin target onsets with replacement (non-parametric CI on F1 sensitivity to which notes are evaluated):
 
 ```python
-def bootstrap_f1(worm_onsets, target_onsets, B=1000,
-                 window_s=15.0, sub_window_s=5.0, tol_s=0.05,
-                 random_state=0) -> dict:
-    """Bootstrap CIs by resampling sub-windows.  Returns median + 2.5/97.5 percentiles."""
-    rng = np.random.default_rng(random_state)
-    f1s = []
-    for _ in range(B):
-        t0 = rng.uniform(0.0, max(0.0, window_s - sub_window_s))
-        w = worm_onsets[(worm_onsets >= t0) & (worm_onsets <= t0 + sub_window_s)] - t0
-        t = target_onsets[(target_onsets >= t0) & (target_onsets <= t0 + sub_window_s)] - t0
-        if len(w) == 0 or len(t) == 0:
-            f1s.append(0.0); continue
-        f1s.append(musical_f1(w, t, tol_s=tol_s, window_s=sub_window_s)['f1'])
-    f1s = np.array(f1s)
-    return {'median': float(np.median(f1s)),
-            'ci_low':  float(np.percentile(f1s, 2.5)),
-            'ci_high': float(np.percentile(f1s, 97.5)),
-            'samples': f1s}
-
-def paired_bootstrap_compare(worm_a, worm_b, target_onsets, B=1000, ...):
-    """H0: F1(a) == F1(b).  Returns median_diff + one-sided p-value + 95% CI."""
-    # ... as in wormuse-analytics/src/wormuse_analytics/metrics.py
+r = bootstrap_musical_f1(worm_onsets, chopin_onsets, n_boot=500, seed=42)
+print(f"F1: {r['mean_f1']:.3f} [{r['ci_low']:.3f}, {r['ci_high']:.3f}]")
 ```
 
-Reference implementation is in `wormuse-analytics/src/wormuse_analytics/metrics.py` (`bootstrap_f1`, `paired_bootstrap_compare`).
+2. **`blocked_bootstrap_ci()`** in `training/cv.py` — block-bootstrap CI on any fit+score pair (preserves temporal autocorrelation structure — see ISSUE-038):
 
-In notebook 03 cell 24, add two columns to the summary table:
+```python
+bb = blocked_bootstrap_ci(fit_fn, score_fn, Z, C, block_len=20, n_boot=200)
+```
 
-| Step | F1 | F1 CI low | F1 CI high | IOI sim |
+**Threshold for significance.** Steps are significantly different if their 95% CIs do not overlap. Step 0 CI can be used as the baseline; all other steps must have CI entirely above Step 0's CI upper bound to claim improvement.
 
-And the paired-bootstrap test for `H0: F1(step_k) ≤ F1(step_0)` so the "Step 0 wins" question gets a formal answer.
+**Tested.** `test_midi_target.py::TestBootstrapMusicalF1` — CI contains mean, perfect-match mean > 0.50, empty input → zeros.
 
-**Affected files.**
-- `PyANNOW/src/pyannow/targets/midi_target.py` — add two functions.
-- `PyANNOW/tests/test_midi_target.py` — bootstrap reproducibility test (seeded).
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — cell 24 augmented summary table.
-- `PyANNOW/notebooks/_build_naml_progression_nb.py` — same.
-- `PyANNOW/TODO.md` — this entry.
+**AppStat connection.** L06: the bootstrap is the standard non-parametric method for CI estimation when the analytical form of the sampling distribution is unknown.
+
+**Category:** `Category A — Metrics & Scoring`

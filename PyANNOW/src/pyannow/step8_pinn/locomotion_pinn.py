@@ -4,6 +4,24 @@ NAML material:  Lecture 27  (PINNs — physics-informed neural networks)
                 Lecture 14  (Autodiff — jax.grad twice for second derivatives)
                 Lecture 22  (L-BFGS — the second-stage optimizer in all PINNs)
 
+╔═══════════════════════════════════════════════════════════════════════════╗
+║  ARCHITECTURE NOTE (ISSUE-036, v0.8.0)                                   ║
+║                                                                           ║
+║  This module enforces a LOCOMOTION-OSCILLATOR ODE/PDE.                   ║
+║  It is NOT the ion-channel PINN described in ION_CHANNELS.md.             ║
+║                                                                           ║
+║  The ion-channel PINN (Hodgkin-Huxley gating kinetics — learning          ║
+║  m_∞, h_∞, τ_m, τ_h as functions of voltage) is the project's intended   ║
+║  long-term centerpiece but is NOT YET IMPLEMENTED in PyANNOW.            ║
+║  Track in ISSUE-008 (ca_thresh as PINN parameter is the first step).     ║
+║                                                                           ║
+║  What this module DOES implement (and is scientifically valid):           ║
+║    Step 8a  — per-muscle damped oscillator ODE:  q̈ + 2γq̇ + ω²q = F      ║
+║    Step 8b  — 1D worm-body wave equation PDE:   ρq_tt − μq_xx + γq_t = F ║
+║  These are coarse-grained surrogates for the dynamics that the            ║
+║  ion-channel PINN would produce.  See SCIENTIFIC_FOUNDATION.md §C.2.     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
 ═══════════════════════════════════════════════════════════════
 The core insight: the same PINN recipe works for two levels of physics:
 

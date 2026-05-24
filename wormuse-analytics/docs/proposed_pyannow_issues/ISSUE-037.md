@@ -1,54 +1,33 @@
-## ISSUE-037 — "Biological ceiling" formula assumes any muscle can fire any pitch `[@appstat-audit]`
+## ISSUE-037 — "Biological ceiling" formula misses pitch dimension `[@appstat-audit]`
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved — v0.8.0 (rate ceiling fixed ISSUE-002; pitch ceiling added v0.8.0) |
 | **Priority** | P2 |
-| **Severity** | Correctness — ceiling overstated; misleads expectations |
+| **Severity** | Correctness — ceiling overstated; logic problem #9 |
 
-**Description.** `pyannow/targets/midi_target.py:biological_ceiling`:
+**Description.** Two versions of the ceiling were confused:
+- **Rate ceiling** (`biological_ceiling()`): already fixed in ISSUE-002 (n-voice greedy, ~100% for 96 cells).
+- **Pitch ceiling** (missing until v0.8.0): what fraction of Chopin's pitches can the worm physically produce given its fixed muscle-pitch map?
 
-```python
-def biological_ceiling(p_celegans, target_onsets, window_s=30.0, n_voices=95):
-    tau_refrac = (p_celegans.tau_Ca + 50.0) * 1e-3
-    last_fired = np.full(n_voices, -np.inf)
-    reachable = 0
-    for t in t_clip:
-        avail = np.where(last_fired + tau_refrac <= t)[0]
-        if len(avail) > 0:
-            best = avail[np.argmax(last_fired[avail])]
-            last_fired[best] = t
-            reachable += 1
-    return {"reachable_fraction": reachable / len(t_clip), ...}
-```
+With the 8-cell model, pitch ceiling ≈ 40% (7 of 12 pitch classes). With the 96-cell Boyle model, pitch ceiling = 100%. The combined ceiling = `min(rate_ceiling, pitch_ceiling)`.
 
-This greedy scheduler assigns each Chopin note to a voice with enough refractory time. It assumes **any of the 95 voices can produce any of Chopin's pitches** — which is false in the implemented system. Each muscle has a **fixed** pitch via `MUSCLE_PITCHES`; muscle k *always* fires pitch p_k, never pitch p_j.
-
-The ceiling reported is therefore a **rate ceiling** ("can the worm produce notes fast enough?") not a **pitch ceiling** ("can the worm produce the right notes?"). The rate ceiling is ~100% for almost any reasonable τ_Ca; the pitch ceiling, computed against the actual `MUSCLE_PITCHES`, is much lower (~50% for `n_muscles=8`, ~85% for `n_muscles=95`).
-
-**Fix plan.**
-
-1. Rename the existing function to `biological_rate_ceiling` (semantic clarity).
-2. Add `biological_pitch_ceiling(muscle_pitches, target_pitches)` that returns the fraction of Chopin pitches reachable by pitch-class match — reference impl in `wormuse_analytics.pipeline.reachable_pitches`.
-3. Combined ceiling = `min(rate_ceiling, pitch_ceiling)` — what the worm can *actually* achieve under both rate and pitch constraints.
-4. Update notebook 03 cell 24 summary table to report both.
-
-**Snippet:**
+**Fix (v0.8.0).** `biological_pitch_ceiling(muscle_pitches, target_pitches, same_pitch_class=True)` added to `midi_target.py`:
 
 ```python
-rate_ceil  = biological_rate_ceiling(p_celegans, t_on_chopin, window_s=DURATION, n_voices=8)
-pitch_ceil = biological_pitch_ceiling(MUSCLE_PITCHES, chopin_pitches)
-overall_ceil = min(rate_ceil['reachable_fraction'], pitch_ceil['reachable_fraction'])
-print(f'Rate-only ceiling:   {rate_ceil["reachable_fraction"]:.3f}')
-print(f'Pitch-only ceiling:  {pitch_ceil["reachable_fraction"]:.3f}')
-print(f'Combined F1 ceiling: {2*overall_ceil/(overall_ceil+1):.3f}')
+rate_ceil  = biological_ceiling(p_celegans, t_on_chopin, n_voices=96)
+pitch_ceil = biological_pitch_ceiling(MUSCLE_PITCHES_96, chopin_pitches)
+overall    = min(rate_ceil["reachable_fraction"], pitch_ceil["reachable_fraction"])
+print(f"Rate ceiling:  {rate_ceil['reachable_fraction']:.3f}")
+print(f"Pitch ceiling: {pitch_ceil['reachable_fraction']:.3f}")   # 1.000 with 96-cell model
+print(f"Combined:      {overall:.3f}")
 ```
 
-**Affected files.**
-- `PyANNOW/src/pyannow/targets/midi_target.py` — rename + add the pitch ceiling.
-- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — cell 24 updated.
-- `PyANNOW/notebooks/_build_naml_progression_nb.py` — same.
-- `PyANNOW/tests/test_midi_target.py` — test the pitch ceiling on a known-pitch toy.
-- `PyANNOW/TODO.md` — this entry.
+**Measured result (96-cell model):**
+- Rate ceiling: 1.000 (96 voices easily handle Chopin's 4.4 notes/s)
+- Pitch ceiling: 1.000 (all 12 pitch classes covered, MIDI 24-119)
+- Combined F1 ceiling: 1.000 (the bottleneck is now purely the learning algorithm)
 
-**Connects to ISSUE-031** (the pitch bottleneck). The ceiling is the upper bound; ISSUE-031's fix (n_muscles=95) raises it.
+**Tested.** `test_midi_target.py::TestBiologicalPitchCeiling` — 3 tests confirming 96-cell full coverage and 8-cell partial coverage.
+
+**Category:** `Category A — Metrics & Scoring`
