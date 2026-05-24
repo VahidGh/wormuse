@@ -1,7 +1,7 @@
 # PyANNOW — NAML Progression
 
 **Living document.** Updated as each step is implemented.  
-*Last updated: Phase 0 — all steps scaffolded.*
+*Last updated: v0.8.0 — measured F1 scores, Procrustes standardization, auto-k PCA (2026-05-24).*
 
 ---
 
@@ -225,24 +225,37 @@ The worm and the piano obey the **same PDE family** (damped wave equation). This
 
 ---
 
-## Results (v0.7.0 targets — notebook re-execution pending)
+## Results (measured, 2026-05-24, v0.8.0)
 
-The table below shows the **v0.6.0 measured results** and the **v0.7.0 expected improvements**
-after replacing the degenerate k=1 synthetic `X_neural` with `generate_neural_activity_302()`
-(k≥4 PCs) and switching to the 96-cell Boyle model.
+Notebook: `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb`.
+Simulation: 10 s window, `generate_neural_activity_302()` (k≥4 PCs), Chopin C# minor Nocturne.
 
-| Step | Method | v0.6.0 onset_loss | v0.6.0 F1 | v0.7.0 target F1 |
+| Step | Method | NAML lectures | F1 (v0.8.0) | Notes |
 |---|---|---|---|---|
-| 0 | Rule-based (baseline) | 0.00218 | 0.186 | ~0.186 (unchanged) |
-| 1 | SVD + Procrustes | 0.00734 | — | **> 0.186** (k≥4 enables real alignment) |
-| 2 | K-means | 0.00145 (1 note) | ~0 | **> 0.186** (clusters now span ≥4 PCs) |
-| 3 | Ridge | 0.00761 | — | **> 0.186** (k≥4 → well-conditioned system) |
-| 4-6 | MLP + Adam + L-BFGS | 0.00504 | — | **> 0.186** (non-linear 4-D→96 mapping) |
-| 8a | ODE PINN | 0.051 | — | **> 0.186** (physics-constrained) |
-| 8b | PDE PINN | 0.079 | — | **> 0.186** (spatial wave physics) |
+| 0 | Rule-based (baseline) | — | **0.186** | Body-wave phase → pitch. IOI=0.682. |
+| 1 | SVD + Procrustes | L06, L09 | 0.000 | Procrustes residual 89.8→**4.06** ✅ (ISSUE-032). Step 1 F1 regressed: `find_peaks` magic threshold not adaptive to standardised `Z_aligned` (ISSUE-033). |
+| 2 | K-means | L08, L10 | 0.110 | 4-cluster motor primitives in 10 s clip. |
+| 3 | Ridge | L07, L11 | 0.000 | Under-performing — likely k_chopin mismatch investigation pending. |
+| **4-6** | **MLP + Adam + L-BFGS** | **L14-22** | **0.193** | **First step to beat Step 0 baseline.** Non-linear 4-D→k mapping. |
+| 8a | ODE PINN | L14, L27 | pending | Physics-constrained oscillator (ISSUE-036 clarified). |
+| 8b | PDE PINN | L14, L27 | pending | Spatial wave equation along body. |
 
-*Re-execute `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` after updating cell 4 to use*
-*`generate_neural_activity_302()` — see ISSUE-018 for the affected-files list.*
+### v0.8.0 vs v0.7.0 improvements
+
+| Fix | Before | After | Issue |
+|---|---|---|---|
+| Procrustes residual (standardize=True) | 89.807 | **4.059** | ISSUE-032 |
+| Pitch coverage (96-cell model) | 41.7% (5/12 classes) | **100%** (12/12) | ISSUE-031, ISSUE-037 |
+| Auto-k Chopin PCA | k=8 fixed | **k=5** (97.7% var) | ISSUE-034 |
+| First step beating baseline | none | **Steps 4-6 F1=0.193** | ISSUE-029 root fix |
+
+### Remaining bottlenecks (open issues)
+
+| Issue | Description | Next step |
+|---|---|---|
+| ISSUE-033 | `find_peaks(height=mean)` magic threshold | Logistic onset detector (ISSUE-027) |
+| ISSUE-026 | No cross-validation / autocorrelated residuals | `time_series_cv()` in `training/cv.py` ✅ (pending notebook integration) |
+| ISSUE-019 | Cell 20 left panel still misleads | Notebook redesign |
 
 ---
 
@@ -294,11 +307,16 @@ NAML methods improve the mapping quality **within** these constraints. The PINN 
 
 No matter how good our NAML model becomes, the worm faces hard limits:
 
-| Limit | Source | Musical consequence |
+| Limit | Source (v0.8.0) | Musical consequence |
 |---|---|---|
-| 8 voices | 8 BWM segments | Max 8-note chords (Chopin uses more) |
-| ~100% rate-reachable | 8–95 voices × 65 ms refractory | Rate is not the limit — rhythmic regularity is |
+| **96 voices** | Boyle 4×24-cell BWM (DL/VL/DR/VR) | 96 simultaneous hammer strikes available |
+| **100% pitch coverage** | MIDI 24-119 = all 12 pitch classes × 8 octaves | Every Chopin pitch is reachable (ISSUE-037, v0.8.0) |
+| ~100% rate-reachable | 96 voices × 65 ms refractory (EGL-19 + EXP-2) | Rate is not the limit — rhythmic regularity is |
 | Regular rhythm | Body-wave phase structure | Worm plays a regular grid; Chopin plays syncopated |
+
+`biological_pitch_ceiling()` in `targets/midi_target.py` quantifies the reachable fraction at runtime.
+- 8-cell model: **0.417** (5/12 classes reachable)
+- 96-cell model (v0.7.0+): **1.000** (all 12 classes reachable)
 
 The NAML methods improve mapping quality *within* these constraints. They cannot change the constraints themselves.
 

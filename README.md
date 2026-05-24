@@ -1,6 +1,6 @@
 # wormuse
 
-![version](https://img.shields.io/badge/version-v0.6.0-blue)
+![version](https://img.shields.io/badge/version-v0.8.0-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![python](https://img.shields.io/badge/python-3.10--3.13-blue)
 ![built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-blueviolet?logo=anthropic)

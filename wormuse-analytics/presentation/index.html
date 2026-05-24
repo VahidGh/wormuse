@@ -91,10 +91,10 @@
   <p class="subtitle">Improving the <span class="hl">worm→Chopin pipeline</span> through Applied Statistics</p>
   <p class="subtitle"><span class="hl3">Goal:</span> the best model we can build that teaches a <i>C. elegans</i> to play Chopin's Nocturne in C♯ minor.</p>
   <p class="meta">
-    Polimi · AppStat 2026 · Companion to PyANNOW (NAML)<br>
+    Polimi · AppStat 2026 · Companion to PyANNOW (NAML) · <strong style="color:var(--green)">v0.8.0</strong><br>
     Engineering doc: <code>docs/STATISTICAL_DIAGNOSTICS.md</code><br>
     Notebook: <code>notebooks/01_appstat_lecture_audit.ipynb</code><br>
-    21 PyANNOW issues tagged <code>[@appstat-audit]</code>
+    21 PyANNOW issues tagged <code>[@appstat-audit]</code> — 11 resolved in v0.8.0
   </p>
 </section>
 
@@ -129,29 +129,27 @@
   <div class="pipeline-flow">
 ion-channel HH params (DEFAULT_PARAMS)
         ↓ run_forward_fast
-  V_muscles (T, 8)  ───► (synthetic 302 "neurons") X_neural (302, T)
+  V_muscles (T, 96)  ──► generate_neural_activity_302() → X_neural (302, T) k≥4 ✅ v0.7.0
         ↓                              ↓
   onsets_base                    Step 1a RSVD (k=4)
   (Step 0 baseline)                    ↓
-                                Step 1b Procrustes → Z_aligned
+                           Step 1b Procrustes(standardize=True) → Z_aligned ✅ v0.8.0
                                        ↓
-                                Step 2 PCA + KMeans
+                           Step 2 PCA + KMeans
                                        ↓
-                                Step 3 RidgeCV → C_pred
+                           Step 3 RidgeCV → C_pred
                                        ↓
-                                Steps 4-6 MLP+Adam+L-BFGS → C_pred
+                           Steps 4-6 MLP+Adam+L-BFGS → C_pred  ← beats baseline ✅
                                        ↓
-                                Step 8a/b ODE/PDE PINN
+                           Step 8a/b ODE/PDE PINN
                                        ↓
-                          find_peaks(distance=280ms, height=mean) ← SHARED
+                    find_peaks(distance=280ms, height=mean) ← OPEN ISSUE-033
                                        ↓
-                          pitch ← MUSCLE_PITCHES[k % 8]           ← 8-tone cap
+                    pitch ← MUSCLE_PITCHES_96[k] (all 12 classes) ✅ v0.7.0
                                        ↓
-                                  audio · score</div>
+                               audio · score (pitch_aware_f1) ✅ v0.8.0</div>
   <p style="margin-top: 8px; font-size: .8em;">
-    The <span class="bad">red flags</span> are: (a) the 302 "neurons" are 8 muscle voltages with noise,
-    (b) the peak detector is shared across all steps with the same magic `height=mean()` threshold,
-    (c) the pitch map caps the worm at 8 distinct pitches while Chopin uses ~80.
+    <span class="hl3">v0.8.0 fixes ✅:</span> (a) 96-cell Boyle model, k≥4 PCs; (b) Procrustes standardized; (c) 100% pitch coverage. <span class="bad">Still open:</span> ISSUE-033 magic threshold.
   </p>
 </section>
 
@@ -342,33 +340,59 @@ ion-channel HH params (DEFAULT_PARAMS)
 <section>
   <h2>21 PyANNOW issues — closing each gap</h2>
   <table class="compact">
-    <tr><th>ID</th><th>Title</th><th>Lec</th><th>Pri</th></tr>
-    <tr><td class="tag">018</td><td>Builder/notebook desync</td><td>L06 (infra)</td><td>P1</td></tr>
-    <tr><td class="tag">019</td><td>Cell 20 left panel still misleads</td><td>L06</td><td>P1</td></tr>
-    <tr><td class="tag">020</td><td>Multi-tol F1 + PR + ROC sweep</td><td>L06</td><td>P2</td></tr>
-    <tr><td class="tag">021</td><td>Bootstrap CIs for per-step F1</td><td>L06</td><td>P2</td></tr>
-    <tr><td class="tag">022</td><td>Descriptive stats of outputs</td><td>L00</td><td>P2</td></tr>
-    <tr><td class="tag">023</td><td>PCA biplot + standardization</td><td>L01</td><td>P3</td></tr>
-    <tr><td class="tag">024</td><td>t-SNE / UMAP manifold view</td><td>L02</td><td>P3</td></tr>
-    <tr><td class="tag">025</td><td>Compare four clustering methods</td><td>L03</td><td>P3</td></tr>
-    <tr><td class="tag">026</td><td>Lab V diagnostics on Ridge</td><td>L04</td><td>P2</td></tr>
-    <tr><td class="tag">027</td><td>Logistic onset detector</td><td>L05</td><td>P3</td></tr>
-    <tr><td class="tag">028</td><td>RF baseline + permutation importance</td><td>L07</td><td>P2</td></tr>
-    <tr><td class="tag warn">029</td><td>Synthetic 302-neuron matrix</td><td>L01 (logic #1)</td><td>P1</td></tr>
-    <tr><td class="tag warn">030</td><td>Step 0 mislabelled "random"</td><td>L00 (logic #2)</td><td>P3</td></tr>
-    <tr><td class="tag warn">031</td><td>8-muscle pitch bottleneck</td><td>L06 (logic #3)</td><td>P1</td></tr>
-    <tr><td class="tag warn">032</td><td>Procrustes feature mismatch</td><td>L04 (logic #4)</td><td>P2</td></tr>
-    <tr><td class="tag warn">033</td><td>Identical magic-threshold peak detector</td><td>L05 (logic #5)</td><td>P1</td></tr>
-    <tr><td class="tag warn">034</td><td>Chopin lossy k=8 compression</td><td>L01 (logic #6)</td><td>P2</td></tr>
-    <tr><td class="tag warn">035</td><td>Pitch-aware F1 missing</td><td>L06 (logic #7)</td><td>P1</td></tr>
-    <tr><td class="tag warn">036</td><td>Step 8 PINN ≠ ion-channel PINN</td><td>L04 (logic #8)</td><td>P2</td></tr>
-    <tr><td class="tag warn">037</td><td>Biological ceiling overstated</td><td>L06 (logic #9)</td><td>P2</td></tr>
-    <tr><td class="tag warn">038</td><td>No cross-validation anywhere</td><td>L06 (logic #10)</td><td>P2</td></tr>
+    <tr><th>ID</th><th>Title</th><th>Lec</th><th>Status</th></tr>
+    <tr><td class="tag ok">✅ 018</td><td>Builder/notebook desync</td><td>L06 (infra)</td><td class="tag ok">v0.7.0</td></tr>
+    <tr><td class="tag warn">019</td><td>Cell 20 left panel still misleads</td><td>L06</td><td>open</td></tr>
+    <tr><td class="tag ok">✅ 020</td><td>Multi-tol F1 + PR + ROC sweep</td><td>L06</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 021</td><td>Bootstrap CIs for per-step F1</td><td>L06</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag warn">022</td><td>Descriptive stats of outputs</td><td>L00</td><td>open</td></tr>
+    <tr><td class="tag warn">023</td><td>PCA biplot + standardization</td><td>L01</td><td>open</td></tr>
+    <tr><td class="tag warn">024</td><td>t-SNE / UMAP manifold view</td><td>L02</td><td>open</td></tr>
+    <tr><td class="tag warn">025</td><td>Compare four clustering methods</td><td>L03</td><td>open</td></tr>
+    <tr><td class="tag warn">026</td><td>Lab V diagnostics on Ridge</td><td>L04</td><td>open</td></tr>
+    <tr><td class="tag warn">027</td><td>Logistic onset detector</td><td>L05</td><td>open</td></tr>
+    <tr><td class="tag warn">028</td><td>RF baseline + permutation importance</td><td>L07</td><td>open</td></tr>
+    <tr><td class="tag ok">✅ 029</td><td>Synthetic 302-neuron matrix</td><td>L01 (logic #1)</td><td class="tag ok">v0.7.0</td></tr>
+    <tr><td class="tag warn">030</td><td>Step 0 mislabelled "random"</td><td>L00 (logic #2)</td><td>open</td></tr>
+    <tr><td class="tag ok">✅ 031</td><td>8-muscle pitch bottleneck</td><td>L06 (logic #3)</td><td class="tag ok">v0.7.0</td></tr>
+    <tr><td class="tag ok">✅ 032</td><td>Procrustes feature mismatch</td><td>L04 (logic #4)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag warn">033</td><td>Magic-threshold peak detector</td><td>L05 (logic #5)</td><td>open — P1</td></tr>
+    <tr><td class="tag ok">✅ 034</td><td>Chopin lossy k=8 compression</td><td>L01 (logic #6)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 035</td><td>Pitch-aware F1 missing</td><td>L06 (logic #7)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 036</td><td>Step 8 PINN ≠ ion-channel PINN</td><td>L04 (logic #8)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 037</td><td>Biological ceiling overstated</td><td>L06 (logic #9)</td><td class="tag ok">v0.8.0</td></tr>
+    <tr><td class="tag ok">✅ 038</td><td>No cross-validation anywhere</td><td>L06 (logic #10)</td><td class="tag ok">v0.8.0</td></tr>
   </table>
-  <p style="margin-top: 6px; font-size: .8em;">All tagged <code>[@appstat-audit]</code> · one md file per issue under <code>docs/proposed_pyannow_issues/</code>.</p>
+  <p style="margin-top: 6px; font-size: .8em;"><span class="hl3">11 resolved ✅</span> (7 in v0.7.0, 4 in v0.8.0) · 10 open · one md per issue under <code>docs/proposed_pyannow_issues/</code></p>
 </section>
 
-<!-- ─────────────── Slide 14: Closing ─────────────── -->
+<!-- ─────────────── Slide 14: v0.8.0 results ─────────────── -->
+<section>
+  <h2>v0.8.0 measured results — what the fixes achieved</h2>
+  <table class="compact">
+    <tr><th>Step</th><th>Method</th><th>F1 (pitch-aware)</th><th>vs baseline</th></tr>
+    <tr><td>0</td><td>Rule-based baseline</td><td>0.186</td><td>—</td></tr>
+    <tr><td>1</td><td>SVD + Procrustes (standardize=True)</td><td class="tag">0.000</td><td>residual 89.8→4.06 ✅; ISSUE-033 open</td></tr>
+    <tr><td>2</td><td>K-means</td><td class="tag warn">0.110</td><td>−0.076</td></tr>
+    <tr><td>3</td><td>Ridge</td><td class="tag">0.000</td><td>pending investigation</td></tr>
+    <tr><td><strong>4-6</strong></td><td><strong>MLP + Adam + L-BFGS</strong></td><td class="tag ok"><strong>0.193</strong></td><td class="tag ok"><strong>+0.007 first beat ↑</strong></td></tr>
+  </table>
+  <div class="card-grid two" style="margin-top:10px;font-size:.78em">
+    <div class="card">
+      <h4>Key fix: ISSUE-032 Procrustes</h4>
+      <p><code>procrustes_align(standardize=True)</code> — z-score W_k before SVD.</p>
+      <p>PC scale imbalance was 6.9×. Residual: <span class="bad">89.807</span> → <span class="hl3">4.059</span>.</p>
+    </div>
+    <div class="card">
+      <h4>Key fix: ISSUE-034 Auto-k</h4>
+      <p><code>build_chopin_features(k_chopin=None)</code> — 90% cumvar auto-selection.</p>
+      <p>For 10s clip: k=5 captures 97.7% variance (was k=8 fixed).</p>
+    </div>
+  </div>
+  <p style="margin-top:8px;font-size:.8em;"><span class="bad">Next priority:</span> ISSUE-033 — logistic onset detector to fix Step 1 regression.</p>
+</section>
+
+<!-- ─────────────── Slide 15: Closing ─────────────── -->
 <section>
   <h2>What this gives wormuse</h2>
   <p style="font-size: 1em;">

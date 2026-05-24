@@ -34,6 +34,16 @@
 | ISSUE-031 ✅ | (v0.7.0) 96-cell Boyle pitch coverage | D — Architecture |
 | ISSUE-018 ✅ | (v0.7.0) Builder/notebook desync | D — Architecture |
 
+**Notebook 03 executed (v0.8.0 measured F1 scores):**
+
+| Step | Method | F1 | Notes |
+|---|---|---|---|
+| 0 | Rule-based baseline | 0.186 | IOI=0.682 |
+| 1 | SVD + Procrustes | 0.000 | residual 89.8→4.06 ✅; ISSUE-033 blocks further gain |
+| 2 | K-means | 0.110 | 4-cluster motor primitives |
+| 3 | Ridge | 0.000 | k_chopin mismatch pending |
+| **4-6** | **MLP+Adam+L-BFGS** | **0.193** | **First step to beat baseline** |
+
 **Still open (10 issues):** ISSUE-019, 022, 023, 024, 025, 026, 027, 028, 030, 033.
 See `wormuse-analytics/docs/proposed_pyannow_issues/ISSUE-GROUPS.md` for full breakdown.
 
