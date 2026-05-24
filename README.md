@@ -10,11 +10,11 @@
 
 Wormuse is a robot pianist, but with the worm as the composer. It is designed as a project integrating some of Politecnico di Milano courses:
 
-| Course                                                     | Sub-project                                 | Focus                                                                                   |
-| ---------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **Advanced Methods for Scientific Computing (AMSC)** | [`wormuse-sim/`](./wormuse-sim/)             | C++ simulator core: OpenWorm wrapper + piano FEM + neuron→MIDI bridge                  |
+| Course                                                     | Sub-project                                 | Focus                                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Advanced Methods for Scientific Computing (AMSC)** | [`wormuse-sim/`](./wormuse-sim/)             | C++ simulator core: OpenWorm wrapper + piano FEM + neuron→MIDI bridge                        |
 | **Numerical Analysis for Machine Learning (NAML)**   | [`PyANNOW/`](./PyANNOW/)                     | 96-cell Boyle worm → Chopin mapper; 9-step NAML progression (SVD→PCA→Ridge→MLP→RF→PINN) |
-| **Applied Statistics (AppStat)**                     | [`wormuse-analytics/`](./wormuse-analytics/) | Python notebooks: PCA / clustering / regression / RF / classification on worm-music data |
+| **Applied Statistics (AppStat)**                     | [`wormuse-analytics/`](./wormuse-analytics/) | Python notebooks: PCA / clustering / regression / RF / classification on worm-music data      |
 
 Plus cross-cutting use of Numerical Linear Algebra (NLA), Numerical Methods for PDEs (NMPDE), Parallel Computing (PC), and Software Engineering for HPC (SE4HPC).
 
@@ -61,10 +61,6 @@ docker compose up amsc-mk openworm        # pulls the user's existing images
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full description and [ROADMAP.md](./ROADMAP.md) for the phased plan.
 
-## Ion channels — the centerpiece
-
-The Hodgkin-Huxley gating variables `(m_∞, h_∞, τ_m, τ_h)` of the worm's neurons are learned by a **Physics-Informed Neural Network**. The user's existing ion-channel PINN research (channelworm + SC-PINN) is the academic anchor. The UI exposes these parameters as live controls: change a single ion-channel parameter → the music morphs in tempo and timbre. See [ION_CHANNELS.md](./ION_CHANNELS.md) for the design and [docs/SCIENTIFIC_FOUNDATION.md](./docs/SCIENTIFIC_FOUNDATION.md) for the full mathematics on both sides of the pipeline.
-
 ## Repository layout
 
 ```
@@ -104,18 +100,16 @@ tests, documentation, notebooks, and the Reveal.js presentation — under the sc
 and design decisions of Vahid Ghayoomie.
 
 See **[`AI_CONTRIBUTIONS.md`](./AI_CONTRIBUTIONS.md)** for:
+
 - Module-by-module contribution breakdown
 - Where human judgment was essential (and where it corrected the AI)
 - Known AI limitations encountered
 - How to reproduce the workflow
 
-> *"From now on add everything marked as issue here to the TODO list and update the list when resolved or updated."*
-> — The project rule (see `CLAUDE.md`) that Claude enforces on itself every session.
-
 ## Acknowledgements
 
 - [OpenWorm](https://openworm.org/) — Sibernetic SPH body simulator, C302 nervous system, ChannelWorm ion-channel models.
 - *Time Domain Simulation of a Piano* (Chabassier et al.) — physical piano modeling reference (Parts 1 + 2).
-- Prof. Luca Formaggia (AMSC), Profs. Beraha & Andre (AppStat 2026), and the NAML faculty (PINN lecture).
+- Prof. Miglio (NAML), Prof. Formaggia (AMSC), and Prof. Massi (AppStat).
 - Vahid Ghayoomie's own channelworm and SC-PINN work informing the ion-channel architecture.
 - **Claude** (Anthropic) — engineering implementation, code, tests, documentation, and design.
