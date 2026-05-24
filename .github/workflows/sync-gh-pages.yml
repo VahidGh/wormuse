@@ -1,0 +1,54 @@
+name: Sync presentations to gh-pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'PyANNOW/presentation/index.html'
+      - 'wormuse-analytics/presentation/index.html'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-repo
+          fetch-depth: 1
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-repo
+          fetch-depth: 1
+
+      - name: Copy updated presentations
+        run: |
+          mkdir -p gh-pages-repo/PyANNOW/presentation
+          mkdir -p gh-pages-repo/wormuse-analytics/presentation
+          cp main-repo/PyANNOW/presentation/index.html \
+             gh-pages-repo/PyANNOW/presentation/index.html
+          cp main-repo/wormuse-analytics/presentation/index.html \
+             gh-pages-repo/wormuse-analytics/presentation/index.html
+
+      - name: Commit and push to gh-pages
+        working-directory: gh-pages-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add PyANNOW/presentation/index.html \
+                  wormuse-analytics/presentation/index.html
+          # Only commit if there are actual changes
+          if git diff --staged --quiet; then
+            echo "No changes to sync."
+          else
+            COMMIT_SHA=$(cd ../main-repo && git rev-parse --short HEAD)
+            git commit -m "sync(gh-pages): update presentations from main@${COMMIT_SHA} [skip ci]"
+            git push
+          fi
