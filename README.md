@@ -1,6 +1,6 @@
 # wormuse
 
-![version](https://img.shields.io/badge/version-v0.8.0-blue)
+![version](https://img.shields.io/badge/version-v0.9.0-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![python](https://img.shields.io/badge/python-3.10--3.13-blue)
 ![built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-blueviolet?logo=anthropic)
@@ -13,8 +13,8 @@ Wormuse is a robot pianist, but with the worm as the composer. It is designed as
 | Course                                                     | Sub-project                                 | Focus                                                                                   |
 | ---------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- |
 | **Advanced Methods for Scientific Computing (AMSC)** | [`wormuse-sim/`](./wormuse-sim/)             | C++ simulator core: OpenWorm wrapper + piano FEM + neuron→MIDI bridge                  |
-| **Numerical Analysis for Machine Learning (NAML)**   | [`PyANNOW/`](./PyANNOW/)                     | JAX/Flax/Optax composer**conditioned on a PINN-tuned ion channel model**          |
-| **Applied Statistics (AppStat)**                     | [`wormuse-analytics/`](./wormuse-analytics/) | Python notebooks: PCA / clustering / regression / classification on the worm-music data |
+| **Numerical Analysis for Machine Learning (NAML)**   | [`PyANNOW/`](./PyANNOW/)                     | 96-cell Boyle worm → Chopin mapper; 9-step NAML progression (SVD→PCA→Ridge→MLP→RF→PINN) |
+| **Applied Statistics (AppStat)**                     | [`wormuse-analytics/`](./wormuse-analytics/) | Python notebooks: PCA / clustering / regression / RF / classification on worm-music data |
 
 Plus cross-cutting use of Numerical Linear Algebra (NLA), Numerical Methods for PDEs (NMPDE), Parallel Computing (PC), and Software Engineering for HPC (SE4HPC).
 

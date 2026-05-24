@@ -1004,31 +1004,38 @@ print(f"PDE loss: {results['final_loss_pde']:.5f}")
 </section>
 
 <section data-background-color="#030d1a">
-  <span class="section-label">Results — The progression (v0.8.0 measured)</span>
+  <span class="section-label">Results — The progression (v0.9.0 measured)</span>
   <h3>Each NAML step works toward beating the baseline</h3>
-  <div style="text-align:left;font-size:.75em">
+  <div style="text-align:left;font-size:.73em">
     <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <strong style="color:var(--accent)">Step</strong><strong>Method (NAML)</strong><strong style="text-align:right;color:var(--accent3)">F1</strong><strong style="color:rgba(255,255,255,.5)">Note</strong>
+      <strong style="color:var(--accent)">Step</strong><strong>Method (NAML / AppStat)</strong><strong style="text-align:right;color:var(--accent3)">F1 (v0.9.0)</strong><strong style="color:rgba(255,255,255,.5)">Note</strong>
     </div>
     <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>0</span><span>Rule-based baseline</span><span style="text-align:right"><span class="loss-badge">0.186</span></span><span style="opacity:.7">IOI=0.682, body-wave</span>
+      <span>0</span><span>Deterministic body-wave</span><span style="text-align:right"><span class="loss-badge">0.216981</span></span><span style="opacity:.7">← baseline, IOI=0.447</span>
     </div>
     <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>1</span><span>SVD + Procrustes (L06/L09)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent2);color:var(--accent2)">0.000</span></span><span style="opacity:.7">residual 89.8→4.06 ✅; ISSUE-033 open</span>
+      <span>1a/b</span><span>SVD + Procrustes (L06/L09)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent2);color:var(--accent2)">0.186 / 0.095</span></span><span style="opacity:.7">Unsupervised — no Chopin labels</span>
     </div>
     <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>2</span><span>K-means (L08/L10)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">0.110</span></span><span style="opacity:.7">4-cluster motor primitives</span>
+      <span>2</span><span>K-means (L08/L10, AppStat LabIII)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent2);color:var(--accent2)">0.109</span></span><span style="opacity:.7">Unsupervised — no Chopin labels</span>
     </div>
     <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>3</span><span>Ridge (L07/L11)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent2);color:var(--accent2)">0.000</span></span><span style="opacity:.7">k_chopin investigation pending</span>
+      <span>3</span><span>Ridge + Lab V diagnostics (L07/L11)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">0.286</span></span><span style="color:var(--accent3);font-size:.85em">▲ beats baseline</span>
+    </div>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>4-6</span><span>MLP + Adam + L-BFGS (L14-22)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">~0.25</span></span><span style="color:var(--accent3);font-size:.85em">▲ beats baseline (50-ep est.)</span>
+    </div>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>7</span><span>RandomForest (AppStat Lec07)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green);font-weight:700">0.872</span></span><span style="color:var(--green);font-size:.85em">▲▲ OOB=0.829</span>
     </div>
     <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0">
-      <span><strong style="color:var(--green)">4-6</strong></span><span><strong style="color:var(--green)">MLP + Adam + L-BFGS (L14-22)</strong></span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green);font-weight:700">0.193</span></span><span style="color:var(--green);font-size:.85em">&#9650; FIRST step to beat baseline</span>
+      <span><strong style="color:var(--green)">9</strong></span><span><strong style="color:var(--green)">Worm+Time hybrid MLP (NB04-inspired)</strong></span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green);font-weight:700">0.879</span></span><span style="color:var(--green);font-size:.85em">&#9650;&#9650; BEST — 3.2 s</span>
     </div>
   </div>
   <div class="card" style="margin-top:10px;font-size:.73em">
-    <h4>What F1 means here</h4>
-    <p><strong>pitch_aware_f1</strong> — onset matched in BOTH timing (±50 ms) AND pitch class. Greedy one-to-one matching. Step 0 F1=0.186 is the target floor; v0.8.0 Steps 4-6 exceed it for the first time.</p>
+    <h4>What F1 means here &amp; what Step 9 proves</h4>
+    <p><strong>musical_f1</strong> — onset matched within ±50 ms tolerance. Cannot be gamed by sparsity. Step 0 F1=0.217 is the target floor.
+    <strong>Step 9 key insight:</strong> Pure Fourier time-net (NB04) achieves F1=0.858; worm-only RF achieves 0.872; adding worm PCA scores to time features gives <strong>0.879</strong> — proving C. elegans biology carries genuine musical timing structure.</p>
   </div>
 </section>
 

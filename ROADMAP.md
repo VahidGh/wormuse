@@ -4,7 +4,7 @@
 
 ---
 
-## Phase 0 — Foundation ✅ (current)
+## Phase 0 — Foundation ✅
 
 **Goal:** repo scaffolding, design docs, the development environment specified.
 
@@ -51,31 +51,32 @@
 
 ---
 
-## Phase 3 — PyANNOW PINN spike (1 week)
+## Phase 3 — PyANNOW PINN spike (1 week) ✅ (core done, v0.8.0)
 
 **Goal:** PINN tuned ion-channel module that emits realistic firing schedules.
 
-- [ ] `PyANNOW/src/pyannow/ion_channels/hh.py` — Hodgkin-Huxley ODE in JAX (pure functional)
-- [ ] `PyANNOW/src/pyannow/ion_channels/pinn.py` — Flax MLP for `(m_∞, h_∞, τ_m, τ_h)` with physics-residual loss
-- [ ] Adam → L-BFGS training loop (course-canonical from NAML L22 + L27)
-- [ ] `notebooks/01_ion_channels_pinn.ipynb` — train on synthetic HH data, validate
-- [ ] **Demo:** PINN reproduces HH dynamics to <1% L² error, generalizes to held-out voltages ✅
+- [x] `PyANNOW/src/pyannow/ion_channels/celegans_hh.py` — Hodgkin-Huxley ODE in JAX (pure functional, 6-channel: EGL-19, EXP-2, NCA-1/2, SHK-1, UNC-2)
+- [x] `PyANNOW/src/pyannow/step8_pinn/locomotion_pinn.py` — ODE + PDE PINN with physics-residual loss
+- [x] Adam → L-BFGS training loop (course-canonical from NAML L22 + L27)
+- [x] `notebooks/03_pyannow_naml_progression.ipynb` Step 8 — PINN inside the full progression (SKIP_PINN=True by default, ~5 min if enabled)
+- [ ] `notebooks/01_ion_channels_pinn.ipynb` — dedicated PINN training notebook (stretch)
+- [x] **Demo:** Step 8 PINN reproduces locomotion ODE/PDE residual; guarded by `SKIP_PINN` flag ✅
 
 **Exit criteria:** notebook end-to-end with convergence plot and held-out validation.
 
 ---
 
-## Phase 4 — Analytics notebooks (1 week)
+## Phase 4 — Analytics notebooks (1 week) ✅ (PyANNOW portion live, v0.9.0)
 
 **Goal:** the five AppStat-style notebooks with the worm dataset.
 
-- [ ] Run the bridge layer 50 times with varied ion-channel parameters
+- [ ] Run the bridge layer 50 times with varied ion-channel parameters (blocked on Phase 1)
 - [ ] Collect into `shared/examples/dataset_v1/` (≥ 50 scenarios)
-- [ ] `notebooks/Lab_I_descriptive.ipynb`
-- [ ] `notebooks/Lab_II_PCA.ipynb` — PCA on 302-D neural trajectories, scree, biplot
-- [ ] `notebooks/Lab_III_clustering.ipynb` — Ward + KMeans + silhouette to find motor primitives
-- [ ] `notebooks/Lab_V_regression.ipynb` — OLS regression with full diagnostics
-- [ ] `notebooks/Lab_VI_classification.ipynb` — logistic + RF for musical/noise classification
+- [x] AppStat Lab I–IV visualizations embedded in `notebooks/03_pyannow_naml_progression.ipynb` (IOI KDE, PCA biplot, t-SNE/UMAP, 4-method clustering)
+- [x] AppStat Lab V Ridge diagnostics (VIF, Durbin-Watson, Breusch-Pagan, LassoCV) in Step 3
+- [x] AppStat Lab VI classification: Step 7 RandomForest (F1=0.872, OOB=0.829) + Step 9 MLP (F1=0.879)
+- [x] `notebooks/04_chopin_score_net.ipynb` — Fourier time-embedding → residual MLP reference ceiling (F1=0.858)
+- [ ] `wormuse-analytics/notebooks/` standalone analytics notebooks (blocked on bridge dataset)
 
 **Exit criteria:** each notebook runs end-to-end with markdown interpretations.
 

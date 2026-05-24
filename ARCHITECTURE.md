@@ -23,12 +23,19 @@ This document describes the modules of **wormuse**, how they communicate, and wh
 
 | Component | Responsibility |
 |---|---|
-| `src/pyannow/ion_channels/` | **The PINN core.** JAX implementation of Hodgkin-Huxley neuron + ion-channel kinetics. Re-implements the essential ideas of the user's SC-PINN inside this repo (no external dependency). |
-| `src/pyannow/neural_state/` | Encoder mapping a 302-D neural state trajectory to a low-dim latent. Trained as a VAE or simple autoencoder. |
-| `src/pyannow/composer/` | Flax MLP / sequence model mapping `(neural latent, time)` → MIDI note sequences. |
-| `src/pyannow/training/` | Adam → L-BFGS pipeline (course-canonical from NAML Lab 10 + the PINN literature). Loss = physics residual + music-coherence term. |
-| `src/pyannow/physics_loss/` | The hook that ties the composer back to the ion-channel kinetics — the composer cannot produce notes that violate the HH dynamics. |
-| `notebooks/` | 4 paper-style notebooks taking each component from toy → end-to-end. |
+| `src/pyannow/ion_channels/` | **The PINN core.** JAX implementation of Hodgkin-Huxley neuron + ion-channel kinetics (EGL-19, EXP-2, NCA-1/2, SHK-1, UNC-2). |
+| `src/pyannow/step1_svd/` | RSVD encoder + Procrustes alignment. Compresses 302-D neural activity → k PCs; rotates into Chopin feature space. |
+| `src/pyannow/step2_clustering/` | PCA + K-means motor primitives. Finds discrete behavioural states in the neural trajectory. |
+| `src/pyannow/step3_regression/` | Ridge regression composer + Lab V diagnostics (VIF, Durbin-Watson, Breusch-Pagan, LassoCV). |
+| `src/pyannow/step4_ffnn/` | JAX/Flax MLP composer (k_worm → hidden → k_chopin). |
+| `src/pyannow/step5_training/` | Adam mini-batch trainer (course-canonical from NAML Lab 10). |
+| `src/pyannow/step6_lbfgs/` | L-BFGS polish stage (NAML L22 / Lab08). |
+| `src/pyannow/step8_pinn/` | ODE + PDE PINN locomotion constraints (damped oscillator + 1D wave equation). |
+| `src/pyannow/targets/midi_target.py` | MIDI parser, onset metrics (musical_f1, ioi_similarity, onset_loss), calibrated_onset_detect (logistic + Youden's J). |
+| `src/pyannow/training/cv.py` | Time-series CV (walk-forward) + blocked bootstrap CI. |
+| `notebooks/03_pyannow_naml_progression.ipynb` | **Main NAML notebook** — 9-step progression (SVD → PCA → Ridge → MLP+Adam+LBFGS → RF → PINN → Worm+Time hybrid). Measured F1: Step 0=0.217 → Step 9=0.879. |
+| `notebooks/04_chopin_score_net.ipynb` | Fourier time-embedding → residual MLP → piano-roll reconstruction. Reference ceiling F1=0.858 on pure time features. |
+| `chopin_score_net/` | Module backing notebook 04: data, model, train, render submodules. |
 
 **Environment:** local Python 3.10-3.13, JAX/Flax/Optax stack matching the NAML labs (see `pyproject.toml`).
 

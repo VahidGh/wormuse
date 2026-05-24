@@ -15,7 +15,7 @@ The NAML column maps to specific course lectures and PyANNOW module paths.
 | # | C. elegans biology | Piano physics | NAML / PyANNOW | Course ref | Code |
 |---|---|---|---|---|---|
 | 1 | **302 neurons** — the entire nervous system; each fires discrete spikes | **88 piano keys** — each string has a distinct frequency; pressed independently | **k-dimensional latent space** — SVD compresses 302-D neural state to k=4-8 principal components | L06 Eckart-Young | `step1_svd/encoder.py` |
-| 2 | **95 BWM muscle cells** — the biological output layer; max polyphony | **88 keys × max 10-finger polyphony** — simultaneous voices limited by player hands | **Output dimension `out_dim`** of the composer MLP | L16 FFNN, L24 UAT | `step4_ffnn/jax_composer.py` |
+| 2 | **96 BWM muscle cells** (Boyle 4×24 model: DL/VL/DR/VR × 24 segments) — the biological output layer; max polyphony | **88 keys × max 10-finger polyphony** — simultaneous voices limited by player hands | **Output dimension `out_dim`** of the composer MLP; k_chopin=96 in `run_forward_fast` | L16 FFNN, L24 UAT | `step4_ffnn/jax_composer.py`, `composer/worm_optimizer_fast.py` |
 | 3 | **EGL-19 (L-type Ca²⁺ VGCC)** — all-or-nothing action potential once threshold crossed | **Hammer–string contact** — nonlinear power-law `F = Kδᵖ` triggered above contact boundary | **ReLU/tanh activation** — threshold nonlinearity; zero below `V_half_Ca` | L15 Activations | `ion_channels/celegans_hh.py` |
 | 4 | **τ_Ca (EGL-19 activation time, ~2-20 ms)** — sets note attack speed; limits refractory | **Hammer contact duration (~1-4 ms)** — felt compression time; sets initial spectrum | **τ_Ca in `CelegansChannelParams`** — most sensitive PINN parameter (§7 sensitivity) | L27 PINN | `celegans_hh.py` |
 | 5 | **g_EGL19 (maximal Ca²⁺ conductance, mS/cm²)** — determines contraction force | **Hammer velocity `v₀` (m/s)** — controls MIDI velocity (loudness) | **`force_to_velocity()` scale factor** — biological amplification | L09 Pseudoinverse | `celegans_hh.py`, `worm_optimizer.py` |
@@ -80,5 +80,5 @@ physically justified rather than metaphorical:
 
 ## Version
 
-Added in wormuse `v0.5.0`. Maintained alongside `SCIENTIFIC_FOUNDATION.md`.
-See `CHANGELOG.md` for version history.
+Added in wormuse `v0.5.0`. Last updated `v0.9.0` (row 2 corrected to 96 BWM cells per Boyle 4×24 model).
+Maintained alongside `SCIENTIFIC_FOUNDATION.md`. See `CHANGELOG.md` for version history.

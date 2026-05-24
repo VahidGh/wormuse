@@ -321,6 +321,260 @@ def train_pinn(
     return params, history
 
 
+# ═══════════════════════════════════════════════════════════════
+# Step 8c — PINN-Classifier (BCE data loss + ODE physics residual)
+# ═══════════════════════════════════════════════════════════════
+#
+# Conceptual update (v0.9.0 / ISSUE-042c):
+#
+#   Steps 7 and 9 showed that directly classifying onsets (BCE loss)
+#   beats the regression approach (MSE against Chopin features).
+#   Step 8c applies the same insight to the PINN:
+#
+#     Old Step 8a/8b: MSE(q̂, C_chopin) + λ · physics_residual
+#     New Step 8c:    BCE(σ(logit), y_onset) + λ · physics_residual
+#
+#   The ODE constraint now acts as temporal REGULARISATION on the
+#   onset probability trajectory — preventing the classifier from
+#   predicting arbitrarily spiky outputs that violate locomotion dynamics.
+#
+#   Biologically: the ODE  logiẗ + 2γ·logiṫ + ω²·logit = F_neural
+#   forces refractory periods and a characteristic oscillation frequency
+#   that the pure-data classifier (Step 9) cannot enforce.
+
+
+def _bce_from_logits(logits: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
+    """Numerically stable sigmoid BCE.
+
+    Implements: E[ max(x,0) - x·y + log(1 + exp(-|x|)) ]
+    Avoids overflow from log(exp(x)) for large positive x.
+    """
+    return jnp.mean(
+        jnp.maximum(logits, 0.0) - logits * y
+        + jnp.log1p(jnp.exp(-jnp.abs(logits)))
+    )
+
+
+def pinn_classifier_loss(
+    params:       dict,
+    model:        PhysicsComposer,
+    inp_data:     jnp.ndarray,    # (N, 1+k_worm)  same layout as ODE
+    y_onset:      jnp.ndarray,    # (N,) float32   binary labels
+    phys_loss_fn: Callable,
+    phys_args:    tuple,
+    lam_phys:     float = 0.05,
+) -> tuple:
+    """Total PINN-Classifier loss = BCE(σ(logit), y_onset) + λ · physics_loss.
+
+    The data term directly optimises for onset detection (same objective
+    as Step 7 / Step 9) while the physics term enforces ODE dynamics.
+    """
+    logits    = model.apply(params, inp_data).squeeze(-1)   # (N,)
+    bce       = _bce_from_logits(logits, y_onset)
+    phys      = phys_loss_fn(params, model, *phys_args)
+    return bce + lam_phys * phys, (bce, phys)
+
+
+def train_pinn_classifier(
+    model:        PhysicsComposer,
+    params:       dict,
+    inp_data:     np.ndarray,     # (N, 1+k_worm)
+    y_onset:      np.ndarray,     # (N,) binary (0 / 1)
+    phys_loss_fn: Callable,
+    phys_args:    tuple,
+    lam_phys:     float = 0.05,
+    lr:           float = 1e-3,
+    adam_steps:   int   = 600,
+    lbfgs_steps:  int   = 60,
+    verbose:      bool  = True,
+    label:        str   = "PINN-CLS",
+) -> tuple[dict, PINNHistory]:
+    """PINN-Classifier training: BCE + ODE physics, Adam → L-BFGS.
+
+    Drop-in replacement for train_pinn() — identical loop, different loss.
+    """
+    id_j = jnp.array(inp_data, dtype=jnp.float32)
+    yo_j = jnp.array(y_onset,  dtype=jnp.float32)
+
+    def loss_fn(p):
+        return pinn_classifier_loss(p, model, id_j, yo_j,
+                                    phys_loss_fn, phys_args, lam_phys)
+
+    history = PINNHistory()
+    t0 = time.perf_counter()
+
+    # Stage 1 — Adam
+    opt   = optax.adam(lr)
+    state = opt.init(params)
+
+    @jax.jit
+    def adam_step(p, s):
+        (loss, parts), grads = jax.value_and_grad(loss_fn, has_aux=True)(p)
+        updates, s = opt.update(grads, s, p)
+        return optax.apply_updates(p, updates), s, loss, parts
+
+    for step in range(adam_steps):
+        params, state, loss, (bce, pl) = adam_step(params, state)
+        history.adam_losses.append(float(loss))
+        history.data_losses.append(float(bce))
+        history.phys_losses.append(float(pl))
+        if verbose and step % 100 == 0:
+            print(f"  [{label}] Adam {step:4d}  total={float(loss):.5f}  "
+                  f"BCE={float(bce):.5f}  phys={float(pl):.5f}")
+
+    # Stage 2 — L-BFGS
+    lbfgs  = optax.lbfgs()
+    lb_st  = lbfgs.init(params)
+    scalar_loss = lambda p: loss_fn(p)[0]
+
+    for step in range(lbfgs_steps):
+        loss, grads = jax.value_and_grad(scalar_loss)(params)
+        upd, lb_st  = lbfgs.update(grads, lb_st, params,
+                                    value=loss, grad=grads,
+                                    value_fn=scalar_loss)
+        params = optax.apply_updates(params, upd)
+        history.lbfgs_losses.append(float(loss))
+        if verbose and step % 20 == 0:
+            print(f"  [{label}] L-BFGS {step:3d}  loss={float(loss):.6f}")
+
+    history.wall_time = time.perf_counter() - t0
+    return params, history
+
+
+def run_pinn_classifier(
+    Z_worm:      np.ndarray,   # (T, k_worm) neural PCA scores
+    y_onset:     np.ndarray,   # (T,) binary onset labels
+    t_arr:       np.ndarray,   # (T,) time in seconds
+    bpm:         float = 50.0, # piece BPM -- beat-phase Fourier feature
+    n_harmonics: int   = 12,   # sin/cos harmonics in time embedding (Step 9)
+    max_train_pts: int   = 10000, # subsample data for Adam (matches Step 9 speed)
+    lam_phys:    float = 0.05,
+    gamma:       float = 0.3,
+    omega:       float = 2.5,
+    adam_steps:  int   = 400,
+    lbfgs_steps: int   = 60,
+    seed:        int   = 0,
+    verbose:     bool  = True,
+) -> dict:
+    """Step 8c: Physics-Informed Neural Network Classifier.
+
+    Same interface as compare_ode_vs_pde() but optimises for onset
+    classification rather than Chopin-feature regression.
+
+    Architecture
+    ------------
+    Input:   [t | Zs | T_feats]  shape (1 + k_worm + 1 + 2*n_harmonics + 2,)
+             t       -- physical time in seconds (position 0; differentiated for ODE)
+             Zs      -- standardised worm PCA scores
+             T_feats -- Fourier time embeddings identical to Step 9 (phase +
+                        n_harmonics sin/cos pairs + beat sin/cos)
+    Network: PhysicsComposer(hidden=96, depth=3, out_dim=1) -- single logit
+    Output:  sigmoid(logit) in (0,1) -- onset probability
+
+    Loss
+    ----
+    Total = BCE(sigmoid(logit), y_onset) + lam_phys * ODE_residual^2
+
+    ODE constraint on the logit: logit_tt + 2*gamma*logit_t + omega^2*logit = F
+    This forces onset probabilities to oscillate with locomotion frequency,
+    enforcing refractory periods as a physics prior.
+
+    Why Fourier features help the PINN
+    ------------------------------------
+    Without them the PINN must learn sin/cos from scratch via tanh (slow).
+    Adding precomputed Fourier features (same as Step 9) gives an explicit
+    time basis; the ODE then regularises a rich representation faster.
+
+    The physics residual differentiates the logit w.r.t. t (position 0),
+    treating Zs and T_feats as frozen context at each collocation point.
+
+    Returns
+    -------
+    dict with keys: model, params, history, probs (T,), inp (T, in_dim)
+    """
+    from sklearn.preprocessing import StandardScaler as _SS
+
+    T, k = Z_worm.shape
+
+    # Fourier time embeddings (same recipe as Step 9)
+    phase_s = t_arr / t_arr[-1]
+    tf_cols = [phase_s[:, None]]
+    for k_h in range(1, n_harmonics + 1):
+        ang = 2.0 * np.pi * k_h * phase_s
+        tf_cols += [np.sin(ang)[:, None], np.cos(ang)[:, None]]
+    beat_phase = t_arr * bpm / 60.0
+    tf_cols += [np.sin(2 * np.pi * beat_phase)[:, None],
+                np.cos(2 * np.pi * beat_phase)[:, None]]
+    T_feats = np.concatenate(tf_cols, axis=1)   # (T, 1 + 2*n_harmonics + 2)
+
+    Zs = _SS().fit_transform(Z_worm)            # (T, k_worm)
+
+    # Full input: t at position 0 (for ODE deriv), then worm+Fourier context
+    in_dim = 1 + k + T_feats.shape[1]
+    inp_full = np.column_stack([t_arr, Zs, T_feats]).astype(np.float32)  # (T, in_dim)
+
+    # Subsample training data (same speed trick as Step 9, default 10k pts)
+    rng     = np.random.default_rng(seed)
+    n_train = min(max_train_pts, T)
+    idx_tr  = np.sort(rng.choice(T, n_train, replace=False))
+    inp_tr  = inp_full[idx_tr]                        # (n_train, in_dim)
+    y_tr    = y_onset.astype(np.float32)[idx_tr]      # (n_train,)
+
+    # Network: increased capacity for richer input
+    model  = PhysicsComposer(hidden=96, depth=3, out_dim=1)
+    key    = jax.random.PRNGKey(seed)
+    params = model.init(key, jnp.zeros((1, in_dim)))
+
+    # ODE collocation: z_col = [Zs | T_feats] at collocation times (frozen)
+    N_c   = min(400, T)
+    idx_c = rng.integers(0, T, N_c)
+    t_col = jnp.array(t_arr[idx_c], dtype=jnp.float32)
+    z_col = jnp.array(
+        np.hstack([Zs[idx_c], T_feats[idx_c]]), dtype=jnp.float32)  # (N_c, k+n_tf)
+
+    if verbose:
+        print("\n=== Step 8c: PINN-Classifier (BCE + ODE + Fourier) ===")
+        print(f"  in_dim={in_dim}  [t(1) | worm({k}) | Fourier({T_feats.shape[1]})]")
+        print(f"  hidden=96  depth=3  out_dim=1  (logit)")
+        print(f"  train_pts={n_train}/{T}  colloc={N_c}")
+        print(f"  Data loss : BCE(sigmoid(logit), y_onset)")
+        print(f"  Physics   : logit_tt + 2*{gamma}*logit_t + {omega:.1f}^2*logit = F")
+        print(f"  lam_phys={lam_phys}  Adam={adam_steps}  L-BFGS={lbfgs_steps}")
+        print(f"  Onset prevalence: {y_onset.mean():.4f}  "
+              f"({int(y_onset.sum())} / {T} frames)")
+
+    params, history = train_pinn_classifier(
+        model, params, inp_tr, y_tr,
+        phys_loss_fn=ode_physics_loss,
+        phys_args=(t_col, z_col, gamma, omega),
+        lam_phys=lam_phys,
+        lr=1e-3,
+        adam_steps=adam_steps,
+        lbfgs_steps=lbfgs_steps,
+        verbose=verbose,
+        label="PINN-CLS",
+    )
+
+    # Inference on full sequence
+    logits_out = model.apply(params, jnp.array(inp_full)).squeeze(-1)  # (T,)
+    probs      = np.array(jax.nn.sigmoid(logits_out))
+
+    final_loss = (history.lbfgs_losses[-1] if history.lbfgs_losses
+                  else history.adam_losses[-1])
+    if verbose:
+        print(f"\n  PINN-CLS final loss={final_loss:.6f}  "
+              f"wall_time={history.wall_time:.1f}s")
+
+    return {
+        "model":   model,
+        "params":  params,
+        "history": history,
+        "probs":   probs,
+        "inp":     inp_full,
+    }
+
+
+
 # ─── Comparison helpers ───────────────────────────────────────────────────────
 
 def compare_ode_vs_pde(

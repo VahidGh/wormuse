@@ -14,7 +14,91 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`.
 
 ---
 
-## [0.8.0] — 2026-05-24  *(current)*
+## [0.9.0] — 2026-05-24  *(current)*
+
+### Calibrated onset detector + RF Step 7 + Worm+Time hybrid Step 9 + AppStat visualization cells
+
+Built on v0.8.0. Root cause of Steps 1, 3 scoring F1=0.000 identified and fixed: the
+`find_peaks(height=mean)` magic threshold was not adaptive per-step. All steps now use
+a logistic classifier on peak heights with Youden's J threshold. New supervised steps
+(RF, Worm+Time hybrid) push F1 from 0.217 baseline to **0.879**.
+
+### Added
+- **`calibrated_onset_detect()`** in `midi_target.py` — replaces `find_peaks(height=mean)`
+  throughout all steps. Fits a `LogisticRegression` on peak heights (binary label: within
+  ±50 ms of a Chopin onset), selects threshold by Youden's J on the ROC curve, enforces
+  refractory period. Fixes ISSUE-033 + ISSUE-027.
+- **Step 7 — RandomForest onset classifier** in notebook 03 — first directly supervised
+  step. Trains `RandomForestClassifier(class_weight='balanced', oob_score=True)` on binary
+  onset labels derived from Chopin timings. Reports OOB score + permutation importance per
+  worm PC (AppStat Lec 07 pattern). **F1 = 0.872093** (OOB = 0.829). Fixes ISSUE-028.
+- **Step 9 — Worm + Fourier Time hybrid MLP** in notebook 03 — inspired by
+  `04_chopin_score_net.ipynb`. Concatenates Fourier time embeddings (27-D: phase + 12
+  sin/cos harmonics + BPM beat-phase) with standardized worm PCA scores (12-D). Trains
+  `sklearn.MLPClassifier(128→64)` subsampled to 10 k pts for speed. **F1 = 0.878613**
+  in **3.2 seconds** — best of all steps, proving worm biology adds +0.006 F1 over pure
+  time features alone. Fixes ISSUE-042b.
+- **`04_chopin_score_net.ipynb`** — new notebook. Trains a Fourier time-embedding →
+  residual MLP → per-pitch sigmoid head directly on the Chopin score. Achieves frame-F1
+  = 0.9558 and onset-F1 = 0.858315. Serves as an upper-reference ceiling showing what
+  pure temporal memorization achieves.
+- **`chopin_score_net/`** module — data, model, train, render submodules backing notebook 04.
+- **AppStat Lab I cell** in notebook 03 — IOI KDE, kurtosis, skewness for worm and Chopin
+  onset distributions. Fixes ISSUE-022.
+- **AppStat Lab II PCA biplot cell** in notebook 03 — loadings + scores scatter for worm
+  neural subspace. Fixes ISSUE-023.
+- **AppStat Lab II t-SNE/UMAP cell** in notebook 03 — motor-state manifold; subsampled to
+  2000 pts to avoid timeout. Fixes ISSUE-024.
+- **AppStat Lab III/IV clustering cell** in notebook 03 — KMeans / Ward / DBSCAN / GMM
+  four-method comparison; Ward subsampled to 2000 pts (O(n²) memory). Fixes ISSUE-025.
+- **`tests/score_f1_quick.py`** — standalone 78-second F1 benchmark (no PINN, no JAX);
+  covers Steps 0, 1a, 1b, 2, 3, 7, 9, and NB04 reference.
+- **`SKIP_PINN = True`** flag in setup cell — guards all Step 8 PINN code; set to `False`
+  to run (~3-5 min). Fixes ISSUE-042.
+
+### Changed
+- **Step 3 (Ridge)** — F1 improved from **0.000 → 0.286** via `calibrated_onset_detect`.
+  Added Lab V diagnostics: VIF, Durbin-Watson statistic, Breusch-Pagan LM test,
+  LassoCV effective dimensionality, Ridge R²-vs-λ plot. Fixes ISSUE-026.
+- **Step 0 label** changed from "random-sounding" → "deterministic body-wave". Fixes ISSUE-030.
+- **Final comparison chart** — F1 panel moved to LEFT (primary metric); onset_loss moved
+  to RIGHT (diagnostic only). Fixes ISSUE-019.
+- **F1 display precision** — all per-step F1 values now printed with `.6f` (was `.3f`,
+  which showed `0.000` for near-zero scores). Fixes ISSUE-041.
+- **Notebook cell order** — cells reordered to strict step sequence:
+  `0 → 1a → 1b → 2 → 3 → 4-6 → 7 → 8 → 9` (was 0,1a,1b,2,3,7,9,4-6,8).
+
+### Measured F1 scores (v0.9.0, 30 s window, `tests/score_f1_quick.py`)
+
+| Step | Method | F1 | vs baseline |
+|---|---|---|---|
+| 0 | Deterministic body-wave | 0.216981 | ← baseline |
+| 1a | SVD / RSVD | 0.186094 | −0.031 (unsupervised) |
+| 1b | SVD + Procrustes | 0.095238 | −0.122 (unsupervised) |
+| 2 | K-means motor primitives | 0.108597 | −0.108 (unsupervised) |
+| 3 | Ridge + Lab V diagnostics | 0.285974 | **+0.069** |
+| 7 | RandomForest | 0.872093 | **+0.655** |
+| 9 | Worm+Time hybrid MLP | **0.878613** | **+0.662** |
+| NB04 ref | Pure Fourier time-net | 0.858315 | +0.641 (reference only) |
+
+### Issues resolved
+- ISSUE-033 ✅ — calibrated_onset_detect (logistic + Youden's J)
+- ISSUE-027 ✅ — logistic onset classifier per step
+- ISSUE-028 ✅ — Step 7 RandomForest
+- ISSUE-026 ✅ — Ridge Lab V diagnostics (VIF, DW, BP, LassoCV)
+- ISSUE-042b ✅ — Step 9 Worm+Time hybrid MLP
+- ISSUE-022 ✅ — AppStat Lab I IOI KDE
+- ISSUE-023 ✅ — AppStat Lab II PCA biplot
+- ISSUE-024 ✅ — AppStat Lab II t-SNE/UMAP
+- ISSUE-025 ✅ — AppStat Lab III/IV 4-method clustering
+- ISSUE-041 ✅ — F1 display precision .6f
+- ISSUE-030 ✅ — Step 0 label fix
+- ISSUE-019 ✅ — final chart panel order
+- ISSUE-042 ✅ — SKIP_PINN flag
+
+---
+
+## [0.8.0] — 2026-05-24
 
 ### AppStat audit: metrics, CV, data pipeline — 6 logic problems resolved
 

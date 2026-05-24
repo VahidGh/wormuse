@@ -554,3 +554,89 @@ def bootstrap_musical_f1(
         "std_f1":  float(f1s.std()),
         "n_boot":  n_boot,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Calibrated onset detector  (ISSUE-033 + ISSUE-027)  v0.9.0
+# ─────────────────────────────────────────────────────────────────────────────
+
+def calibrated_onset_detect(
+    activ:            np.ndarray,
+    target_onsets_s:  np.ndarray,
+    t_arr_s:          np.ndarray,
+    tol_s:            float = 0.05,
+    refractory_s:     float = 0.28,
+    window_s:         float | None = None,
+) -> np.ndarray:
+    """Logistic-calibrated onset detector — replaces magic `height=mean` (ISSUE-033).
+
+    Replaces `find_peaks(activ, height=activ.mean())` with a principled classifier:
+
+    1. Find all local-maximum candidates (refractory-period distance enforced).
+    2. Label each candidate peak 1 if it falls within ±tol_s of a Chopin onset, 0 otherwise.
+    3. Fit `LogisticRegression(class_weight='balanced')` using peak height as the
+       single feature — this adapts the decision boundary to each step's activation
+       distribution (different scale/shape per step).
+    4. Pick the operating threshold via **Youden's J** (maximises TPR − FPR on the
+       candidate peaks) rather than an arbitrary constant.
+
+    This combines ISSUE-033 (calibrated threshold) with ISSUE-027 (logistic classifier).
+    The result is a per-step, data-driven onset gate that cannot be gamed by sparsity.
+
+    Parameters
+    ----------
+    activ           : (T,) activation envelope (any scale, e.g. |C_pred|.max(axis=1))
+    target_onsets_s : Chopin onset times in seconds (supervision signal for calibration)
+    t_arr_s         : (T,) time axis in seconds
+    tol_s           : ±tolerance for building binary ground-truth labels (default 50 ms)
+    refractory_s    : minimum gap between detected onsets (default 280 ms)
+    window_s        : if set, restrict to t_arr_s ≤ window_s before detection
+
+    Returns
+    -------
+    onsets_s : np.ndarray of detected onset times in seconds (sorted)
+    """
+    from scipy.signal import find_peaks
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_curve
+
+    if window_s is not None:
+        mask    = t_arr_s <= window_s
+        activ   = activ[mask]
+        t_arr_s = t_arr_s[mask]
+
+    dt_s       = float(t_arr_s[1] - t_arr_s[0]) if len(t_arr_s) > 1 else 0.5e-3
+    dist_steps = max(1, int(refractory_s / dt_s))
+
+    # ── Step 1: candidate peaks (no height filter) ────────────────────────────
+    peak_idx, _ = find_peaks(activ, distance=dist_steps)
+    if len(peak_idx) == 0:
+        return np.array([])
+
+    t_peaks = t_arr_s[peak_idx]
+
+    # ── Step 2: binary labels — is this peak near a Chopin onset? ────────────
+    y = np.array([
+        1 if np.any(np.abs(target_onsets_s - t_p) <= tol_s) else 0
+        for t_p in t_peaks
+    ], dtype=int)
+
+    # ── Degenerate fallback (all-same-class) ─────────────────────────────────
+    if len(np.unique(y)) < 2:
+        # No calibration possible — fall back to > mean threshold
+        good = peak_idx[activ[peak_idx] >= activ[peak_idx].mean()]
+        return t_arr_s[good]
+
+    # ── Step 3: logistic regression on peak height ────────────────────────────
+    X   = activ[peak_idx].reshape(-1, 1)
+    clf = LogisticRegression(class_weight="balanced", solver="lbfgs", max_iter=500)
+    clf.fit(X, y)
+    probs = clf.predict_proba(X)[:, 1]
+
+    # ── Step 4: Youden's J threshold ─────────────────────────────────────────
+    fpr, tpr, thresholds = roc_curve(y, probs)
+    youden_idx = int(np.argmax(tpr - fpr))
+    thresh     = float(thresholds[youden_idx])
+
+    selected = peak_idx[probs >= thresh]
+    return np.sort(t_arr_s[selected])

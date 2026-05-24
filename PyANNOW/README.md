@@ -1,8 +1,13 @@
 # PyANNOW
 
-**The NAML sub-project.** Python / JAX / Flax / Optax composer that tunes the worm's nervous system so each movement produces a coherent melody. The **ion-channel PINN is the centerpiece** (see [`../ION_CHANNELS.md`](../ION_CHANNELS.md)).
+**The NAML sub-project.** Python / JAX / Flax composer that maps *C. elegans* 302-neuron
+activity to Chopin piano music using a 9-step NAML progression. The **ion-channel PINN
+is the scientific centrepiece** (see [`../ION_CHANNELS.md`](../ION_CHANNELS.md));
+the practical best result (v0.9.0) is the **Worm+Time hybrid MLP** (Step 9, F1=0.879).
 
 `PyANNOW` ≈ **Py**thon **A**rtificial **N**eural-channel **N**etwork **O**rchestrator for **W**ormuse.
+
+*Current version: **v0.9.0***
 
 ---
 
@@ -12,17 +17,29 @@
 PyANNOW/
 ├── pyproject.toml
 ├── src/pyannow/
-│   ├── ion_channels/      The PINN: HH kinetics learned with physics-residual loss
-│   ├── neural_state/      Encoder: 302-D neural trajectory → low-dim latent
-│   ├── composer/          Latent → MIDI sequence (Flax MLP / seq model)
-│   ├── physics_loss/      Couples composer back to ion-channel dynamics
-│   └── training/          Adam → L-BFGS pipeline (course-canonical)
+│   ├── ion_channels/           HH kinetics (EGL-19, EXP-2, NCA-1/2, SHK-1, UNC-2)
+│   ├── composer/               run_forward_fast: 96-cell Boyle 4×24 worm simulation
+│   ├── step1_svd/              RSVD encoder + Procrustes alignment
+│   ├── step2_clustering/       PCA + K-means motor primitives
+│   ├── step3_regression/       Ridge regression composer
+│   ├── step4_ffnn/             JAX/Flax MLP composer
+│   ├── step5_training/         Adam mini-batch trainer (NAML Lab 10)
+│   ├── step6_lbfgs/            L-BFGS polish (NAML L22)
+│   ├── step8_pinn/             ODE + PDE PINN locomotion constraints
+│   ├── targets/midi_target.py  MIDI parser, onset metrics, calibrated_onset_detect
+│   └── training/cv.py          Time-series CV + blocked bootstrap CI
+├── chopin_score_net/           NB04 module: Fourier→residual MLP→piano roll
 ├── notebooks/
-│   ├── 01_ion_channels_pinn.ipynb       Train PINN on synthetic HH
-│   ├── 02_worm_state_encoder.ipynb      Autoencode 302-D trajectories
-│   ├── 03_composer_training.ipynb       Train the composer
-│   └── 04_end_to_end_inference.ipynb    Worm → music end-to-end
-└── tests/                 pytest unit tests
+│   ├── 02_chopin_worm_optimizer.ipynb   Worm optimizer + audio playback
+│   ├── 03_pyannow_naml_progression.ipynb  ← MAIN (9-step NAML progression)
+│   └── 04_chopin_score_net.ipynb        Fourier time-net reference ceiling
+├── docs/
+│   └── PyANNOW_NAML_progression.md      Living doc with measured F1 scores
+├── presentation/
+│   └── index.html               Reveal.js slides
+└── tests/
+    ├── score_f1_quick.py        78-second F1 benchmark (no PINN/JAX)
+    └── test_*.py                pytest unit tests
 ```
 
 ## Stack
@@ -40,45 +57,67 @@ pip install jax jaxlib flax optax \
 
 Python 3.10-3.13.
 
-## Lecture map (NAML)
+## Step progression (notebook 03, v0.9.0 measured F1)
 
-### Linear algebra & low-rank (NAML L02–L09)
+| Step | Method | NAML / AppStat ref | F1 | Notes |
+|---|---|---|---|---|
+| 0 | Deterministic body-wave | — | 0.2170 | Baseline |
+| 1a | SVD / RSVD | L06 Eckart-Young | 0.1861 | Unsupervised — no Chopin labels |
+| 1b | SVD + Procrustes | L06/L09 | 0.0952 | Unsupervised |
+| 2 | PCA + K-means | L08/L10, AppStat LabIII | 0.1086 | Unsupervised |
+| 3 | Ridge + Lab V diagnostics | L07/L11, AppStat LabV | 0.2860 | First supervised win |
+| 4-6 | MLP + Adam + L-BFGS | L14-22 | ~0.25 | JAX; 50-ep quick-test est. |
+| 7 | RandomForest | AppStat Lec07 | 0.8721 | OOB=0.829, 13 s |
+| 8 | ODE/PDE PINN | L14/L27 | SKIPPED | Set SKIP_PINN=False (~5 min) |
+| **9** | **Worm+Time hybrid MLP** | **AppStat Lec06, NB04** | **0.8786** | **3.2 s, best step** |
+
+## Lecture map (NAML + AppStat)
+
+### Linear algebra & low-rank (NAML L06–L09)
 
 | Lecture | Concept | Where |
 |---|---|---|
-| L02-05 Linear algebra | Inner products, projection, orthogonality | `neural_state/encoder.py` (whitening) |
-| L06 Eckart-Young proof | Best low-rank approximation = truncated SVD | `neural_state/svd_encoder.py` (baseline encoder) |
-| L08 PCA | PCA of 302-D neural states for visualization | `neural_state/diagnostics.py` |
-| L09 Pseudoinverse | Least-squares decoder from latent | `neural_state/decoder.py` |
+| L06 Eckart-Young | Best rank-k = truncated SVD | `step1_svd/encoder.py` |
+| L08 PCA | 302-D → k PC directions | `step2_clustering/motor_primitives.py` |
+| L09 Pseudoinverse | Least-squares decoder from latent | `step1_svd/procrustes.py` |
+
+### Regression & regularization (NAML L07/L11, AppStat LabV)
+
+| Lecture | Concept | Where |
+|---|---|---|
+| L07 Normal equations | Ridge: `(Z^T Z + λI)^{-1} Z^T C` | `step3_regression/ridge_composer.py` |
+| L11 Ridge | σ/(σ²+λ) shrinkage view | `step3_regression/ridge_composer.py` |
+| AppStat Lab V | VIF, Durbin-Watson, Breusch-Pagan, LassoCV | notebook 03 Step 3 cell |
 
 ### Optimization (NAML L18–L22)
 
 | Lecture | Concept | Where |
 |---|---|---|
-| L18 GD | Plain SGD baseline for comparison | `training/sgd.py` |
-| L19-20 SGD + Adam | `optax.adam` first-stage | `training/adam_stage.py` |
-| L21 Newton | (Reference only — Hessian too large for these models) | `docs/design_notes/newton_vs_lbfgs.md` |
-| L22 L-BFGS | `optax.lbfgs` polish stage (the PINN literature's standard recipe) | `training/lbfgs_stage.py` |
+| L19-20 Adam | Per-parameter adaptive LR | `step5_training/adam_trainer.py` |
+| L22 L-BFGS | Hessian approximation polish | `step6_lbfgs/lbfgs_polish.py` |
 
-### Autodiff & NNs (NAML L14–L17, L23–L26)
+### Autodiff & NNs (NAML L14–L17)
 
 | Lecture | Concept | Where |
 |---|---|---|
-| L14 Autodiff | `jax.grad` (reverse mode), `jax.jvp`/`vjp` for higher-order | `ion_channels/pinn.py` |
-| L15 Activations | tanh for PINNs (smoother gradients than ReLU at boundaries) | `ion_channels/pinn.py` |
-| L16-17 Neural networks | Flax `nn.Dense` + `tanh`, Xavier init | `ion_channels/pinn.py` |
-| L23 Convolution | (Optional) 1D conv composer for time-series MIDI | `composer/conv_composer.py` (Phase 6+) |
-| L24 Universal approximation | Justification for MLP width/depth choice | `docs/design_notes/architecture.md` |
-| L25 Functional analysis | Sobolev-style smoothness of `m_∞`, `τ_m` priors | `docs/math_derivations/regularity.md` |
-| L26 NN complexity | Parameter count vs training-set size budget | `docs/design_notes/capacity.md` |
+| L14 Autodiff | `jax.grad` reverse-mode | `step4_ffnn/jax_composer.py` |
+| L15 Activations | tanh / ReLU | `step4_ffnn/jax_composer.py` |
+| L16-17 FFNN | Flax `nn.Dense`, Xavier init | `step4_ffnn/jax_composer.py` |
 
-### PINNs (NAML L27 — **the core**)
+### Classification (AppStat Lec06/07)
 
 | Lecture | Concept | Where |
 |---|---|---|
-| L27 PINNs | Physics-informed loss: data + residual + boundary | `ion_channels/pinn.py` + `physics_loss/hh_residual.py` |
-| L27 (continued) | Adaptive collocation point sampling (RAR) | `training/rar.py` |
-| L27 (continued) | Inverse problem: gradient through PINN to recover params | `notebooks/04_end_to_end_inference.ipynb` |
+| AppStat Lec07 | RandomForest, OOB, permutation importance | notebook 03 Step 7 |
+| AppStat Lec06 | MLP classifier, onset probability | notebook 03 Step 9 |
+| NB04 | Fourier time embeddings → score reconstruction | `chopin_score_net/`, notebook 04 |
+
+### PINNs (NAML L27)
+
+| Lecture | Concept | Where |
+|---|---|---|
+| L27 PINNs | Data loss + physics residual (ODE/PDE) | `step8_pinn/locomotion_pinn.py` |
+| L14+L27 | `jax.grad` twice for ∂²q/∂t², ∂²q/∂x² | `step8_pinn/locomotion_pinn.py` |
 
 ## Phases
 

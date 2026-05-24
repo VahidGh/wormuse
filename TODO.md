@@ -14,6 +14,76 @@
 ## Status key
 🔴 Open · 🟡 In Progress · ✅ Resolved · ⏸ Deferred
 
+### ISSUE-043 — Add detailed Chopin score-model explainer cell
+
+| Field | Value |
+|---|---|
+| **Status** | 🟡 In Progress |
+| **Priority** | P3 |
+| **Severity** | Improvement |
+
+**Description:** The new Chopin score notebook needs a dedicated cell that explains the full model pipeline, including time features, network layers, output heads, and how this differs from the worm simulator architecture.
+
+**Affected files:**
+- `PyANNOW/notebooks/04_chopin_score_net.ipynb` — insert the new explainer/visualization cell before the architecture comparison cell
+- `TODO.md` — this entry
+
+**Fix plan:**
+1. Add a markdown cell with a compact model diagram and layer-by-layer explanation.
+2. Place it before the existing architecture comparison cell.
+3. Run the notebook cell once to verify the rendering.
+
+---
+
+## v0.9.0 — Calibrated detector + RF Step 7 + AppStat visualization (2026-05-24)
+
+**14 issues resolved** across `midi_target.py`, notebook builder, and 5 new notebook cells:
+
+| Issue | Title | Category |
+|---|---|---|
+| ISSUE-033 ✅ | Calibrated onset detector (`calibrated_onset_detect`, logistic + Youden's J) | D — Architecture |
+| ISSUE-027 ✅ | Logistic onset classifier per step (combined with ISSUE-033) | C — Stats |
+| ISSUE-028 ✅ | RandomForest Step 7 — supervised onset classifier + permutation importance | C — Stats |
+| ISSUE-026 ✅ | Ridge Lab V diagnostics (VIF, Durbin-Watson, Breusch-Pagan, LassoCV) | C — Stats |
+| ISSUE-022 ✅ | Descriptive stats + IOI KDE cell (AppStat Lab I) | E — Visualization |
+| ISSUE-023 ✅ | PCA biplot of worm neural subspace (AppStat Lab II) | E — Visualization |
+| ISSUE-024 ✅ | t-SNE / UMAP motor-state manifold (AppStat Lab II) | E — Visualization |
+| ISSUE-025 ✅ | Four clustering methods comparison — KMeans / Ward / DBSCAN / GMM (AppStat Lab III/IV) | E — Visualization |
+| ISSUE-041 ✅ | F1 display precision: `.6f` (was `.3f`, showing 0.000 for near-zero steps) | E — Visualization |
+| ISSUE-030 ✅ | Step 0 relabelled "deterministic body-wave" (was "random-sounding") | D — Architecture |
+| ISSUE-019 ✅ | Final chart: F1 panel LEFT (primary), onset_loss RIGHT (diagnostic) | E — Visualization |
+| ISSUE-039 ✅ | Q1 answered: 10-finger ≡ n_fires=5 (2×5=10 simultaneous voices) | — |
+| ISSUE-040 ✅ | Q2 answered: 8×12 is musically cleaner but not more biologically accurate | — |
+| ISSUE-042 ✅ | SKIP_PINN flag added to setup cell for fast iteration | — |
+| **ISSUE-042b ✅** | **Step 9: Worm+Time hybrid MLP (sklearn, inspired by NB04)** | **C — Stats** |
+
+**Notebook 03 v0.9.0 F1 scores (measured via `tests/score_f1_quick.py`, 2026-05-24):**
+
+| Step | Method | F1 (v0.8.0) | F1 (v0.9.0) | Delta | beats S0? |
+|---|---|---|---|---|---|
+| 0 | Deterministic body-wave | 0.186 | 0.216981 | +0.031 | ← baseline |
+| 1a | SVD / RSVD first PC | 0.000 | 0.186094 | +0.186 | ✗ |
+| 1b | SVD + Procrustes | 0.000 | 0.095238 | +0.095 | ✗ |
+| 2 | K-means motor primitives | 0.110 | 0.108597 | -0.001 | ✗ |
+| 3 | Ridge regression | 0.000 | 0.285974 | +0.286 | ✓ +0.069 |
+| **7** | **RandomForest** | **—** | **0.872093** | **new** | **✓ +0.655** |
+| **9** | **Worm+Time hybrid MLP** | **—** | **0.878613** | **new** | **✓ +0.662** |
+| NB04 ref | Pure Fourier time-net | — | 0.858315 | ref | ✓ +0.641 |
+| 4-6 | MLP+Adam+L-BFGS | 0.193 | ~0.253* | — | ✓ |
+| 8a/b | ODE/PDE PINN | — | SKIPPED | — | — |
+
+*Step 4 measured at 50 Adam epochs (quick test); full 300-epoch run in notebook expected ~0.3+.
+
+**Runtime notes (cell-level):**
+- Step 4-6 (JAX MLP + Adam + L-BFGS): ~3-6 min (JAX XLA compile on first run). Workaround: reduce Adam epochs to 150, L-BFGS steps to 40.
+- Step 8 PINN: ~3-5 min. Already guarded by `SKIP_PINN=True`.
+- t-SNE (Lab II cell): ~60s at 2000 subsampled pts (already subsampled).
+- Ward clustering (Lab III/IV cell): ~20s at 2000 subsampled pts (already fixed).
+- Step 9 (hybrid MLP): **3.2s** — fastest supervised step.
+
+**New additions (v0.9.0):** ISSUE-039 (n_fires polyphony Q), ISSUE-040 (8×12 layout Q),
+ISSUE-041 (F1 precision), ISSUE-042 (SKIP_PINN flag), ISSUE-042b (Step 9 hybrid).
+
 ---
 
 ## v0.8.0 — AppStat audit batch (2026-05-24, branch: `appstat`)
