@@ -13,15 +13,57 @@ We use **only the methods taught in the Numerical Analysis for Machine Learning 
 
 ---
 
-## The constraints (fixed biology)
+## Architecture revision: v0.7.0 — Boyle et al. 4×24 = 96-cell model
+
+### Why all NAML steps previously scored worse than Step 0
+
+Step 0 (rule-based) achieves F1=0.186.  Steps 1-6 (SVD / K-means / Ridge / MLP / Adam /
+L-BFGS) all scored *lower*.  The root cause: the synthetic `X_neural` matrix was generated
+as 302 repetitions of the 95 muscle signals, collapsing the 302-D neural space to rank 1.
+SVD found k=1 principal component — a single oscillation scalar.  Ridge, MLP, and L-BFGS
+cannot learn any meaningful mapping from a 1-D input; they end up worse than the hand-crafted
+phase rule of Step 0.
+
+### The fix (v0.7.0)
+
+| Aspect | v0.6.0 (broken) | v0.7.0 (fixed) |
+|---|---|---|
+| Muscle cells | 95 (2-quadrant: 48 dorsal + 47 ventral) | **96** (Boyle 4×24: DL/VL/DR/VR) |
+| Neural input | 302 × `repeat(95 signals)` → **rank 1** | `generate_neural_activity_302()` → **rank ≥ 4** |
+| Pitch range | C# minor scale, MIDI 25-108 (83 distinct) | Chromatic 8 octaves, MIDI 24-119 (96 distinct) |
+| Musical mapping | 95 pitches in C# minor pentatonic | 96 ≡ 8 octaves × 12 semitones = piano keyboard |
+| SVD useful k | k=1 (degenerate) | k=4-8 (meaningful locomotion subspace) |
+| Steps beat Step 0? | No (all worse) | Yes (goal: all steps > Step 0 F1) |
+
+### Boyle et al. (2012) quadrant layout
+
+```
+DL quadrant (indices 0-23)  : dorsal-left,   head→tail, MIDI 24-47  (C1-B2, bass)
+VL quadrant (indices 24-47) : ventral-left,  head→tail, MIDI 48-71  (C3-B4, tenor)
+DR quadrant (indices 48-71) : dorsal-right,  head→tail, MIDI 72-95  (C5-B6, alto)
+VR quadrant (indices 72-95) : ventral-right, head→tail, MIDI 96-119 (C7-B8, treble)
+
+Phase structure: DL/DR fire in phase (dorsal body-wave);
+                 VL/VR fire 180° out of phase (ventral antiphase).
+                 Bilateral pairs (DL/DR, VL/VR) have 0.05 rad lateral offset.
+```
+
+The body-wave travels head-to-tail within each quadrant → pitch rises bass→treble.
+4×24 = 96 muscles ≡ 8×12 = 96 piano keys (8 full chromatic octaves).
+
+Reference: Boyle et al. 2012, *PLoS Comput. Biol.* 8(11), doi:10.1371/journal.pcbi.1002890.
+
+---
+
+## The constraints (fixed biology, v0.7.0)
 
 | Constraint | Value | Musical consequence |
 |---|---|---|
-| Neurons | 302 (fully mapped connectome) | 302-D input vector |
-| Muscle groups | 8 body-wall segments | 8 independent piano "keys" |
-| Locomotion frequency | ~0.4–2 Hz | Max ~3 notes/second |
-| BWM refractory | ~280 ms | Min inter-note interval |
-| Pitch range | 8 pentatonic pitches | vs Chopin's 5 octaves |
+| Neurons | 302 (fully mapped connectome) | 302-D input vector, **k≥4 PCs** (v0.7.0) |
+| Muscle cells | **96** (4×24 Boyle quadrants) | **96 independent piano "keys"** |
+| Locomotion frequency | ~0.4–2 Hz | ~4.5 notes/second (3 fires × 1.5 Hz) |
+| BWM refractory | ~65 ms (EGL-19 τ_Ca + 50 ms) | Min inter-note interval |
+| Pitch range | **96 chromatic pitches** (8 octaves) | Full piano keyboard coverage |
 
 ---
 
@@ -183,7 +225,28 @@ The worm and the piano obey the **same PDE family** (damped wave equation). This
 
 ---
 
-## Results (measured, 2026-05-22)
+## Results (v0.7.0 targets — notebook re-execution pending)
+
+The table below shows the **v0.6.0 measured results** and the **v0.7.0 expected improvements**
+after replacing the degenerate k=1 synthetic `X_neural` with `generate_neural_activity_302()`
+(k≥4 PCs) and switching to the 96-cell Boyle model.
+
+| Step | Method | v0.6.0 onset_loss | v0.6.0 F1 | v0.7.0 target F1 |
+|---|---|---|---|---|
+| 0 | Rule-based (baseline) | 0.00218 | 0.186 | ~0.186 (unchanged) |
+| 1 | SVD + Procrustes | 0.00734 | — | **> 0.186** (k≥4 enables real alignment) |
+| 2 | K-means | 0.00145 (1 note) | ~0 | **> 0.186** (clusters now span ≥4 PCs) |
+| 3 | Ridge | 0.00761 | — | **> 0.186** (k≥4 → well-conditioned system) |
+| 4-6 | MLP + Adam + L-BFGS | 0.00504 | — | **> 0.186** (non-linear 4-D→96 mapping) |
+| 8a | ODE PINN | 0.051 | — | **> 0.186** (physics-constrained) |
+| 8b | PDE PINN | 0.079 | — | **> 0.186** (spatial wave physics) |
+
+*Re-execute `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` after updating cell 4 to use*
+*`generate_neural_activity_302()` — see ISSUE-018 for the affected-files list.*
+
+---
+
+## Results (measured, 2026-05-22, v0.6.0)
 
 Notebook: `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` (2 MB, all outputs baked).  
 Simulation: 10 s window, 302-neuron synthetic activity, Chopin first 10 s.

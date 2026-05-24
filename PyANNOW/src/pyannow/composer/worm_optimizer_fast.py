@@ -21,7 +21,8 @@ from ..ion_channels.celegans_hh import (
 )
 from ..targets.midi_target import onset_loss, biological_ceiling
 from .worm_optimizer import (CMD_TO_MN, MN_TO_MUSCLE, MUSCLE_PITCHES,
-                              MUSCLE_PITCHES_95, generate_muscle_pitches)
+                              MUSCLE_PITCHES_95, MUSCLE_PITCHES_96,
+                              generate_muscle_pitches, generate_neural_activity_302)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ def run_forward_fast(
     drive_freq_hz: float = 1.5,
     drive_amplitude: float = 12.0,
     random_seed: int | None = 42,
-    n_muscles: int = 95,                # 95 = full BWM; 8 = simplified legacy
+    n_muscles: int = 96,                # 96 = Boyle 4×24 (v0.7.0 default); 95 = legacy; 8 = simplified
     n_fires: int = 3,                   # muscles to fire per cycle (rate = n_fires × drive_freq_hz)
 ) -> dict:
     """Simulate the C. elegans locomotion circuit (numpy-vectorised).
@@ -50,7 +51,11 @@ def run_forward_fast(
 
     Parameters
     ----------
-    n_muscles : BWM cells to simulate (95 = full model, 8 = simplified legacy)
+    n_muscles : BWM cells to simulate.
+                96 = Boyle et al. (2012) 4×24 quadrant model (v0.7.0 default).
+                4 quadrants × 24 cells = 96 muscles ≡ 8 octaves × 12 semitones.
+                95 = legacy 2-quadrant model (pass explicitly for backward compat).
+                8  = simplified 8-cell model (pass explicitly).
     n_fires   : muscles fired per locomotion cycle.  Total note rate =
                 n_fires × drive_freq_hz.  Default 3 → 3 × 1.5 Hz = 4.5 notes/s
                 ≈ Chopin's 4.40 notes/s.
@@ -87,17 +92,36 @@ def run_forward_fast(
     g_leak    = p.g_leak;  Cm    = p.C_m
     ca_thresh = p.ca_thresh
 
-    # ── Segmental travelling-wave drive — dorsal/ventral antiphase ───────
-    # Biological reality: dorsal and ventral BWM cells fire in antiphase.
-    # First half of muscles = dorsal (phase 0→2π); second half = ventral
-    # (phase π→3π, i.e. offset by π from dorsal).  This reproduces the
-    # sinusoidal body-wave with correct D/V symmetry.
-    n_dorsal  = n_muscles // 2 + n_muscles % 2   # ceil(n/2)
-    n_ventral = n_muscles // 2                    # floor(n/2)
-    muscle_phases = np.concatenate([
-        np.linspace(0.0,        2.0 * np.pi, n_dorsal,  endpoint=False),
-        np.linspace(np.pi, 3.0 * np.pi, n_ventral, endpoint=False),
-    ])
+    # ── Segmental travelling-wave drive — 4-quadrant Boyle et al. (2012) ──
+    # Biological reality (Boyle et al. 2012, Fig. 1):
+    #   DL/DR (dorsal)  fire in phase with each other;
+    #   VL/VR (ventral) fire 180° out of phase with dorsal.
+    #   Bilateral left/right pairs have a small (~0.05 rad) phase offset
+    #   reflecting the slight delay in bilateral contraction coordination.
+    #
+    # For the Boyle 4×24 model (n_muscles=96):
+    #   DL (indices 0-23)  : phase 0      → 2π      (forward wave, head→tail)
+    #   VL (indices 24-47) : phase π      → 3π      (antiphase to DL)
+    #   DR (indices 48-71) : phase 0.05   → 2π+0.05 (dorsal-right, slight offset)
+    #   VR (indices 72-95) : phase π+0.05 → 3π+0.05 (antiphase to DR)
+    #
+    # For legacy n_muscles=95 (2-quadrant): fall back to original dorsal/ventral split.
+    if n_muscles == 96:
+        n_dq = 24  # cells per quadrant
+        muscle_phases = np.concatenate([
+            np.linspace(0.0,          2.0 * np.pi,          n_dq, endpoint=False),  # DL
+            np.linspace(np.pi,        3.0 * np.pi,          n_dq, endpoint=False),  # VL
+            np.linspace(0.05,         2.0 * np.pi + 0.05,   n_dq, endpoint=False),  # DR
+            np.linspace(np.pi + 0.05, 3.0 * np.pi + 0.05,  n_dq, endpoint=False),  # VR
+        ])
+    else:
+        # Legacy 2-quadrant split (n_muscles=95 or any non-96 value)
+        n_dorsal  = n_muscles // 2 + n_muscles % 2   # ceil(n/2)
+        n_ventral = n_muscles // 2                    # floor(n/2)
+        muscle_phases = np.concatenate([
+            np.linspace(0.0,   2.0 * np.pi, n_dorsal,  endpoint=False),
+            np.linspace(np.pi, 3.0 * np.pi, n_ventral, endpoint=False),
+        ])
 
     for k in range(N):
         t = t_arr[k]

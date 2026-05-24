@@ -572,6 +572,69 @@ stale `drive_freq_hz=0.4` and `% 8` references, and Step 8 PINN was under-traine
 
 ---
 
+## ISSUE-018 — Boyle et al. 4×24 = 96-cell muscle architecture + 302-neuron connectome (v0.7.0)
+
+| Field | Value |
+|---|---|
+| **Status** | 🟡 In Progress |
+| **Priority** | P0 |
+| **Severity** | Architecture — root cause of all NAML steps scoring worse than Step 0 |
+
+**Description:** Two related architectural problems prevent any NAML step from beating the Step 0 rule-based baseline (onset_loss=0.00218, F1=0.186):
+
+1. **95-cell model does not match Boyle et al. (2012)**: Boyle et al. describe 24 muscle groups per quadrant (DL, VL, DR, VR) = 96 total, arranged in a strict 4×24 layout. This also maps cleanly to 96 piano keys (8 octaves × 12 semitones). The current 2-quadrant (48+47) layout loses the dorsal/ventral lateral symmetry of the real connectome.
+
+2. **Synthetic 302-neuron data collapses to k=1 PC**: `X_neural` is generated as `302 repetitions of 96 muscle signals + noise`, which has rank 1. When SVD encodes this, k=1 — a single scalar oscillation. Ridge, MLP, and L-BFGS cannot learn any structure from a rank-1 input, so they perform *worse* than Step 0's hand-crafted phase rule. The biological connectome has ~10-20 independent directions (forward/backward command interneurons, A/B/D motor neuron classes, interneurons, sensory neurons). With properly structured 302-D input, k=4-8 PCs are available, enabling all NAML steps to outperform Step 0.
+
+**Required changes:**
+
+A. **96-cell quadrant model** (Boyle et al. 2012):
+   - 4 quadrants: DL (24 cells), VL (24 cells), DR (24 cells), VR (24 cells) = 96 total
+   - Pitch: chromatic 8 octaves — DL→C1-B2 (MIDI 24-47), VL→C3-B4 (48-71), DR→C5-B6 (72-95), VR→C7-B8 (96-119)
+   - 4-quadrant muscle phases: DL phase 0→2π, VL phase π→3π, DR phase 0.05→2π+0.05, VR phase π+0.05→3π+0.05
+   - `generate_muscle_pitches(96)` → 96 chromatic pitches, quadrant-structured
+   - `MUSCLE_PITCHES_96` constant; `BOYLE_QUADRANT_LAYOUT` documentation constant
+
+B. **Proper 302-neuron synthetic data** (`generate_neural_activity_302()`):
+   - `X ∈ ℝ^{302 × T}` with k≥4 independent PCs
+   - Structure: cmd interneurons (12, 4-phase), A-MNs (21, backward wave), B-MNs (18, forward wave), D-MNs (19, antiphase), other interneurons (30, multi-freq), sensory (100, sparse bursts), body (102, slow oscillations)
+   - Purpose: replaces the `np.vstack([V_mus.T] * n)[:302]` hack in notebooks that collapses to k=1
+   - Goal: SVD now finds k=4-8 meaningful PCs → Steps 1-6 can learn a real mapping
+
+C. **`worm_optimizer_fast.py`** default `n_muscles=96`, 4-quadrant phases
+
+D. **All open issues**: ISSUE-003 (piano audio), ISSUE-004 (full piece render), ISSUE-009 (AppStat dataset) now build on the 96-cell architecture
+
+**Root cause summary:** "Steps worse than Step 0" is 100% caused by the degenerate k=1 neural input. The 96-cell model adds biological correctness. Both must change together.
+
+**Affected files:**
+- `PyANNOW/src/pyannow/composer/worm_optimizer.py` — add `BOYLE_QUADRANT_LAYOUT`, `generate_muscle_pitches(96)`, `MUSCLE_PITCHES_96`, `generate_neural_activity_302()` ✅
+- `PyANNOW/src/pyannow/composer/worm_optimizer_fast.py` — default n_muscles=96, 4-quadrant phases ✅
+- `PyANNOW/notebooks/03_pyannow_naml_progression.ipynb` — replace synthetic X_neural with `generate_neural_activity_302()` (cell 4); update Data preparation cell; re-execute all cells
+- `PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb` — update n_muscles default references; re-execute
+- `PyANNOW/notebooks/_build_naml_progression_nb.py` — update builder to use `generate_neural_activity_302()`
+- `PyANNOW/tests/test_forward_model.py` — add result_96 fixture + 96-cell tests ✅
+- `PyANNOW/tests/test_biophysical_constraints.py` — update D/V antiphase tests for 4-quadrant layout
+- `PyANNOW/docs/PyANNOW_NAML_progression.md` — update constraints table (8→96 muscles, k=1→k≥4) ✅
+- `PyANNOW/presentation/index.html` — update architecture slide (95-cell → 96-cell, Boyle reference)
+- `docs/EQUIVALENCE_TABLE.md` — add 96-key piano ↔ 4×24 worm correspondence row
+- `CHANGELOG.md` — v0.7.0 entry ✅
+- `VERSION` — 0.7.0 ✅
+- `PyANNOW/pyproject.toml` — version 0.7.0 ✅
+- `TODO.md` — this entry
+
+**Fix plan:**
+1. ✅ Add `generate_muscle_pitches(96)` with 4-quadrant chromatic mapping to `worm_optimizer.py`
+2. ✅ Add `generate_neural_activity_302()` to `worm_optimizer.py`
+3. ✅ Update `worm_optimizer_fast.py`: default n_muscles=96, 4-quadrant phases
+4. ✅ Update tests: `test_forward_model.py` for 96-cell model
+5. ✅ Update `PyANNOW_NAML_progression.md` — revised constraints, v0.7.0 architecture section
+6. 🔴 Update notebook 03 cell 4 (synthetic X_neural → `generate_neural_activity_302()`)
+7. 🔴 Re-execute both notebooks and document new Step-by-step F1 scores
+8. 🔴 Update presentation slide (architecture diagram)
+
+---
+
 ## Priority order (open issues)
 
 | Priority | Issue | Effort | Impact |

@@ -93,35 +93,69 @@ MN_TO_MUSCLE = np.array([
 # Force amplitude is rescaled to MIDI velocity (0-127).
 # ─────────────────────────────────────────────────────────────────────────────
 
-def generate_muscle_pitches(n_muscles: int = 95,
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Boyle et al. (2012) 4×24 muscle quadrant layout
+# ─────────────────────────────────────────────────────────────────────────────
+
+BOYLE_QUADRANT_LAYOUT = {
+    "reference": "Boyle et al. 2012, 'Gait Modulation in C. elegans: An Integrated Neuromechanical Model'",
+    "n_quadrants": 4,
+    "n_per_quadrant": 24,
+    "n_total": 96,
+    "quadrants": {
+        "DL": {"label": "Dorsal-Left",   "indices": (0,  24), "midi_range": (24,  47), "octaves": "C1-B2"},
+        "VL": {"label": "Ventral-Left",  "indices": (24, 48), "midi_range": (48,  71), "octaves": "C3-B4"},
+        "DR": {"label": "Dorsal-Right",  "indices": (48, 72), "midi_range": (72,  95), "octaves": "C5-B6"},
+        "VR": {"label": "Ventral-Right", "indices": (72, 96), "midi_range": (96, 119), "octaves": "C7-B8"},
+    },
+    "musical_mapping": (
+        "4 quadrants × 24 muscles = 96 muscle cells ≡ 8 octaves × 12 semitones = 96 piano keys. "
+        "Head-to-tail wave propagation → pitch rises bass→treble within each quadrant. "
+        "DL/DR (dorsal) fire in phase; VL/VR (ventral) fire 180° out of phase (antiphase body wave). "
+        "This maps directly to piano keyboard structure: each quadrant occupies 2 chromatic octaves."
+    ),
+}
+
+
+def generate_muscle_pitches(n_muscles: int = 96,
                              key: str = "C#m",
                              midi_lo: int = 25,
                              midi_hi: int = 108) -> np.ndarray:
     """Return an array of `n_muscles` MIDI pitches distributed across the piano.
 
-    Biological layout of the 95 C. elegans BWM cells:
-      ~24 dorsal-left   (head → tail)  → lowest pitches  (bass register)
-      ~23 dorsal-right  (head → tail)  → lower-mid
-      ~24 ventral-left  (head → tail)  → upper-mid
-      ~24 ventral-right (head → tail)  → highest pitches (treble register)
+    Biological layout per Boyle et al. (2012):
+      n_muscles=96 → 4 quadrants × 24 cells, chromatic 8-octave mapping:
+        DL (0-23)  : C1-B2  (MIDI 24-47)  — bass register
+        VL (24-47) : C3-B4  (MIDI 48-71)  — lower-mid
+        DR (48-71) : C5-B6  (MIDI 72-95)  — upper-mid
+        VR (72-95) : C7-B8  (MIDI 96-119) — treble register
+      96 cells = 8 octaves × 12 semitones — maps directly to the piano keyboard.
 
-    The wave of contraction propagates head-to-tail, so as it passes through
-    each quadrant the pitch rises from bass to treble — a natural physical
-    interpretation.
-
-    With n_muscles=8  → the original C# minor pentatonic (simplified model)
-    With n_muscles=95 → the full 95-cell map across MIDI 25-108
+      n_muscles=95 → original 2-quadrant model, C#m scale across MIDI 25-108
+      n_muscles=8  → original 8-cell C# minor pentatonic (backward compat)
 
     Parameters
     ----------
-    n_muscles : number of muscle groups (8 for simplified; 95 for full model)
-    key       : "C#m" = C# natural minor scale; "chrom" = chromatic
-    midi_lo   : lowest MIDI pitch to use (default 25 = C#1, lowest Nocturne bass note)
-    midi_hi   : highest MIDI pitch to use (default 108 = C7, upper piano range)
+    n_muscles : number of muscle groups (8 / 95 for legacy; 96 for Boyle architecture)
+    key       : "C#m" = C# natural minor scale; "chrom" = chromatic; ignored for n=96
+    midi_lo   : lowest MIDI pitch (ignored for n=96, which uses quadrant-based ranges)
+    midi_hi   : highest MIDI pitch (ignored for n=96)
     """
     if n_muscles == 8 and key == "C#m":
         # Original simplified mapping — preserved for backward compatibility
         return np.array([61, 64, 66, 68, 71, 73, 76, 78])
+
+    if n_muscles == 96:
+        # Boyle et al. 4×24 quadrant layout — chromatic 8-octave mapping
+        # Each quadrant gets 2 chromatic octaves = 24 consecutive semitones.
+        # DL→C1-B2 (24-47), VL→C3-B4 (48-71), DR→C5-B6 (72-95), VR→C7-B8 (96-119)
+        return np.concatenate([
+            np.arange(24, 48),   # DL: C1-B2
+            np.arange(48, 72),   # VL: C3-B4
+            np.arange(72, 96),   # DR: C5-B6
+            np.arange(96, 120),  # VR: C7-B8
+        ]).astype(int)
 
     if key == "C#m":
         # C# natural minor scale intervals from C# (semitones from root):
@@ -150,7 +184,125 @@ def generate_muscle_pitches(n_muscles: int = 95,
 
 # Default pitch arrays
 MUSCLE_PITCHES    = generate_muscle_pitches(n_muscles=8)   # 8-cell simplified (backward compat)
-MUSCLE_PITCHES_95 = generate_muscle_pitches(n_muscles=95)  # 95-cell full BWM
+MUSCLE_PITCHES_95 = generate_muscle_pitches(n_muscles=95)  # 95-cell full BWM (2-quadrant)
+MUSCLE_PITCHES_96 = generate_muscle_pitches(n_muscles=96)  # 96-cell Boyle 4×24 (v0.7.0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 302-neuron biologically structured synthetic activity  (v0.7.0)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_neural_activity_302(
+    n_steps: int,
+    dt_ms: float = 0.5,
+    drive_freq_hz: float = 1.5,
+    seed: int = 42,
+) -> np.ndarray:
+    """Generate biologically-structured synthetic 302-neuron activity matrix.
+
+    Returns X ∈ ℝ^{302 × n_steps} with k ≥ 4 independent principal components.
+
+    This replaces the degenerate ``np.vstack([V_mus.T] * n)[:302]`` pattern used in
+    earlier notebooks, which collapsed the 302-D space to rank 1 and prevented any
+    NAML learning step from outperforming the Step 0 rule-based baseline.
+
+    Neuron group structure (Boyle et al. 2012, White et al. 1986):
+
+      | Group               | Count | Signal model                                |
+      |---------------------|-------|---------------------------------------------|
+      | Command interneurons| 12    | 4-phase rhythmic, strong amplitude          |
+      | A-class MNs (VA, DA)| 21    | backward traveling wave                     |
+      | B-class MNs (VB, DB)| 18    | forward traveling wave                      |
+      | D-class MNs (VD, DD)| 19    | inhibitory antiphase                        |
+      | Other interneurons  | 30    | multi-frequency oscillations (0.5f, f, 2f) |
+      | Sensory neurons     | 100   | sparse exponential-decay bursts             |
+      | Body / remaining    | 102   | slow oscillations + Gaussian noise          |
+      | Total               | 302   |                                             |
+
+    With k ≥ 4 independent PCs the NAML pipeline can:
+    - Step 1 (SVD+Procrustes): align 4-D worm subspace to Chopin feature space
+    - Step 2 (K-means): find 4-8 meaningful motor-state clusters
+    - Steps 3-6 (Ridge/MLP/Adam/L-BFGS): learn a non-trivial mapping
+
+    Parameters
+    ----------
+    n_steps       : number of simulation time steps (= duration_s * 1000 / dt_ms)
+    dt_ms         : timestep in milliseconds (must match the forward model dt_ms)
+    drive_freq_hz : locomotion drive frequency in Hz (default 1.5)
+    seed          : random seed for reproducibility
+
+    Returns
+    -------
+    X : np.ndarray of shape (302, n_steps), dtype float32
+    """
+    rng = np.random.default_rng(seed)
+    omega = 2.0 * np.pi * drive_freq_hz * 1e-3  # rad/ms
+    t = np.arange(n_steps, dtype=float) * dt_ms
+
+    # ── Group 1: Command interneurons (12) — 4-phase rhythmic ──────────────
+    # AVA, AVD (backward), AVB, PVC (forward), left/right copies → 4 × 3 = 12
+    cmd_phases = [0.0, np.pi / 2, np.pi, 3.0 * np.pi / 2]
+    X_cmd = np.zeros((12, n_steps))
+    for i, ph in enumerate(cmd_phases):
+        X_cmd[3 * i : 3 * i + 3] = (
+            10.0 * np.sin(omega * t + ph)
+            + rng.standard_normal((3, n_steps)) * 1.0
+        )
+
+    # ── Group 2: A-class motor neurons (21) — backward traveling wave ──────
+    # VA1-VA12 (12) + DA1-DA9 (9) = 21; phase progresses head→tail
+    X_mn_a = np.zeros((21, n_steps))
+    for i in range(21):
+        ph = np.pi + i * (2.0 * np.pi / 21.0)  # backward = antiphase to forward
+        X_mn_a[i] = 7.0 * np.sin(omega * t + ph) + rng.standard_normal(n_steps) * 1.5
+
+    # ── Group 3: B-class motor neurons (18) — forward traveling wave ───────
+    # VB1-VB11 (11) + DB1-DB7 (7) = 18; phase progresses head→tail
+    X_mn_b = np.zeros((18, n_steps))
+    for i in range(18):
+        ph = i * (2.0 * np.pi / 18.0)           # forward wave
+        X_mn_b[i] = 7.0 * np.sin(omega * t + ph) + rng.standard_normal(n_steps) * 1.5
+
+    # ── Group 4: D-class motor neurons (19) — inhibitory antiphase ─────────
+    # VD1-VD13 (13) + DD1-DD6 (6) = 19; antiphase to B-class (GABA inhibition)
+    X_mn_d = np.zeros((19, n_steps))
+    for i in range(19):
+        ph = np.pi + i * (2.0 * np.pi / 19.0)
+        X_mn_d[i] = 5.0 * np.sin(omega * t + ph) + rng.standard_normal(n_steps) * 1.0
+
+    # ── Group 5: Other interneurons (30) — multi-frequency ─────────────────
+    # RIB, RIM, SMB, SMD, etc.: mixture of locomotion freq and harmonics
+    X_intr = np.zeros((30, n_steps))
+    freqs = [drive_freq_hz * 0.5, drive_freq_hz, drive_freq_hz * 2.0]
+    for i in range(30):
+        om_i = 2.0 * np.pi * freqs[i % 3] * 1e-3
+        ph = rng.uniform(0.0, 2.0 * np.pi)
+        X_intr[i] = 4.0 * np.sin(om_i * t + ph) + rng.standard_normal(n_steps) * 2.0
+
+    # ── Group 6: Sensory neurons (100) — sparse exponential-decay bursts ───
+    # Mechanosensory, chemosensory, proprioceptive: fire in sparse bursts
+    X_sens = rng.standard_normal((100, n_steps)) * 0.5
+    tau_decay = 20.0 / dt_ms   # 20 ms decay
+    for i in range(100):
+        n_bursts = rng.integers(5, 15)
+        burst_times = rng.integers(0, n_steps, size=n_bursts)
+        for bt in burst_times:
+            dur = min(int(tau_decay * 3), n_steps - bt)
+            if dur <= 0:
+                continue
+            X_sens[i, bt : bt + dur] += 3.0 * np.exp(-np.arange(dur) / tau_decay)
+
+    # ── Group 7: Body / remaining (102) — slow oscillations + noise ────────
+    X_body = rng.standard_normal((102, n_steps)) * 0.3
+    om_slow = omega * 0.3   # slow proprioceptive oscillation
+    for i in range(102):
+        ph = rng.uniform(0.0, 2.0 * np.pi)
+        X_body[i] += 1.5 * np.sin(om_slow * t + ph)
+
+    # ── Assemble and verify ─────────────────────────────────────────────────
+    X = np.vstack([X_cmd, X_mn_a, X_mn_b, X_mn_d, X_intr, X_sens, X_body])
+    assert X.shape == (302, n_steps), f"Shape mismatch: {X.shape}"
+    return X.astype(np.float32)
 
 
 def force_to_velocity(force_normalised: float,
