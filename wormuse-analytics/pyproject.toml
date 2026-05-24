@@ -28,6 +28,10 @@ dependencies = [
     "tqdm>=4.65",
     "jupyter>=1.0",
     "ipywidgets>=8.0",
+    # PyANNOW is consumed as a library: F1/IOI metrics, forward model, step modules.
+    # Install via:  pip install -e ../PyANNOW
+    # (left out of the pinned list because pip can't fetch sibling-repo local installs
+    #  automatically; the README has instructions.)
 ]
 
 [project.optional-dependencies]
