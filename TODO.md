@@ -4,10 +4,48 @@
 > Issues are added in the same turn they are discovered. Status is updated when resolved.
 > See `CLAUDE.md` for the entry format.
 
+> **AppStat branch note:** ISSUE-018..038 are AppStat audit issues tracked in detail at
+> `wormuse-analytics/docs/proposed_pyannow_issues/ISSUE-*.md` (branch: `appstat`).
+> The grouping index is at `wormuse-analytics/docs/proposed_pyannow_issues/ISSUE-GROUPS.md`.
+> Only version-level summaries appear here.
+
 ---
 
 ## Status key
 🔴 Open · 🟡 In Progress · ✅ Resolved · ⏸ Deferred
+
+---
+
+## v0.8.0 — AppStat audit batch (2026-05-24, branch: `appstat`)
+
+**11 issues resolved** across 4 new/modified source files + 3 test files (39 new tests):
+
+| Issue | Title | Category |
+|---|---|---|
+| ISSUE-020 ✅ | Multi-tol F1 curve (`precision_recall_at_tolerances`) | A — Metrics |
+| ISSUE-021 ✅ | Bootstrap CIs for F1 (`bootstrap_musical_f1`) | A — Metrics |
+| ISSUE-032 ✅ | Procrustes standardization (`procrustes_align(standardize=True)`) | B — Pipeline |
+| ISSUE-034 ✅ | Auto-k Chopin PCA (`build_chopin_features(k_chopin=None)`) | B — Pipeline |
+| ISSUE-035 ✅ | Pitch-aware F1 (`pitch_aware_f1`) | A — Metrics |
+| ISSUE-036 ✅ | PINN identity note added to `locomotion_pinn.py` | C — Architecture |
+| ISSUE-037 ✅ | Biological pitch ceiling (`biological_pitch_ceiling`) | A — Metrics |
+| ISSUE-038 ✅ | Time-series CV (`time_series_cv`, `blocked_bootstrap_ci`) | D — Stats |
+| ISSUE-029 ✅ | (v0.7.0) 302-neuron rank ≥ 4 | D — Architecture |
+| ISSUE-031 ✅ | (v0.7.0) 96-cell Boyle pitch coverage | D — Architecture |
+| ISSUE-018 ✅ | (v0.7.0) Builder/notebook desync | D — Architecture |
+
+**Notebook 03 executed (v0.8.0 measured F1 scores):**
+
+| Step | Method | F1 | Notes |
+|---|---|---|---|
+| 0 | Rule-based baseline | 0.186 | IOI=0.682 |
+| 1 | SVD + Procrustes | 0.000 | residual 89.8→4.06 ✅; ISSUE-033 blocks further gain |
+| 2 | K-means | 0.110 | 4-cluster motor primitives |
+| 3 | Ridge | 0.000 | k_chopin mismatch pending |
+| **4-6** | **MLP+Adam+L-BFGS** | **0.193** | **First step to beat baseline** |
+
+**Still open (10 issues):** ISSUE-019, 022, 023, 024, 025, 026, 027, 028, 030, 033.
+See `wormuse-analytics/docs/proposed_pyannow_issues/ISSUE-GROUPS.md` for full breakdown.
 
 ---
 

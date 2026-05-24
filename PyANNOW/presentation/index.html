@@ -733,22 +733,24 @@
       </div>
     </div>
     <div>
-      <pre><code class="language-python"># Step 1: RSVD + Procrustes (from Lab01 + L06/L09)
+      <pre><code class="language-python"># Step 1: RSVD + Procrustes (from Lab01 + L06/L09) — v0.8.0
 from pyannow.step1_svd.encoder import rsvd, neural_scores
-from pyannow.step1_svd.procrustes import procrustes_align
+from pyannow.step1_svd.procrustes import procrustes_align, build_chopin_features
 
 # Compress 302-D neural trajectory to k=4
 U_k, s_k, Vt_k = rsvd(X_neural, k=4)
 Z_worm = neural_scores(X_neural, U_k)  # (T, 4)
 
-# Build Chopin target features
-C_chopin = build_chopin_features(events, duration_s=15)
+# Auto-select k_chopin at 90% variance (ISSUE-034 fix)
+C_chopin = build_chopin_features(events, duration_s=15, k_chopin=None)
 
-# Find orthogonal rotation to Chopin space (L06/L09)
-result = procrustes_align(Z_worm, C_chopin)
-R = result['R']          # (4, k_chopin)
-Z_aligned = Z_worm @ R  # worm in Chopin's space
-print(f"Alignment residual: {result['residual']:.3f}")</code></pre>
+# Standardize W_k before SVD (ISSUE-032 fix: PC1/PC4 ratio was 6.9x)
+result = procrustes_align(Z_worm, C_chopin, standardize=True)
+R = result['R']                  # (4, k_chopin)
+Z_aligned = result['W_k_scaled'] @ R  # worm in Chopin's space
+# v0.8.0: residual 89.807 -> 4.059
+print(f"Alignment residual: {result['residual']:.3f}")
+print(f"Scale factors: {result['scale']}")</code></pre>
     </div>
   </div>
 </section>
@@ -1002,34 +1004,31 @@ print(f"PDE loss: {results['final_loss_pde']:.5f}")
 </section>
 
 <section data-background-color="#030d1a">
-  <span class="section-label">Results — The progression</span>
-  <h3>Each NAML step <span class="hl">improves</span> the music</h3>
-  <div style="text-align:left;font-size:.78em">
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <strong style="color:var(--accent)">Step</strong><strong>Method (NAML)</strong><strong style="text-align:right;color:var(--accent3)">Loss</strong>
+  <span class="section-label">Results — The progression (v0.8.0 measured)</span>
+  <h3>Each NAML step works toward beating the baseline</h3>
+  <div style="text-align:left;font-size:.75em">
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <strong style="color:var(--accent)">Step</strong><strong>Method (NAML)</strong><strong style="text-align:right;color:var(--accent3)">F1</strong><strong style="color:rgba(255,255,255,.5)">Note</strong>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>0</span><span>Rule-based (no learning)</span><span style="text-align:right"><span class="loss-badge">0.010</span></span>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>0</span><span>Rule-based baseline</span><span style="text-align:right"><span class="loss-badge">0.186</span></span><span style="opacity:.7">IOI=0.682, body-wave</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>1</span><span>SVD + Procrustes (L06/L09)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">~0.007</span></span>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>1</span><span>SVD + Procrustes (L06/L09)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent2);color:var(--accent2)">0.000</span></span><span style="opacity:.7">residual 89.8→4.06 ✅; ISSUE-033 open</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>1-3</span><span>+ K-means + Ridge (L08-11)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">~0.005</span></span>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>2</span><span>K-means (L08/L10)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent3);color:var(--accent3)">0.110</span></span><span style="opacity:.7">4-cluster motor primitives</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>4-5</span><span>+ MLP + Adam (L14-20)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green)">~0.003</span></span>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span>3</span><span>Ridge (L07/L11)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--accent2);color:var(--accent2)">0.000</span></span><span style="opacity:.7">k_chopin investigation pending</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span>6</span><span>+ L-BFGS (L21-22)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green)">~0.0024</span></span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;align-items:center;padding:8px 0">
-      <span>8</span><span>+ PINN (L27)</span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green)">~0.002</span></span>
+    <div style="display:grid;grid-template-columns:.4fr 2fr 1fr 1.4fr;gap:8px;align-items:center;padding:8px 0">
+      <span><strong style="color:var(--green)">4-6</strong></span><span><strong style="color:var(--green)">MLP + Adam + L-BFGS (L14-22)</strong></span><span style="text-align:right"><span class="loss-badge" style="border-color:var(--green);color:var(--green);font-weight:700">0.193</span></span><span style="color:var(--green);font-size:.85em">&#9650; FIRST step to beat baseline</span>
     </div>
   </div>
-  <div class="card" style="margin-top:14px;font-size:.78em">
-    <h4>What loss means</h4>
-    <p>Loss = soft Hamming distance between worm's note-onset density and Chopin's. Loss=0 would mean perfect alignment (physically impossible). Loss=1 = silence.</p>
+  <div class="card" style="margin-top:10px;font-size:.73em">
+    <h4>What F1 means here</h4>
+    <p><strong>pitch_aware_f1</strong> — onset matched in BOTH timing (±50 ms) AND pitch class. Greedy one-to-one matching. Step 0 F1=0.186 is the target floor; v0.8.0 Steps 4-6 exceed it for the first time.</p>
   </div>
 </section>
 
@@ -1057,9 +1056,9 @@ print(f"PDE loss: {results['final_loss_pde']:.5f}")
         <td style="padding:8px;color:var(--accent2)">Worm plays a regular grid; Chopin is syncopated</td>
       </tr>
       <tr style="border-top:1px solid var(--border)">
-        <td style="padding:8px"><strong>8 pitches</strong></td>
-        <td style="padding:8px">8 muscle groups → 8 D♭ pentatonic pitches</td>
-        <td style="padding:8px;color:var(--accent2)">Chopin spans 5 octaves, 88 notes</td>
+        <td style="padding:8px"><strong>96 pitches</strong> ✅</td>
+        <td style="padding:8px">Boyle 4×24 model → MIDI 24-119, all 12 pitch classes (v0.7.0+)</td>
+        <td style="padding:8px;color:var(--green)">100% pitch coverage — every Chopin note is reachable</td>
       </tr>
     </tbody>
   </table>
@@ -1102,9 +1101,9 @@ display(Audio(audio_chopin, rate=fs))</code></pre>
     </div>
   </div>
   <p style="font-size:.75em;opacity:.7;margin-top:12px">
-    <strong>Note:</strong> The worm uses only 8 fixed pitches from the D♭ pentatonic scale.
-    Chopin uses the full piano range. The <em>timbre</em> of each note is identical (same physics).
-    The <em>rhythm</em> is what differs: regular body wave vs Chopin's expressive phrasing.
+    <strong>Note (v0.8.0):</strong> The worm uses 96 pitches covering all 12 pitch classes (Boyle 4×24 model, MIDI 24-119).
+    Chopin uses the full piano range — both are now fully compatible in pitch space.
+    The key remaining bottleneck is <em>rhythmic regularity</em>: regular body wave vs Chopin's expressive phrasing.
   </p>
 </section>
 
