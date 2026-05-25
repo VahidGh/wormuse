@@ -1,8 +1,76 @@
-src/
-PyANNOW/notebooks/.DS_Store
-PyANNOW/notebooks/step_outputs
-shared/examples
-*_cache.npz
-PyANNOW/worm_dance/data/worm_forward_v2_cache.npz
+# ── macOS / system ────────────────────────────────────────────────────────────
 .DS_Store
 **/.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Python bytecode & caches ──────────────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+*.egg
+MANIFEST
+
+# ── Python source dirs (not needed for static site) ───────────────────────────
+PyANNOW/src/
+PyANNOW/tests/
+PyANNOW/chopin_score_net/
+shared/
+
+# ── Notebook outputs & step artefacts ─────────────────────────────────────────
+PyANNOW/notebooks/step_outputs/
+PyANNOW/notebooks/.DS_Store
+PyANNOW/notebooks/*.DS_Store
+
+# ── Large binary / model files ────────────────────────────────────────────────
+*.npz
+*.npy
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*_cache.npz
+PyANNOW/worm_dance/data/worm_forward_v2_cache.npz
+
+# ── Audio & image outputs (notebook-generated, not site assets) ───────────────
+# NOTE: PyANNOW/worm_dance/chopin.wav IS tracked intentionally — do not add *.wav here.
+#       Only suppress generated outputs sitting outside the worm_dance asset folder.
+PyANNOW/notebooks/**/*.wav
+PyANNOW/notebooks/**/*.mp3
+PyANNOW/notebooks/**/*.png
+PyANNOW/notebooks/**/*.jpg
+PyANNOW/notebooks/**/*.jpeg
+PyANNOW/notebooks/**/*.svg
+
+# ── Environment & secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+node_modules/
