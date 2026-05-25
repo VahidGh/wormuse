@@ -109,17 +109,27 @@
 
 ---
 
-## Phase 7 — UI (1-2 weeks)
+## Phase 7 — UI (1-2 weeks)  🟡 *Partially done — PyANNOW static demo live (v1.2.0 / v2.0.0)*
 
 **Goal:** GitHub-Pages-deployable interactive demo.
 
+- [x] **`PyANNOW/worm_dance/worm_dance.html`** (v1.2.0) — self-contained static HTML+JS
+  worm dance visualizer: body wave, neural circuit panel, locomotion trail, pattern
+  timeline, Chopin audio.  Served by `python3 -m http.server 7432 --directory PyANNOW`.
+- [x] **`PyANNOW/presentation/index_v2.html`** (v2.0.0) — split-screen Reveal.js
+  presentation with live worm dance iframe (right 45%).  No build step; works from
+  the same static server.
+- [x] **`PyANNOW/worm_dance/data/worm_dance_data.json`** — pre-built pattern bank;
+  auto-loaded on page open.
 - [ ] `ui/render/build_static_dataset.py` — packs ≥ 10 scenarios into JSON + MIDI assets
+  *(blocked on Phase 1 bridge layer)*
 - [ ] `ui/static/index.html` — Three.js worm + piano + Web Audio playback
 - [ ] Sliders: scenario picker, playback control, single-neuron focus
 - [ ] `ui/notebook/wormuse.ipynb` — JupyterLite-compatible notebook with ipywidgets
 - [ ] `.github/workflows/gh-pages.yml` — auto-deploy on push to `main`
 
-**Exit criteria:** GH Pages URL plays a worm-driven melody in any modern browser, no install required.
+**Exit criteria (full):** GH Pages URL plays a worm-driven melody in any modern browser, no install required.
+**Exit criteria (partial, v2.0.0 ✅):** `python3 -m http.server 7432 --directory PyANNOW` + open `presentation/index_v2.html` — live worm dance + NAML presentation in browser.
 
 ---
 

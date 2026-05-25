@@ -1,15 +1,26 @@
 # PyANNOW
 
 **The NAML sub-project.** Python / JAX / Flax composer that maps *C. elegans* 302-neuron
-activity to Chopin piano music using a 10-step NAML progression. The **ion-channel PINN
-is the scientific centrepiece** (see [`../ION_CHANNELS.md`](../ION_CHANNELS.md));
-the best audio result (v1.0.0) is the **Step 9b physics-residual MLP on the full 229 s
-piece**, synthesised with the new `render_string_v2` piano (3 detuned strings + hammer
-transient + room reverb).
+activity to Chopin piano music using a 10-step NAML progression — **and its inverse**:
+extracting recurring musical patterns from Chopin and driving the worm's 96 body-wall
+muscles to produce a live dance visualisation.  The **ion-channel PINN is the scientific
+centrepiece** (see [`../ION_CHANNELS.md`](../ION_CHANNELS.md)); the best audio result
+(v1.0.0) is the **Step 9b physics-residual MLP on the full 229 s piece**, synthesised
+with `render_string_v2` (3 detuned strings + hammer transient + room reverb).
 
 `PyANNOW` ≈ **Py**thon **A**rtificial **N**eural-channel **N**etwork **O**rchestrator for **W**ormuse.
 
-*Current version: **v1.0.0***
+*Current version: **v2.0.0***
+
+### Quick demo (v2.0.0)
+
+```bash
+# From repo root — serves PyANNOW/ at localhost:7432
+python3 -m http.server 7432 --directory PyANNOW
+# Then open:
+#   http://localhost:7432/presentation/index_v2.html   ← 24-slide NAML presentation
+#   http://localhost:7432/worm_dance/worm_dance.html   ← standalone worm dance
+```
 
 ---
 
@@ -22,7 +33,7 @@ PyANNOW/
 │   ├── ion_channels/           HH kinetics (EGL-19, EXP-2, NCA-1/2, SHK-1, UNC-2)
 │   ├── composer/               run_forward_fast: 96-cell Boyle 4×24 worm simulation
 │   ├── step1_svd/              RSVD encoder + Procrustes alignment
-│   ├── step2_clustering/       PCA + K-means motor primitives
+│   ├── step2_clustering/       PCA + K-means motor primitives (+ silhouette K*)
 │   ├── step3_regression/       Ridge regression composer
 │   ├── step4_ffnn/             JAX/Flax MLP composer
 │   ├── step5_training/         Adam mini-batch trainer (NAML Lab 10)
@@ -32,14 +43,26 @@ PyANNOW/
 │   └── training/cv.py          Time-series CV + blocked bootstrap CI
 ├── chopin_score_net/           NB04 module: Fourier→residual MLP→piano roll
 ├── notebooks/
-│   ├── 02_chopin_worm_optimizer.ipynb   Worm optimizer + audio playback
-│   ├── 03_pyannow_naml_progression.ipynb  Full 10-step NAML progression
-│   ├── 04_chopin_score_net.ipynb        Fourier time-net reference ceiling
-│   └── 05_pyannow_step9b_audio.ipynb  ← v1.0.0: Step 9b on full piece + v2 piano
+│   ├── 02_chopin_worm_optimizer.ipynb        Worm optimizer + audio playback
+│   ├── 03_pyannow_naml_progression.ipynb     Full 10-step NAML progression (v1)
+│   ├── 04_chopin_score_net.ipynb             Fourier time-net reference ceiling
+│   ├── 05_pyannow_step9b_audio.ipynb         v1.0.0: Step 9b on full piece + v2 piano
+│   ├── 06_chopin_patterns_worm_dance_v2.ipynb  ← v2.0.0: inverse pipeline
+│   └── 06_pyannow_v2_patterns.ipynb          Pattern-bank builder (lightweight)
+├── worm_dance/                 ← v1.2.0 / v2.0.0: live dance visualizer
+│   ├── worm_dance.html         Self-contained JS visualizer (body wave + circuit)
+│   ├── chopin.wav              Chopin nocturne audio (auto-loaded)
+│   └── data/
+│       ├── worm_dance_data.json          Pre-built pattern bank (K*=8 poses × 96 muscles)
+│       └── worm_forward_v2_cache.npz     HH simulation cache (~370 MB)
 ├── docs/
-│   └── PyANNOW_NAML_progression.md      Living doc with measured F1 scores
+│   ├── PyANNOW_NAML_progression.md      Living doc: v1 F1 scores + v2 pipeline
+│   └── boyle_architecture_map.html      Biology→NN table + piano keyboard diagram
 ├── presentation/
-│   └── index.html               Reveal.js slides
+│   ├── index.html              v1.0.0 Reveal.js slides (10 NAML steps)
+│   ├── index_v2.html           v2.0.0 split-screen presentation (24 slides + live dance)
+│   ├── QA_v2.md                23 NAML Q&A pairs for the v2 presentation
+│   └── SCENARIO_v2.md          20-minute speaking script
 └── tests/
     ├── score_f1_quick.py        78-second F1 benchmark (no PINN/JAX)
     └── test_*.py                pytest unit tests
@@ -60,7 +83,7 @@ pip install jax jaxlib flax optax \
 
 Python 3.10-3.13.
 
-## Step progression (notebook 03, v0.9.0 measured F1)
+## v1.x — Forward pipeline: Worm → Music (notebook 03, v0.9.0 measured F1)
 
 | Step | Method | NAML / AppStat ref | F1 | Notes |
 |---|---|---|---|---|
@@ -73,6 +96,19 @@ Python 3.10-3.13.
 | 7 | RandomForest | AppStat Lec07 | 0.8721 | OOB=0.829, 13 s |
 | 8 | ODE/PDE PINN | L14/L27 | SKIPPED | Set SKIP_PINN=False (~5 min) |
 | **9** | **Worm+Time hybrid MLP** | **AppStat Lec06, NB04** | **0.8786** | **3.2 s, best step** |
+
+## v2.0.0 — Inverse pipeline: Music → Worm Dance (notebook 06)
+
+| Stage | Method | NAML ref | Output |
+|---|---|---|---|
+| 1 | Piano-roll M ∈ ℝ^{56×11711} | — | Binary pitch×time matrix |
+| 2 | RSVD (Eckart-Young) k=12 | L06–L09 · Lab01 | U_k, σ_k, V_k (90% var.) |
+| 3 | K-means on V_k, K*=8 | L10 · Lab02 | Musical state labels |
+| 4 | Silhouette score | AppStat · Lab02 | K*=8 optimal clusters |
+| 5 | Pearson excitability | AppStat | Pattern ranking (r≤0.88) |
+| 6 | lstsq / pseudoinverse | L07/L09 · Lab03 | W_nm: neural→96-muscle map |
+| 7 | Synthetic body wave | — | 96-muscle pose per pattern |
+| 8 | Live JS visualizer | — | `worm_dance.html` dance demo |
 
 ## Lecture map (NAML + AppStat)
 

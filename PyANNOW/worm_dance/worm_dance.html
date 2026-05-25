@@ -477,182 +477,208 @@ function drawCircuit(muscles, pat) {
   const glow = parseFloat(document.getElementById('glow-slider').value);
 
   // ── Layout ────────────────────────────────────────────────────────
-  const X1 = 52;                       // CMD IN column
-  const X2 = 152;                      // MN class column
-  const MUS_X0 = 210;                  // muscle grid left edge
-  const MUS_CW = Math.max(5, Math.floor((W - MUS_X0 - 14) / 24));
-  const MUS_RH = Math.max(9, Math.floor((H - 60) / 10));  // cell height
-  const MUS_GAP = 2;                   // gap between D rows and V rows
-  // 4 rows: DL, DR, (gap), VL, VR
+  const X1     = 40;                      // CMD IN column x
+  const X2     = 125;                     // MN class column x
+  const MUS_X0 = 168;                     // muscle grid left edge
+  const MUS_CW = Math.max(4, Math.floor((W - MUS_X0 - 6) / 24));
+  const MUS_RH = Math.max(10, Math.floor((H - 68) / 10));
+  const MUS_GAP = 3;
+  // 4 rows: DL, DR, gap, VL, VR  (centred vertically)
   const rowY = [
-    H/2 - MUS_RH*2 - MUS_GAP - 4,     // DL
-    H/2 - MUS_RH   - MUS_GAP - 2,     // DR
-    H/2             + MUS_GAP/2,       // VL
-    H/2 + MUS_RH   + MUS_GAP + 2,     // VR
+    H/2 - MUS_RH*2 - MUS_GAP - 4,  // DL
+    H/2 - MUS_RH   - MUS_GAP - 2,  // DR
+    H/2             + MUS_GAP/2,    // VL
+    H/2 + MUS_RH   + MUS_GAP + 2,  // VR
   ];
   const CMD_Y = [H*0.14, H*0.37, H*0.63, H*0.86];
   const MN_Y  = MN_CLASS.map((_,j) => H * (0.08 + j * 0.165));
 
   // ── Edges CMD → MN classes ────────────────────────────────────────
+  // Always visible at a baseline; brighten with activation
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 6; j++) {
       const w = CMD_TO_MNC[i][j];
       if (!w) continue;
-      const a = (w / 5) * (cmd[i] * 0.75 + 0.06);
+      const base = 0.18 + (w / 5) * 0.14;  // min 0.18, max 0.32 at rest
+      const a    = Math.min(0.88, base + cmd[i] * 0.65);
       ctx.strokeStyle = hexToRgba(CMD_COL[i], a);
-      ctx.lineWidth = 0.5 + cmd[i] * 1.5;
+      ctx.lineWidth   = 1.0 + cmd[i] * 2.5;
       ctx.beginPath();
-      ctx.moveTo(X1 + 10, CMD_Y[i]);
+      ctx.moveTo(X1 + 9, CMD_Y[i]);
       ctx.lineTo(X2 - 9, MN_Y[j]);
       ctx.stroke();
     }
   }
 
-  // ── Edges MN classes → muscle grid regions ────────────────────────
-  // Draw a colored bracket from each MN node to the rows it innervates
+  // ── Edges MN classes → muscle grid ────────────────────────────────
+  // S-curve bezier + vertical bracket at muscle grid edge.
+  // Always visible — never skipped even at low activation.
   for (let j = 0; j < 6; j++) {
-    const mc = MN_CLASS[j];
+    const mc  = MN_CLASS[j];
     const act = mn[j];
-    if (act < 0.02) continue;
-    const a = act * 0.55 + 0.05;
-    const y0 = rowY[mc.quads[0]];
-    const y1 = rowY[mc.quads[mc.quads.length-1]] + MUS_RH;
-    const cx  = X2 + 10;
-    const tx  = MUS_X0 - 4;
-    // Vertical bracket line
-    ctx.strokeStyle = hexToRgba(mc.col, a * 0.7);
-    ctx.lineWidth = mc.excitatory ? (0.5 + act * 2) : (0.5 + act * 1.5);
-    ctx.setLineDash(mc.excitatory ? [] : [3, 3]);
+    const a   = Math.min(0.88, 0.48 + act * 0.44);   // min 0.48 at rest
+    const cx  = X2 + 9;                               // depart right of MN node
+    const bx  = MUS_X0 - 7;                           // bracket/arrow x
+    const y0  = rowY[mc.quads[0]];
+    const y1  = rowY[mc.quads[mc.quads.length-1]] + MUS_RH;
+    const midY = (y0 + y1) / 2;
+    const lw  = mc.excitatory ? (2.0 + act * 3.0) : (1.5 + act * 2.0);
+
+    ctx.strokeStyle = hexToRgba(mc.col, a);
+    ctx.lineWidth   = lw;
+    ctx.setLineDash(mc.excitatory ? [] : [4, 3]);
+
+    // S-curve: depart horizontally, arrive at midpoint of target rows
     ctx.beginPath();
     ctx.moveTo(cx, MN_Y[j]);
-    ctx.bezierCurveTo(tx - 20, MN_Y[j], tx - 20, (y0+y1)/2, tx, (y0+y1)/2);
+    ctx.bezierCurveTo(
+      cx + 20, MN_Y[j],  // control 1: pull right horizontally from source
+      bx - 8,  midY,     // control 2: approach target row midpoint from left
+      bx,      midY
+    );
     ctx.stroke();
     ctx.setLineDash([]);
-    // Arrowhead / T-bar
+
+    // Vertical bracket spanning the innervated rows
+    ctx.strokeStyle = hexToRgba(mc.col, Math.min(0.92, a + 0.08));
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(bx, y0); ctx.lineTo(bx, y1); ctx.stroke();
+
+    // Termination: arrowhead (excitatory) or flat cap (inhibitory)
     if (mc.excitatory) {
-      ctx.fillStyle = hexToRgba(mc.col, a);
+      ctx.fillStyle = hexToRgba(mc.col, Math.min(0.98, a + 0.18));
       ctx.beginPath();
-      ctx.moveTo(tx, (y0+y1)/2);
-      ctx.lineTo(tx - 5, (y0+y1)/2 - 3);
-      ctx.lineTo(tx - 5, (y0+y1)/2 + 3);
+      ctx.moveTo(bx + 6, midY);
+      ctx.lineTo(bx - 1,  midY - 4);
+      ctx.lineTo(bx - 1,  midY + 4);
       ctx.closePath(); ctx.fill();
     } else {
-      ctx.strokeStyle = hexToRgba(mc.col, a * 1.2);
-      ctx.lineWidth = 2;
+      // Blunt inhibitory cap (wide horizontal bar at midY)
+      ctx.strokeStyle = hexToRgba(mc.col, Math.min(0.98, a + 0.18));
+      ctx.lineWidth = 3.0;
       ctx.beginPath();
-      ctx.moveTo(tx, y0); ctx.lineTo(tx, y1); ctx.stroke();
+      ctx.moveTo(bx + 5, y0 + 2); ctx.lineTo(bx + 5, y1 - 2); ctx.stroke();
     }
   }
 
   // ── 96 Muscle cells (4 rows × 24 cols) ───────────────────────────
-  // muscles are already in [0,1] (synthetic wave from vp_timeline)
   const QUAD_LABELS = ['DL','DR','VL','VR'];
   for (let q = 0; q < 4; q++) {
     const ry = rowY[q];
-    ctx.font = '7px monospace';
-    ctx.fillStyle = hexToRgba('#ffffff', 0.35);
+    // Row label
+    ctx.font = '9px monospace';
+    ctx.fillStyle = '#9ab0c4';
     ctx.textAlign = 'right';
-    ctx.fillText(QUAD_LABELS[q], MUS_X0 - 6, ry + MUS_RH * 0.7);
+    ctx.fillText(QUAD_LABELS[q], MUS_X0 - 7, ry + MUS_RH * 0.73);
     ctx.textAlign = 'left';
-
+    // Cells
     for (let s = 0; s < 24; s++) {
-      const t  = muscles[q * 24 + s];   // directly [0,1]
+      const t  = muscles[q * 24 + s];
       const cx = MUS_X0 + s * MUS_CW;
-      // Muscle cell fill: pattern color blended by activation
       ctx.fillStyle = blendColor('#111827', pat.color, t * 0.85 + 0.05);
       ctx.fillRect(cx, ry, MUS_CW - 1, MUS_RH - 1);
-      // Glow for highly active cells
-      if (glow > 0 && t > 0.7) {
+      if (glow > 0 && t > 0.65) {
         ctx.save();
         ctx.shadowColor = pat.color;
-        ctx.shadowBlur = glow * t * 8;
-        ctx.fillStyle = hexToRgba(pat.color, (t - 0.7) * 0.8);
+        ctx.shadowBlur  = glow * t * 9;
+        ctx.fillStyle   = hexToRgba(pat.color, (t - 0.65) * 0.85);
         ctx.fillRect(cx, ry, MUS_CW - 1, MUS_RH - 1);
         ctx.restore();
       }
     }
-    // Segment tick marks every 6 (ant/mid/post thirds)
+    // Tick marks at ant / 1/4 / mid / 3/4 / post
     for (let s = 0; s <= 24; s += 6) {
       const cx = MUS_X0 + s * MUS_CW;
-      ctx.strokeStyle = hexToRgba('#ffffff', 0.12);
+      ctx.strokeStyle = hexToRgba('#ffffff', 0.18);
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(cx, ry); ctx.lineTo(cx, ry + MUS_RH); ctx.stroke();
     }
   }
 
-  // D/V divider
+  // D/V gap divider
   const dvY = (rowY[1] + MUS_RH + rowY[2]) / 2;
-  ctx.setLineDash([3,4]);
-  ctx.strokeStyle = hexToRgba('#ffffff', 0.1);
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.15);
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(MUS_X0 - 22, dvY); ctx.lineTo(W - 4, dvY); ctx.stroke();
+  ctx.moveTo(MUS_X0 - 20, dvY); ctx.lineTo(W - 3, dvY); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Segment axis label
-  ctx.font = '7px monospace';
-  ctx.fillStyle = hexToRgba('#ffffff', 0.18);
-  ctx.fillText('ant', MUS_X0, rowY[3] + MUS_RH + 10);
-  ctx.textAlign = 'right';
-  ctx.fillText('post', MUS_X0 + 24 * MUS_CW, rowY[3] + MUS_RH + 10);
+  // Anterior / posterior axis labels
+  const axisY = rowY[3] + MUS_RH + 12;
+  ctx.font = '9px monospace';
+  ctx.fillStyle = '#6e8a9e';
+  ctx.textAlign = 'left';  ctx.fillText('ant',  MUS_X0,             axisY);
+  ctx.textAlign = 'right'; ctx.fillText('post', MUS_X0 + 24*MUS_CW, axisY);
   ctx.textAlign = 'left';
 
   // ── CMD IN nodes ──────────────────────────────────────────────────
   CMD_NAMES.forEach((name, i) => {
-    const r = 5 + cmd[i] * 8;
+    const r = 6 + cmd[i] * 8;
     ctx.save();
-    if (glow > 0 && cmd[i] > 0.15) { ctx.shadowColor = CMD_COL[i]; ctx.shadowBlur = glow * cmd[i] * 14; }
+    if (glow > 0 && cmd[i] > 0.08) {
+      ctx.shadowColor = CMD_COL[i]; ctx.shadowBlur = glow * cmd[i] * 16;
+    }
     ctx.beginPath();
     ctx.arc(X1, CMD_Y[i], r, 0, Math.PI * 2);
-    ctx.fillStyle = blendColor('#1a1a2e', CMD_COL[i], cmd[i] * 0.85 + 0.15);
+    ctx.fillStyle = blendColor('#1a1a2e', CMD_COL[i], cmd[i] * 0.85 + 0.20);
     ctx.fill();
-    ctx.strokeStyle = hexToRgba(CMD_COL[i], 0.55);
-    ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = hexToRgba(CMD_COL[i], 0.75);
+    ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
-    ctx.font = `${7 + cmd[i]*2}px monospace`;
-    ctx.fillStyle = hexToRgba(CMD_COL[i], 0.9);
+    // Node label
+    ctx.font = '10px monospace';
+    ctx.fillStyle = hexToRgba(CMD_COL[i], 0.95);
     ctx.textAlign = 'right';
-    ctx.fillText(name, X1 - r - 3, CMD_Y[i] + 3);
+    ctx.fillText(name, X1 - r - 4, CMD_Y[i] + 4);
     ctx.textAlign = 'left';
   });
 
   // ── MN class nodes ────────────────────────────────────────────────
   MN_CLASS.forEach((mc, j) => {
-    const r = 4 + mn[j] * 7;
+    const r = 6 + mn[j] * 7;   // minimum radius 6 — always visible
     ctx.save();
-    if (glow > 0 && mn[j] > 0.15) { ctx.shadowColor = mc.col; ctx.shadowBlur = glow * mn[j] * 10; }
+    if (glow > 0 && mn[j] > 0.08) {
+      ctx.shadowColor = mc.col; ctx.shadowBlur = glow * mn[j] * 12;
+    }
     ctx.beginPath();
     ctx.arc(X2, MN_Y[j], r, 0, Math.PI * 2);
-    ctx.fillStyle = blendColor('#1a1a2e', mc.col, mn[j] * 0.85 + 0.15);
+    ctx.fillStyle = blendColor('#1a1a2e', mc.col, mn[j] * 0.85 + 0.22);
     ctx.fill();
-    ctx.strokeStyle = hexToRgba(mc.col, mc.excitatory ? 0.5 : 0.3);
-    ctx.lineWidth = mc.excitatory ? 1 : 1.5;
-    if (!mc.excitatory) ctx.setLineDash([2,2]);
+    ctx.strokeStyle = hexToRgba(mc.col, mc.excitatory ? 0.80 : 0.62);
+    ctx.lineWidth = 1.5;
+    if (!mc.excitatory) ctx.setLineDash([2, 2]);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
-    ctx.font = '7.5px monospace';
-    ctx.fillStyle = hexToRgba(mc.col, 0.85);
-    ctx.fillText(mc.name, X2 + r + 3, MN_Y[j] + 3);
+    // Node label
+    ctx.font = '9px monospace';
+    ctx.fillStyle = hexToRgba(mc.col, 0.92);
+    ctx.fillText(mc.name, X2 + r + 4, MN_Y[j] + 3);
+    // Inhibitory marker
     if (!mc.excitatory) {
-      ctx.fillStyle = hexToRgba(mc.col, 0.5);
-      ctx.fillText('⊣', X2 + r + 24, MN_Y[j] + 3);
+      ctx.fillStyle = hexToRgba(mc.col, 0.70);
+      ctx.fillText('-|', X2 + r + 27, MN_Y[j] + 3);
     }
   });
 
-  // ── Labels ────────────────────────────────────────────────────────
-  ctx.font = '8px monospace';
-  ctx.fillStyle = hexToRgba('#ffffff', 0.15);
+  // ── Section labels ────────────────────────────────────────────────
+  // Column footers
+  ctx.font = '9px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('CMD', X1, H - 5);
-  ctx.fillText('MN class', X2, H - 5);
-  ctx.fillText('96 BWM', MUS_X0 + 12 * MUS_CW, H - 5);
+  ctx.fillStyle = '#6e8a9e';
+  ctx.fillText('CMD',    X1,                   H - 6);
+  ctx.fillText('MN',     X2,                   H - 6);
+  ctx.fillText('96 BWM', MUS_X0 + 12 * MUS_CW, H - 6);
   ctx.textAlign = 'left';
-  ctx.fillStyle = hexToRgba('#ffffff', 0.18);
-  ctx.fillText('neural circuit', 6, 11);
-  ctx.font = '7px monospace';
-  ctx.fillStyle = hexToRgba('#9b59b6', 0.6);
-  ctx.fillText('⊣ inh', X2 + 26, H - 5);
+  // Inhibitory legend
+  ctx.fillStyle = hexToRgba('#9b59b6', 0.78);
+  ctx.fillText('-| inhib', X2 + 12, H - 6);
+  // Panel title
+  ctx.font = 'bold 9px monospace';
+  ctx.fillStyle = '#58a6ff';
+  ctx.fillText('neural circuit', 5, 12);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1296,6 +1322,61 @@ function resizeCanvases() {
 }
 window.addEventListener('resize', resizeCanvases);
 resizeCanvases();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Default file loading (always) + autoplay / embedded support
+//   ?autoplay=1  → start animation immediately after files load
+//   ?embedded=1  → register postMessage listener for parent presentation
+//
+// Controls (player buttons, speed slider, WAV/JSON uploaders) are ALWAYS
+// visible — the user can override the defaults at any time.
+// ═══════════════════════════════════════════════════════════════════════════
+(function initPage() {
+  const params  = new URLSearchParams(window.location.search);
+  const embed   = params.get('embedded') === '1';
+  const autoply = params.get('autoplay')  === '1';
+
+  // ── Auto-fetch default JSON then default WAV ─────────────────────────────
+  fetch('data/worm_dance_data.json')
+    .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+    .then(data => {
+      D = data;
+      initViz();
+      document.getElementById('overlay').style.display = 'none';
+      return fetch('chopin.wav');
+    })
+    .then(r => { if (!r.ok) throw new Error(r.statusText); return r.blob(); })
+    .then(blob => {
+      if (audioReady) URL.revokeObjectURL(audio.src);
+      audio.src = URL.createObjectURL(blob);
+      audioReady = true;
+      audio.playbackRate = parseFloat(document.getElementById('speed-slider').value);
+      const status = document.getElementById('audio-status');
+      if (status) { status.textContent = '♪ Chopin'; status.classList.add('loaded'); }
+      const wavBtn = document.getElementById('btn-wav');
+      if (wavBtn) wavBtn.textContent = '♪ Chopin';
+      // Start playing immediately if ?autoplay=1
+      if (autoply) {
+        setTimeout(() => {
+          playing = true;
+          lastTs = null;
+          audioSeek(0);
+          audioPlay();
+          rafId = requestAnimationFrame(animLoop);
+        }, 400);
+      }
+    })
+    .catch(err => console.warn('[initPage] default file load error:', err));
+
+  // ── postMessage bridge — only when embedded in a parent frame ───────────
+  if (embed) {
+    window.addEventListener('message', e => {
+      if (e.data === 'worm:play')  { if (D && !playing) togglePlay(); }
+      if (e.data === 'worm:pause') { if (playing) togglePlay(); }
+      if (e.data === 'worm:reset') { resetAnim(); }
+    });
+  }
+})();
 </script>
 </body>
 </html>

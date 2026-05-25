@@ -4,7 +4,7 @@
     {
       "name": "worm-dance",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "7432", "--directory", "PyANNOW/worm_dance"],
+      "runtimeArgs": ["-m", "http.server", "7432", "--directory", "PyANNOW"],
       "port": 7432
     }
   ]

@@ -14,7 +14,101 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`.
 
 ---
 
-## [1.1.0] — 2026-05-25  *(current)*
+## [2.0.0] — 2026-05-25  *(current)*
+
+### Inverse pipeline: Music → Patterns → Worm Dance (NAML presentation release)
+
+Turns the PyANNOW direction around: instead of simulating a worm and mapping its
+muscle output to piano notes (v1.x), v2 extracts recurring patterns from Chopin,
+ranks them by biological excitability, and drives the worm's 96 body-wall muscles
+from the music — producing a live visualised dance.  The HH fixed-point attractor
+that limited v1 visualisation is bypassed by a synthetic body-wave driven from the
+piano-roll temporal modes.  A 24-slide split-screen Reveal.js presentation (NAML
+course) is shipped alongside the live demo.
+
+### Added
+- **`notebooks/06_chopin_patterns_worm_dance_v2.ipynb`** — full inverse-pipeline
+  notebook: piano-roll M ∈ ℝ^{56×11711} → RSVD (Eckart-Young, k=12, 90% var) →
+  K-means on V_k (silhouette K*=8) → Pearson cross-correlation excitability ranking
+  → lstsq neural→muscle map (W_nm) → per-cluster muscle poses → JSON export.
+- **`notebooks/06_pyannow_v2_patterns.ipynb`** — standalone pattern-bank builder
+  used when the full 229 s simulation cache is unavailable.
+- **`worm_dance/data/worm_dance_data.json`** — pre-computed pattern bank (8 poses ×
+  96 muscles, 8 excitability scores, K-means labels over T=11 711 frames, SVD
+  components).
+- **`worm_dance/data/worm_forward_v2_cache.npz`** — worm HH forward-model cache
+  (229 s simulation, ~370 MB); avoids re-running the ~5-min simulation on reload.
+- **`presentation/index_v2.html`** — 24-slide split-screen Reveal.js presentation.
+  Left 55% = slides; right 45% = live worm dance iframe.  Covers all 7 NAML methods
+  (RSVD/Eckart-Young, PCA equivalence, K-means, silhouette, lstsq/pseudoinverse,
+  Pearson correlation) with MathJax equations and Prism.js code snippets.
+  postMessage bridge syncs worm with slides; `?autoplay=1` starts animation on load.
+- **`presentation/QA_v2.md`** — 23 NAML-focused Q&A pairs covering SVD, PCA,
+  K-means, silhouette, Pearson, lstsq/pseudoinverse, PINNs, and biological questions.
+- **`presentation/SCENARIO_v2.md`** — complete 20-minute speaking script with
+  per-slide timing, biological context, and standard interruption responses.
+- **`scripts/build_pattern_bank_fallback.py`** — CLI to regenerate `worm_dance_data.json`
+  from the cache NPZ without re-running the full simulation.
+- **`scripts/run_v2_demo.py`** — convenience script: starts the HTTP server and
+  opens the presentation in the browser.
+- **`scripts/worm_ingestion_converter.py`** — WCON → JSON converter for real
+  OpenWorm pose data (future integration).
+
+### Changed
+- `worm_dance/worm_dance.html` — default file loading now happens on **every page
+  load** (not just `?embedded=1`): `data/worm_dance_data.json` and `chopin.wav` are
+  auto-fetched, controls pre-loaded; manual upload buttons remain for overriding.
+  `initEmbedded()` renamed `initPage()`, UI hiding removed.
+
+### NAML methods used (v2 pipeline)
+
+| Method | NAML ref | Role |
+|---|---|---|
+| RSVD / Eckart-Young | L06–L09 · Lab01 | Extract k=12 musical basis from piano-roll |
+| PCA equivalence | L08–L10 · Lab02 | V_k rows = PCA coordinates of time frames |
+| K-means + silhouette | L10 · Lab02 | Cluster T frames → K*=8 musical states |
+| Least squares / pseudoinverse | L07/L09 · Lab03 | Neural scores → 96-muscle map W_nm |
+| Pearson cross-correlation | AppStat | Rank patterns by biological excitability |
+
+---
+
+## [1.2.0] — 2026-05-25
+
+### Worm Dance live visualizer + circuit panel + navigation fixes
+
+Interactive browser-based worm dance visualizer driven by the v2 pattern bank.
+All readability issues in the circuit panel are fixed; the L/R navigation bug
+(anti-phase D/V cancellation) is proved mathematically and resolved.
+
+### Added
+- **`worm_dance/worm_dance.html`** (1 300+ lines) — self-contained JavaScript
+  visualizer.  Two canvases: (1) worm body with synthetic body-wave, colored per
+  active pattern, locomotion trail; (2) neural circuit panel (CMD nodes AVA/AVD/
+  AVB/PVC, six MN classes DA/DB/VA/VB/DD/VD, 96 BWM grid with S-curve bezier
+  connections).  Pattern legend, pattern activation timeline, behavior overlay.
+  Embedded mode (`?embedded=1`) and autoplay (`?autoplay=1`) URL params supported.
+  postMessage bridge for parent presentation control.
+- **`worm_dance/chopin.wav`** — Chopin Nocturne in C# minor Op. posth.  Copied from
+  `shared/examples/` (3.6 MB, 234 s, synthesised by `render_string_v2` + room reverb).
+- **`worm_dance/data/`** directory with pre-built JSON pattern bank.
+- **`.claude/launch.json`** — server now serves `PyANNOW/` as root
+  (`python3 -m http.server 7432 --directory PyANNOW`).
+
+### Fixed
+- **Circuit panel readability** — text was 7–8 px at opacity 0.12; connections were
+  activation-gated to near-zero alpha.  Fixes: ≥9 px fonts throughout, base alpha
+  0.18 for CMD→MN edges and 0.48 for MN→muscle connections (never gated to zero),
+  S-curve bezier + vertical bracket + arrowhead/blunt-cap terminal markers.
+- **L/R navigation anti-phase cancellation** — `leftM = (DL + VL) / 2` is
+  identically `amp/4` for any body-wave phase (D/V 180° anti-phase cancels exactly).
+  Fixed by using `headDL = qSeg(0, 0, 8)` vs `headDR = qSeg(1, 0, 8)` — both
+  dorsal head segments, bilateral offset 0.05 rad preserved.
+  Verified behavior variety after fix: FORWARD 26%, FWD+R 15%, FWD+L 8%, HALT 51%.
+- **`⊣` unicode** rendered as `→` on canvas; replaced with `-|`.
+
+---
+
+## [1.1.0] — 2026-05-25
 
 ### Karplus-Strong piano engine + direct HH biophysics synthesis path
 

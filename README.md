@@ -1,12 +1,15 @@
 # wormuse
 
-![version](https://img.shields.io/badge/version-v0.9.0-blue)
+![version](https://img.shields.io/badge/version-v2.0.0-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![python](https://img.shields.io/badge/python-3.10--3.13-blue)
 ![built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-blueviolet?logo=anthropic)
 
-> **A *C. elegans*–driven musical simulator.**
-> The 302-neuron nervous system, simulated by OpenWorm (Sibernetic + C302), is wired into a physical piano model. Each neuron firing triggers a hammer; muscle contractions modulate timing and dynamics. **Ion channels are the tuning fork** — a physics-informed neural network learns the kinetics that make the worm's activity musically coherent. Move the worm → hear the melody.
+> **A *C. elegans*–driven musical simulator — and its inverse.**
+>
+> **v1.x (Worm → Music):** The 302-neuron nervous system, simulated by OpenWorm (Sibernetic + C302), is wired into a physical piano model. Each neuron firing triggers a hammer; muscle contractions modulate timing and dynamics. **Ion channels are the tuning fork** — a physics-informed neural network learns the kinetics that make the worm's activity musically coherent.
+>
+> **v2.0.0 (Music → Worm Dance):** The inverse pipeline. Chopin's Nocturne in C# minor is decomposed into K=8 recurring patterns via **RSVD + K-means** (NAML Eckart-Young), ranked by biological **Pearson excitability**, and mapped onto 96 body-wall muscles via **least-squares regression**. The worm dances to Chopin in real time in the browser — body wave, locomotion trail, neural circuit panel, and pattern timeline included. Open `PyANNOW/presentation/index_v2.html` for the full 24-slide NAML presentation.
 
 Wormuse is a robot pianist, but with the worm as the composer. It is designed as a project integrating some of Politecnico di Milano courses:
 

@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyANNOW v2.0.0 — The Worm Dances to Chopin</title>
+
+<!-- Reveal.js 5 via CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/black.css">
+
+<!-- MathJax -->
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+    startup: { typeset: false }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<!-- Prism.js syntax highlighting -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js" defer></script>
+
+<style>
+/* ═══════════════════════════════ ROOT / SPLIT LAYOUT ═════════════════════ */
+:root {
+  --accent:  #00d9ff;
+  --accent2: #ff6b6b;
+  --accent3: #ffd93d;
+  --green:   #6bcb77;
+  --purple:  #c084fc;
+  --bg-card: rgba(255,255,255,0.06);
+  --border:  rgba(255,255,255,0.13);
+  --slide-w: 55vw;
+  --worm-w:  45vw;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: #04080f;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ── Two-panel layout ── */
+#slides-panel {
+  position: fixed;
+  left: 0; top: 0;
+  width: var(--slide-w);
+  height: 100vh;
+  background: #050a15;
+  border-right: 1px solid rgba(0,217,255,0.18);
+  overflow: hidden;
+  z-index: 1;
+}
+
+#worm-panel {
+  position: fixed;
+  right: 0; top: 0;
+  width: var(--worm-w);
+  height: 100vh;
+  background: #030810;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#worm-panel-header {
+  background: rgba(0,217,255,0.07);
+  border-bottom: 1px solid rgba(0,217,255,0.2);
+  padding: 5px 14px;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#worm-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #555;
+  transition: background .4s;
+}
+#worm-status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+#worm-frame {
+  width: 100%;
+  flex: 1;
+  border: none;
+  display: block;
+}
+
+/* ── Keyboard hint overlay (bottom-left) ── */
+#key-hint {
+  position: fixed;
+  bottom: 8px; left: 10px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  z-index: 10;
+  letter-spacing: .05em;
+}
+
+/* ═══════════════════════════════ REVEAL OVERRIDES ════════════════════════ */
+#slides-panel .reveal {
+  width: 100%;
+  height: 100%;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 30px;
+}
+
+#slides-panel .reveal .slides section {
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 6px 15px;
+  text-align: center;
+}
+
+#slides-panel .reveal h1 { font-size: 1.9em; margin: 0 0 .15em; }
+#slides-panel .reveal h2 { font-size: 1.3em; margin: 0 0 7px; }
+#slides-panel .reveal h3 { font-size: 1.08em; margin: 0 0 5px; }
+#slides-panel .reveal p  { margin: 0 0 4px; }
+#slides-panel .reveal ul,
+#slides-panel .reveal ol  { margin: 0 0 4px; padding-left: 1.2em; }
+#slides-panel .reveal li  { margin-bottom: 3px; font-size: .84em; }
+
+#slides-panel .reveal pre {
+  font-size: .42em !important;
+  border-radius: 7px;
+  margin: 5px 0;
+}
+#slides-panel .reveal pre code {
+  padding: 8px !important;
+  max-height: 220px;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+}
+
+/* ── Color helpers ── */
+.hl  { color: var(--accent);  font-weight: 600; }
+.hl2 { color: var(--accent3); font-weight: 600; }
+.hl3 { color: var(--green);   font-weight: 600; }
+.hl4 { color: var(--purple);  font-weight: 600; }
+.hl5 { color: var(--accent2); font-weight: 600; }
+
+/* ── Part header ── */
+.part-header {
+  background: linear-gradient(135deg, #0a2540, #1a3c5e);
+  border-radius: 10px;
+  padding: 20px 28px;
+  text-align: left;
+}
+.part-header .part-num {
+  font-size: .68em; letter-spacing: .22em;
+  color: var(--accent); text-transform: uppercase;
+}
+.part-header h2 { font-size: 1.55em; margin: .15em 0; color: white; }
+.part-header .tagline { font-size: .82em; opacity: .68; font-style: italic; }
+
+/* ── Cards ── */
+.card-grid { display: grid; gap: 8px; }
+.card-grid.two   { grid-template-columns: 1fr 1fr; }
+.card-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  text-align: left;
+}
+.card h4 {
+  color: var(--accent); margin: 0 0 4px;
+  font-size: .72em; text-transform: uppercase; letter-spacing: .07em;
+}
+.card p { margin: 0; font-size: .74em; line-height: 1.38; opacity: .92; }
+.card .big {
+  font-size: 1.5em; font-weight: 700;
+  color: var(--accent3); margin-bottom: 2px;
+}
+
+/* ── Step cards ── */
+.step-card {
+  border-left: 3px solid var(--accent);
+  padding: 5px 10px; margin: 3px 0;
+  background: var(--bg-card);
+  border-radius: 0 7px 7px 0;
+  text-align: left;
+}
+.step-card .step-label { font-size: .64em; color: var(--accent); font-weight: 700;
+                         text-transform: uppercase; letter-spacing: .07em; }
+.step-card .step-title { font-size: .84em; font-weight: 600; margin: 1px 0; }
+.step-card .step-meta  { font-size: .68em; opacity: .7; line-height: 1.3; }
+.step-card.done   { border-color: var(--green); }
+.step-card.active { border-color: var(--accent3); background: rgba(255,217,61,.07); }
+.step-card.purple { border-color: var(--purple); }
+
+/* ── Equation box ── */
+.eq-box {
+  background: rgba(0,217,255,.07);
+  border: 1px solid rgba(0,217,255,.28);
+  border-radius: 7px;
+  padding: 8px 11px;
+  margin: 5px 0;
+  text-align: center;
+}
+.eq-box.orange {
+  background: rgba(255,217,61,.07);
+  border-color: rgba(255,217,61,.28);
+}
+
+/* ── Section label ── */
+.section-label {
+  font-size: .58em; letter-spacing: .17em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: .25em; display: block;
+}
+
+/* ── Table ── */
+.reveal table { font-size: .68em; width: 100%; }
+.reveal table th {
+  color: var(--accent);
+  background: rgba(0,217,255,.08);
+  padding: 4px 7px;
+}
+.reveal table td { padding: 3px 7px; }
+.reveal table tr:nth-child(even) { background: rgba(255,255,255,.03); }
+
+/* ── Timeline ── */
+.timeline { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.tl-item  { display: flex; align-items: flex-start; gap: 8px; }
+.tl-dot   { width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+            flex-shrink: 0; margin-top: 5px; }
+.tl-text  { font-size: .72em; line-height: 1.38; }
+
+/* ── Bio profile card (presenter slide) ── */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 14px;
+  text-align: left;
+  margin: 4px 0;
+}
+.profile-avatar {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a2540, #1a3a5a);
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4em;
+  color: var(--accent);
+  margin: 0 auto;
+}
+.pub-badge {
+  display: inline-block;
+  background: rgba(107,203,119,.12);
+  border: 1px solid rgba(107,203,119,.35);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: .64em;
+  color: var(--green);
+  margin: 2px 2px 0;
+}
+.royal-badge {
+  display: inline-block;
+  background: rgba(255,217,61,.12);
+  border: 1px solid rgba(255,217,61,.35);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: .64em;
+  color: var(--accent3);
+  margin: 2px 2px 0;
+}
+
+/* ── Comparison bars ── */
+.bar-row  { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size:.7em; }
+.bar-lbl  { width: 80px; text-align: right; flex-shrink: 0; opacity: .8; }
+.bar-track { flex: 1; background: rgba(255,255,255,.1); border-radius: 3px; height: 10px; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 3px; }
+.bar-val  { width: 50px; flex-shrink: 0; opacity: .8; }
+
+/* ── Arrow annotation ── */
+.arrow-right {
+  font-size: 1.4em; color: var(--accent3); line-height: 1;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:.5; transform: translateX(0); }
+  50%      { opacity:1;  transform: translateX(6px); }
+}
+
+/* Dense slide utility */
+section.dense .card  { padding: 7px 10px; }
+section.dense .step-card { padding: 4px 9px; margin: 2px 0; }
+section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ SLIDES PANEL ═══════════════════ -->
+<div id="slides-panel">
+<div class="reveal">
+<div class="slides">
+
+<!-- ════════════════════════════════════════════ SLIDE 1: TITLE ════════════ -->
+<section class="title-slide"
+  data-background-gradient="radial-gradient(circle at 30% 40%, #0a2540 0%, #050a15 100%)">
+  <div style="padding:16px 4px">
+    <div style="font-size:.6em;letter-spacing:.28em;color:var(--accent);text-transform:uppercase;margin-bottom:.6em">
+      PyANNOW · Politecnico di Milano · NAML 2025-26 · v2.0.0
+    </div>
+    <h1 style="font-size:2.1em;color:var(--accent);line-height:1.18;margin-bottom:.3em">
+      The Worm Dances<br><span style="color:var(--accent3)">to Chopin</span>
+    </h1>
+    <p style="font-size:.86em;opacity:.78;margin-bottom:1em;line-height:1.5">
+      From musical patterns to biological locomotion —<br>
+      a NAML pipeline: <span class="hl">RSVD</span> · <span class="hl2">K-means</span> ·
+      <span class="hl3">Pearson</span> · <span class="hl4">Least Squares</span>
+    </p>
+    <!-- Worm-to-Chopin diagram -->
+    <svg width="100%" height="60" viewBox="0 0 460 60">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ffd93d"/>
+        </marker>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6bcb77"/>
+        </marker>
+      </defs>
+      <!-- Piano-roll block -->
+      <rect x="5" y="10" width="70" height="40" rx="4"
+        fill="rgba(0,217,255,.12)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="40" y="27" text-anchor="middle" fill="var(--accent)" font-size="8">Piano-roll</text>
+      <text x="40" y="40" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="7">M ∈ ℝ^{56×T}</text>
+      <!-- Arrow: piano → RSVD -->
+      <path d="M78 30 L110 30" stroke="#ffd93d" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="94" y="24" text-anchor="middle" fill="#ffd93d" font-size="7">RSVD</text>
+      <!-- Patterns block -->
+      <rect x="113" y="10" width="64" height="40" rx="4"
+        fill="rgba(255,217,61,.08)" stroke="var(--accent3)" stroke-width="1"/>
+      <text x="145" y="27" text-anchor="middle" fill="var(--accent3)" font-size="8">K-means</text>
+      <text x="145" y="40" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="7">8 patterns</text>
+      <!-- Arrow: patterns → excitability -->
+      <path d="M180 30 L212 30" stroke="#ffd93d" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="196" y="24" text-anchor="middle" fill="#ffd93d" font-size="7">Pearson</text>
+      <!-- Excitability block -->
+      <rect x="215" y="10" width="68" height="40" rx="4"
+        fill="rgba(107,203,119,.08)" stroke="var(--green)" stroke-width="1"/>
+      <text x="249" y="27" text-anchor="middle" fill="var(--green)" font-size="8">Excitability</text>
+      <text x="249" y="40" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="7">Z_worm ↔ V_p</text>
+      <!-- Arrow: → dance -->
+      <path d="M286 30 L318 30" stroke="#6bcb77" stroke-width="1.5" marker-end="url(#a2)"/>
+      <text x="302" y="24" text-anchor="middle" fill="#6bcb77" font-size="7">LS-reg.</text>
+      <!-- Dance block -->
+      <rect x="320" y="10" width="64" height="40" rx="4"
+        fill="rgba(192,132,252,.08)" stroke="var(--purple)" stroke-width="1"/>
+      <text x="352" y="27" text-anchor="middle" fill="var(--purple)" font-size="8">🐛 Dance</text>
+      <text x="352" y="40" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="7">96 muscles →</text>
+      <!-- Arrow: → right panel -->
+      <path d="M387 30 L438 30" stroke="var(--purple)" stroke-width="1.5" marker-end="url(#a2)"/>
+      <text x="432" y="24" text-anchor="middle" fill="var(--purple)" font-size="7">live</text>
+      <text x="452" y="34" fill="var(--accent3)" font-size="16">→</text>
+    </svg>
+    <p style="font-size:.68em;opacity:.45;margin-top:.8em">
+      Vahid Ghayoomie · wormuse / PyANNOW · May 2026
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ SLIDE 2: PRESENTER ════════════ -->
+<section data-background-gradient="radial-gradient(circle at 60% 20%, #0d1f3c 0%, #050a15 100%)">
+  <span class="section-label">About the Presenter</span>
+  <h3 style="margin-bottom:8px">Seyed Vahid <span class="hl">Ghayoomie</span></h3>
+
+  <div class="profile-grid">
+    <!-- Avatar column -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="profile-avatar">🐛</div>
+      <div style="font-size:.62em;text-align:center;color:var(--accent);line-height:1.4">
+        M.Sc. HPC Eng.<br>Politecnico di Milano<br>
+        <span style="color:rgba(255,255,255,.5)">2025 – present</span>
+      </div>
+    </div>
+    <!-- Info column -->
+    <div>
+      <!-- Research highlight -->
+      <div class="card" style="margin-bottom:6px;border-color:rgba(0,217,255,.35)">
+        <h4>🔬 Research — C. elegans Systems Neuroscience</h4>
+        <p style="font-size:.8em">
+          <strong class="hl">OpenWorm Foundation</strong>
+          <span style="opacity:.6">(Delaware non-profit, 2014 – present)</span><br>
+          Led <em>ChannelWorm</em> — Python platform for ion-channel modeling in
+          <em>C. elegans</em>: patch-clamp data curation, HH fitting, API + validation suite.
+        </p>
+        <p style="font-size:.8em;margin-top:4px">
+          <strong>chModeler</strong>
+          <span style="opacity:.6">(2018 – present)</span> —
+          ion-channel "supermodel" + ML predictor for kinetics from amino-acid sequences
+          (~270 channels, <em>Xenopus oocyte</em> dataset).
+        </p>
+      </div>
+      <!-- Publications + talk -->
+      <div style="margin-bottom:5px">
+        <span class="pub-badge">Phil. Trans. R. Soc. B 2018</span>
+        <span class="pub-badge">F1000Research 2016</span>
+        <span class="royal-badge">★ Invited Speaker — The Royal Society, London 2018</span>
+      </div>
+      <!-- Education + context -->
+      <div class="card" style="border-color:rgba(255,217,61,.3)">
+        <h4>🎓 Education & Context</h4>
+        <p style="font-size:.76em">
+          B.Sc. IT Engineering · M.Sc. studies in Biology &amp; Mechatronics ·
+          Currently: M.Sc. HPC Engineering @ PoliMi
+          (CUDA, OpenMP, NAML, NLA, NMPDE).<br>
+          <span style="opacity:.65">Industrial: Big Data @ Sadad/Melli Bank (2015–18); co-founder Neursal (2022–23).</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:.6em;opacity:.45;margin-top:4px">
+    vahidghayoomi@gmail.com · github.com/vahidgh · github.com/VahidGh
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════ SLIDE 3: AGENDA ══════════ -->
+<section data-background-gradient="radial-gradient(circle at 70% 30%, #0d1f3c 0%, #050a15 100%)">
+  <span class="section-label">20-Minute Roadmap</span>
+  <h3>What we'll cover today</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px">
+    <div>
+      <div class="step-card done">
+        <div class="step-label">Context</div>
+        <div class="step-title">🔬 v1.0.0 — What we built</div>
+        <div class="step-meta">HH simulation, 10 NAML steps, F1 progression</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">Part I</div>
+        <div class="step-title">🎹 The Data</div>
+        <div class="step-meta">Piano-roll M, 96-muscle architecture</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">Part II</div>
+        <div class="step-title">📐 RSVD + Eckart-Young</div>
+        <div class="step-meta">Best rank-k musical basis</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">Part III</div>
+        <div class="step-title">🔵 K-means + Silhouette</div>
+        <div class="step-meta">Discovering 8 musical states</div>
+      </div>
+    </div>
+    <div>
+      <div class="step-card active">
+        <div class="step-label">Part IV</div>
+        <div class="step-title">⚡ Excitability</div>
+        <div class="step-meta">Pearson r + least-squares mapping</div>
+      </div>
+      <div class="step-card purple">
+        <div class="step-label">Part V</div>
+        <div class="step-title">🐛 The Dance</div>
+        <div class="step-meta">Body wave, L/R fix, live viz →</div>
+      </div>
+      <div class="step-card">
+        <div class="step-label">Synthesis</div>
+        <div class="step-title">🔗 NAML Connections</div>
+        <div class="step-meta">All 7 methods from the course</div>
+      </div>
+      <div class="step-card">
+        <div class="step-label">Wrapup</div>
+        <div class="step-title">💡 Insights + Open questions</div>
+        <div class="step-meta">What biology taught us about ML</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════ SLIDE 4: v1 RECAP ══════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Context — PyANNOW v1.0.0</span>
+  <h3>The v1 question: <span class="hl">Worm → Music</span></h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="step-card done">
+        <div class="step-label">Approach</div>
+        <div class="step-title">HH simulation → note generation</div>
+        <div class="step-meta">302 neurons, Hodgkin-Huxley ion channels, 96 BWMs</div>
+      </div>
+      <div class="step-card done">
+        <div class="step-label">10 NAML steps</div>
+        <div class="step-title">SVD → K-means → Ridge → MLP → Adam → L-BFGS</div>
+        <div class="step-meta">Each step: more NAML, (hopefully) better F1</div>
+      </div>
+      <div class="step-card done">
+        <div class="step-label">Best result</div>
+        <div class="step-title">F1 = 0.879 (Step 9: worm + Fourier)</div>
+        <div class="step-meta">vs Step 0 random baseline F1 = 0.186</div>
+      </div>
+    </div>
+    <div>
+      <div class="eq-box" style="margin-bottom:7px">
+        <p style="font-size:.72em;margin:0">
+          <strong>The problem with v1:</strong><br>
+          HH simulation reaches a <span class="hl5">fixed-point attractor</span> —
+          the worm locks into one muscle pattern, making raw muscle data useless for
+          <em>varied</em> visualization.
+        </p>
+      </div>
+      <div class="eq-box orange">
+        <p style="font-size:.72em;margin:0">
+          <strong>v2 inversion:</strong><br>
+          Instead of Worm→Music, we ask:<br>
+          <span class="hl2">Music → Patterns → Worm Dance</span><br>
+          Extract recurring patterns from Chopin,<br>
+          drive the worm's 96 muscles from music.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART I HEADER ════════════════════════ -->
+<section data-background-color="#030810">
+  <div class="part-header">
+    <div class="part-num">Part I</div>
+    <h2>🎹 The Data</h2>
+    <p class="tagline">Two matrices — a piano and a worm — connected by linear algebra</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ SLIDE 5: PIANO-ROLL ═════════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Part I — Data Representation</span>
+  <h3>The piano-roll: <span class="hl">M ∈ ℝ<sup>P×T</sup></span></h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="eq-box" style="margin-bottom:6px">
+        $$M_{p,t} = \begin{cases}1 & \text{pitch } p \text{ active at time } t \\ 0 & \text{otherwise}\end{cases}$$
+      </div>
+      <div class="card">
+        <h4>Dimensions</h4>
+        <p>
+          <span class="hl">P = 56</span> unique pitches (MIDI bins)<br>
+          <span class="hl2">T = 11 711</span> time frames at <strong>20 ms</strong> resolution<br>
+          Duration: <strong>234 s</strong> · BPM: <strong>69</strong><br>
+          Density: <strong>~9% active</strong>
+        </p>
+      </div>
+      <div class="card" style="margin-top:6px">
+        <h4>Why binary?</h4>
+        <p>MIDI note-on/off events → binary presence.
+          Velocity and duration encoded separately.
+          This is the <em>pitch × time</em> representation
+          standard in music information retrieval (MIR).</p>
+      </div>
+    </div>
+    <div>
+      <!-- Schematic piano-roll visualization -->
+      <svg width="100%" height="155" viewBox="0 0 240 155"
+        style="background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border)">
+        <text x="120" y="14" text-anchor="middle" fill="var(--accent)" font-size="9">
+          Chopin Nocturne in C# minor (first 30 s)
+        </text>
+        <!-- Pitch axis -->
+        <text x="8" y="85" text-anchor="middle" fill="rgba(255,255,255,.4)"
+          font-size="7" transform="rotate(-90,8,85)">pitch rank (0–55)</text>
+        <!-- Time axis -->
+        <text x="120" y="152" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="7">
+          time (s) → 0 ............... 30
+        </text>
+        <!-- Piano-roll mock (coloured rectangles) -->
+        <rect x="20" y="22" width="220" height="120" fill="rgba(0,0,0,.4)" rx="3"/>
+        <!-- Several horizontal note streaks (stylized) -->
+        <rect x="24" y="100" width="18" height="2" rx="1" fill="rgba(0,217,255,.65)"/>
+        <rect x="46" y="96" width="14" height="2" rx="1" fill="rgba(0,217,255,.55)"/>
+        <rect x="64" y="88" width="22" height="2" rx="1" fill="rgba(0,217,255,.70)"/>
+        <rect x="90" y="82" width="16" height="2" rx="1" fill="rgba(0,217,255,.60)"/>
+        <rect x="24" y="76" width="20" height="2" rx="1" fill="rgba(0,217,255,.45)"/>
+        <rect x="48" y="110" width="12" height="2" rx="1" fill="rgba(0,217,255,.50)"/>
+        <rect x="110" y="70" width="28" height="2" rx="1" fill="rgba(0,217,255,.75)"/>
+        <rect x="142" y="78" width="18" height="2" rx="1" fill="rgba(0,217,255,.55)"/>
+        <rect x="164" y="62" width="22" height="2" rx="1" fill="rgba(0,217,255,.65)"/>
+        <rect x="190" y="90" width="14" height="2" rx="1" fill="rgba(0,217,255,.45)"/>
+        <rect x="200" y="105" width="16" height="2" rx="1" fill="rgba(0,217,255,.55)"/>
+        <!-- Bass notes (low, thick) -->
+        <rect x="24"  y="126" width="40" height="3" rx="1" fill="rgba(107,203,119,.6)"/>
+        <rect x="90"  y="122" width="35" height="3" rx="1" fill="rgba(107,203,119,.5)"/>
+        <rect x="148" y="118" width="38" height="3" rx="1" fill="rgba(107,203,119,.55)"/>
+        <!-- k-component lines -->
+        <line x1="20" y1="55" x2="240" y2="55" stroke="rgba(255,217,61,.35)" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="24" y="52" fill="rgba(255,217,61,.6)" font-size="7">U[:,0] projection</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 6: 96-MUSCLE ARCH ══════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Part I — C. elegans Architecture</span>
+  <h3>96 body-wall muscles = 96 piano keys</h3>
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
+    <div>
+      <div class="eq-box" style="font-size:.78em;text-align:left;padding:7px 10px">
+        <strong>Boyle et al. 2012</strong> — 4 quadrants × 24 segments:<br>
+        <span class="hl">DL</span> (dorsal-left) ≡ MIDI 24–47 (C1–B2, bass)<br>
+        <span class="hl3">VL</span> (ventral-left) ≡ MIDI 48–71 (C3–B4, tenor)<br>
+        <span class="hl4">DR</span> (dorsal-right) ≡ MIDI 72–95 (C5–B6, alto)<br>
+        <span class="hl2">VR</span> (ventral-right) ≡ MIDI 96–119 (C7–B8, treble)
+      </div>
+      <div class="card" style="margin-top:5px">
+        <h4>Phase structure</h4>
+        <p>DL/DR fire <em>in-phase</em> (dorsal body-wave).<br>
+          VL/VR fire <em>180° anti-phase</em> (ventral).<br>
+          Bilateral pairs have <strong>0.05 rad</strong> lateral offset.<br>
+          Body-wave travels <strong>head→tail</strong> within each quadrant.</p>
+      </div>
+    </div>
+    <div>
+      <!-- Worm quadrant diagram -->
+      <svg width="100%" height="165" viewBox="0 0 200 165">
+        <text x="100" y="13" text-anchor="middle" fill="white" font-size="9" font-weight="bold">
+          C. elegans body-wall muscles
+        </text>
+        <!-- Body outline -->
+        <ellipse cx="100" cy="90" rx="85" ry="60"
+          fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+        <!-- Head circle -->
+        <circle cx="185" cy="90" r="12" fill="rgba(0,217,255,.15)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="185" y="94" text-anchor="middle" fill="var(--accent)" font-size="7">head</text>
+        <!-- DL row -->
+        <rect x="30" y="48" width="140" height="14" rx="3"
+          fill="rgba(0,217,255,.25)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="100" y="58" text-anchor="middle" fill="var(--accent)" font-size="8">DL · bass (24–47)</text>
+        <!-- DR row -->
+        <rect x="30" y="126" width="140" height="14" rx="3"
+          fill="rgba(192,132,252,.25)" stroke="var(--purple)" stroke-width="1"/>
+        <text x="100" y="136" text-anchor="middle" fill="var(--purple)" font-size="8">DR · alto (72–95)</text>
+        <!-- VL row -->
+        <rect x="30" y="66" width="140" height="13" rx="3"
+          fill="rgba(107,203,119,.20)" stroke="var(--green)" stroke-width="1"/>
+        <text x="100" y="76" text-anchor="middle" fill="var(--green)" font-size="8">VL · tenor (48–71)</text>
+        <!-- VR row -->
+        <rect x="30" y="110" width="140" height="13" rx="3"
+          fill="rgba(255,107,107,.20)" stroke="var(--accent2)" stroke-width="1"/>
+        <text x="100" y="120" text-anchor="middle" fill="var(--accent2)" font-size="8">VR · treble (96–119)</text>
+        <!-- Centre spine -->
+        <line x1="30" y1="90" x2="175" y2="90"
+          stroke="rgba(255,255,255,.12)" stroke-width="1" stroke-dasharray="3,2"/>
+        <!-- Segment markers -->
+        <text x="30" y="100" fill="rgba(255,255,255,.35)" font-size="7">s=0</text>
+        <text x="165" y="100" fill="rgba(255,255,255,.35)" font-size="7">s=23</text>
+        <!-- Phase arrow -->
+        <path d="M36 88 L170 88" stroke="var(--accent3)" stroke-width="1"
+          marker-end="url(#a1)" stroke-dasharray="4,2"/>
+        <text x="100" y="86" text-anchor="middle" fill="var(--accent3)" font-size="7">body wave →</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART II HEADER ═══════════════════════ -->
+<section data-background-color="#030810">
+  <div class="part-header">
+    <div class="part-num">Part II</div>
+    <h2>📐 RSVD + Eckart-Young</h2>
+    <p class="tagline">Finding the best musical basis — the same theorem that compresses images</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 7: ECKART-YOUNG ════════════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Part II — Eckart-Young Theorem (L06)</span>
+  <h3>The best rank-<em>k</em> approximation</h3>
+  <div class="eq-box" style="margin:6px 0">
+    $$M = U \Sigma V^T, \quad
+      \hat{M}_k = U_k \Sigma_k V_k^T \;\;\text{minimises}\;\; \|M - \hat{M}_k\|_F$$
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+    <div>
+      <div class="card">
+        <h4>Components (piano-roll M)</h4>
+        <p>
+          <span class="hl">$U_k \in \mathbb{R}^{56 \times k}$</span> — pitch profiles:
+          which pitches co-activate in each pattern<br><br>
+          <span class="hl2">$\sigma_i$</span> — pattern energy:
+          $\sigma_i^2 / \|\sigma\|^2$ = fraction of musical variance<br><br>
+          <span class="hl3">$V_k \in \mathbb{R}^{T \times k}$</span> — temporal envelopes:
+          <em>when</em> each pattern is active
+        </p>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>Course connection (Lab01)</h4>
+        <p>
+          In Lab01 we compressed images by keeping the top-k singular values.
+          Here we compress a <em>musical score</em> the same way.<br><br>
+          The <span class="hl">k=12</span> most energetic patterns
+          explain <span class="hl2">90%</span> of the piano-roll's Frobenius energy.<br><br>
+          Each pattern $U_k[:,i]$ is a <em>pitch chord</em>;
+          $V_k[:,i]$ is its <em>rhythmic envelope</em>.
+        </p>
+      </div>
+      <div class="eq-box orange" style="margin-top:6px">
+        <p style="font-size:.74em;margin:0">
+          Larger $\sigma_i$ = more musical energy.<br>
+          <strong>$\sigma_1$ alone captures ~42% of variance</strong><br>
+          (the nocturne's repeating motif).
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ SLIDE 8: RSVD ════════════════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Part II — Randomized SVD (L09 / Halko 2011)</span>
+  <h3>Why <span class="hl">Randomized</span> SVD?</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="step-card">
+        <div class="step-label">Problem</div>
+        <div class="step-title">M is 56 × 11 711 — dense and wide</div>
+        <div class="step-meta">Full SVD: O(PT·min(P,T)) — wasteful for k≪P</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">Algorithm (course version)</div>
+        <div class="step-title">1. Sketch: Ω ← random (T×(k+p))</div>
+        <div class="step-meta">2. Y = M Ω · (M M^T)^q Y → power iteration</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">3–4</div>
+        <div class="step-title">Q = orth(Y), B = Q^T M, SVD(B) = Û Σ V^T</div>
+        <div class="step-meta">Final: U = Q Û · Cost: O(PT·k) ≪ O(PT·min(P,T))</div>
+      </div>
+      <div class="step-card done">
+        <div class="step-label">Result</div>
+        <div class="step-title">k=12, p=10 oversampling, q=2 power iters</div>
+        <div class="step-meta">~90% variance in &lt;0.5 s · same as Lab01 image compression</div>
+      </div>
+    </div>
+    <div>
+      <!-- Scree plot mock -->
+      <svg width="100%" height="155" viewBox="0 0 220 155"
+        style="background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border)">
+        <text x="110" y="13" text-anchor="middle" fill="var(--accent)" font-size="9">
+          Piano-roll scree plot
+        </text>
+        <!-- Axes -->
+        <line x1="28" y1="130" x2="28" y2="22" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+        <line x1="28" y1="130" x2="210" y2="130" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+        <text x="14" y="80" fill="rgba(255,255,255,.4)" font-size="7"
+          transform="rotate(-90,14,80)">var. frac.</text>
+        <text x="119" y="145" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="7">
+          component k
+        </text>
+        <!-- Bars (scree) — decreasing -->
+        <rect x="32"  y="32"  width="10" height="98" rx="1" fill="rgba(0,217,255,.7)"/>
+        <rect x="46"  y="74"  width="10" height="56" rx="1" fill="rgba(0,217,255,.6)"/>
+        <rect x="60"  y="92"  width="10" height="38" rx="1" fill="rgba(0,217,255,.55)"/>
+        <rect x="74"  y="104" width="10" height="26" rx="1" fill="rgba(0,217,255,.50)"/>
+        <rect x="88"  y="111" width="10" height="19" rx="1" fill="rgba(0,217,255,.45)"/>
+        <rect x="102" y="116" width="10" height="14" rx="1" fill="rgba(0,217,255,.40)"/>
+        <rect x="116" y="120" width="10" height="10" rx="1" fill="rgba(0,217,255,.35)"/>
+        <rect x="130" y="123" width="10" height="7"  rx="1" fill="rgba(0,217,255,.30)"/>
+        <rect x="144" y="124" width="10" height="6"  rx="1" fill="rgba(0,217,255,.28)"/>
+        <rect x="158" y="125" width="10" height="5"  rx="1" fill="rgba(0,217,255,.25)"/>
+        <rect x="172" y="126" width="10" height="4"  rx="1" fill="rgba(0,217,255,.22)"/>
+        <rect x="186" y="126" width="10" height="4"  rx="1" fill="rgba(0,217,255,.20)"/>
+        <!-- k=12 line -->
+        <line x1="196" y1="22" x2="196" y2="130" stroke="crimson" stroke-width="1.5"
+          stroke-dasharray="3,2"/>
+        <text x="198" y="35" fill="crimson" font-size="7">k=12</text>
+        <!-- 90% label -->
+        <line x1="28" y1="45" x2="210" y2="45" stroke="rgba(255,255,255,.2)"
+          stroke-width="1" stroke-dasharray="2,2"/>
+        <text x="200" y="43" fill="rgba(255,255,255,.4)" font-size="6">90%</text>
+        <!-- k-axis labels -->
+        <text x="37"  y="140" fill="rgba(255,255,255,.4)" font-size="6">1</text>
+        <text x="93"  y="140" fill="rgba(255,255,255,.4)" font-size="6">5</text>
+        <text x="149" y="140" fill="rgba(255,255,255,.4)" font-size="6">9</text>
+        <text x="187" y="140" fill="rgba(255,255,255,.4)" font-size="6">12</text>
+      </svg>
+      <p style="font-size:.65em;text-align:center;opacity:.6;margin-top:3px">
+        k=12 chosen by 90% cumulative variance threshold
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ PART III HEADER ═══════════════════════ -->
+<section data-background-color="#030810">
+  <div class="part-header">
+    <div class="part-num">Part III</div>
+    <h2>🔵 K-means + Silhouette</h2>
+    <p class="tagline">Discovering recurring musical states from temporal modes</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE 9: K-MEANS ON V_k ═══════════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Part III — K-means (L10 / Lab02)</span>
+  <h3>Musical states from <span class="hl">V<sub>k</sub></span> temporal modes</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            <strong>Input:</strong> $V_k \in \mathbb{R}^{T \times k}$ — each row is a time frame
+            represented as a <em>k</em>-dimensional mode-coordinate vector
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            <strong>K-means</strong> clusters the T=11711 frames into K groups.
+            Each cluster = <em>one recurring musical state</em>
+            (same harmony + rhythm profile)
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            <strong>Analogy to Lab02/Lab10:</strong> same as clustering MNIST digits
+            in PCA space — here we cluster music frames in SVD mode space
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            <strong>Each cluster centroid</strong> $\mu_j \in \mathbb{R}^k$ describes
+            the <em>average modal fingerprint</em> of a musical pattern
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="eq-box" style="margin-bottom:7px">
+        $$\min_{\{c_j\}} \sum_{t=1}^T \| V_k[t,:] - \mu_{c_t} \|_2^2$$
+      </div>
+      <!-- Cluster visualization mock -->
+      <svg width="100%" height="115" viewBox="0 0 220 115"
+        style="background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border)">
+        <text x="110" y="13" text-anchor="middle" fill="var(--accent)" font-size="9">
+          V_k frame clusters (schematic, 2 modes shown)
+        </text>
+        <!-- Clusters as colored point clouds -->
+        <circle cx="60"  cy="50"  r="16" fill="rgba(74,144,217,.3)"  stroke="rgba(74,144,217,.6)"  stroke-width="1"/>
+        <circle cx="100" cy="75"  r="13" fill="rgba(232,115,74,.3)"  stroke="rgba(232,115,74,.6)"  stroke-width="1"/>
+        <circle cx="145" cy="42"  r="15" fill="rgba(92,184,92,.3)"   stroke="rgba(92,184,92,.6)"   stroke-width="1"/>
+        <circle cx="175" cy="80"  r="12" fill="rgba(155,89,182,.3)"  stroke="rgba(155,89,182,.6)"  stroke-width="1"/>
+        <circle cx="75"  cy="88"  r="11" fill="rgba(240,173,78,.3)"  stroke="rgba(240,173,78,.6)"  stroke-width="1"/>
+        <circle cx="130" cy="90"  r="10" fill="rgba(26,188,156,.3)"  stroke="rgba(26,188,156,.6)"  stroke-width="1"/>
+        <circle cx="185" cy="50"  r="9"  fill="rgba(231,76,60,.3)"   stroke="rgba(231,76,60,.6)"   stroke-width="1"/>
+        <circle cx="50"  cy="70"  r="9"  fill="rgba(52,73,94,.6)"    stroke="rgba(255,255,255,.3)"  stroke-width="1"/>
+        <!-- Centroids -->
+        <text x="60"  y="53"  text-anchor="middle" fill="white" font-size="8" font-weight="bold">P1</text>
+        <text x="100" y="78"  text-anchor="middle" fill="white" font-size="8" font-weight="bold">P2</text>
+        <text x="145" y="45"  text-anchor="middle" fill="white" font-size="8" font-weight="bold">P3</text>
+        <text x="175" y="83"  text-anchor="middle" fill="white" font-size="8" font-weight="bold">P4</text>
+        <!-- Axis labels -->
+        <text x="110" y="108" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="7">mode V[:,0]</text>
+        <text x="8" y="70" fill="rgba(255,255,255,.35)" font-size="7"
+          transform="rotate(-90,8,70)">V[:,1]</text>
+        <line x1="18" y1="100" x2="210" y2="100" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+        <line x1="18" y1="22"  x2="18"  y2="100" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════ SLIDE 10: SILHOUETTE → K*=8 ═════════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Part III — Silhouette Score (Lab02 / AppStat)</span>
+  <h3>How many patterns? <span class="hl2">K* = 8</span></h3>
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
+    <div>
+      <div class="eq-box" style="margin-bottom:6px">
+        $$s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))} \in [-1, 1]$$
+        <p style="font-size:.7em;margin:4px 0 0;opacity:.8">
+          $a(i)$ = mean intra-cluster distance · $b(i)$ = nearest-cluster distance
+        </p>
+      </div>
+      <div class="card">
+        <h4>Interpretation</h4>
+        <p>
+          $s \to 1$: tight, well-separated clusters → <span class="hl3">good K</span><br>
+          $s \to 0$: frames on cluster boundaries → ambiguous<br>
+          $s \to -1$: misclassified → <span class="hl5">bad K</span>
+        </p>
+      </div>
+      <div class="card" style="margin-top:6px">
+        <h4>Result: K*=8 musical states</h4>
+        <p>
+          8 clusters capture the main harmonic transitions of the nocturne:
+          <em>opening motif, bridge, development, recapitulation…</em>
+          Matches human perception of phrase structure.
+        </p>
+      </div>
+    </div>
+    <div>
+      <!-- Silhouette mock chart -->
+      <svg width="100%" height="165" viewBox="0 0 180 165"
+        style="background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border)">
+        <text x="90" y="13" text-anchor="middle" fill="var(--accent)" font-size="9">
+          Silhouette score vs K
+        </text>
+        <!-- Axes -->
+        <line x1="28" y1="140" x2="28"  y2="22" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+        <line x1="28" y1="140" x2="170" y2="140" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+        <!-- Silhouette curve (hand-crafted realistic shape) -->
+        <polyline
+          points="36,130 52,108 68,90 84,72 100,58 116,62 132,76 148,88 164,96"
+          fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <!-- Peak at K=8 (x=100) -->
+        <circle cx="100" cy="58" r="5" fill="var(--accent3)" stroke="white" stroke-width="1"/>
+        <!-- K* label -->
+        <line x1="100" y1="58" x2="100" y2="140" stroke="crimson" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="103" y="135" fill="crimson" font-size="7">K*=8</text>
+        <!-- Axis labels -->
+        <text x="14" y="82" fill="rgba(255,255,255,.4)" font-size="7"
+          transform="rotate(-90,14,82)">Silhouette</text>
+        <text x="99" y="152" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="7">K</text>
+        <!-- K tick labels -->
+        <text x="34"  y="150" fill="rgba(255,255,255,.35)" font-size="6">2</text>
+        <text x="50"  y="150" fill="rgba(255,255,255,.35)" font-size="6">3</text>
+        <text x="66"  y="150" fill="rgba(255,255,255,.35)" font-size="6">4</text>
+        <text x="82"  y="150" fill="rgba(255,255,255,.35)" font-size="6">5</text>
+        <text x="98"  y="150" fill="rgba(255,255,255,.35)" font-size="6">8</text>
+        <text x="114" y="150" fill="rgba(255,255,255,.35)" font-size="6">10</text>
+        <text x="130" y="150" fill="rgba(255,255,255,.35)" font-size="6">12</text>
+      </svg>
+      <p style="font-size:.64em;text-align:center;opacity:.6;margin-top:3px">
+        Peak silhouette at K=8 — 8 musical patterns
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ PART IV HEADER ═══════════════════════ -->
+<section data-background-color="#030810">
+  <div class="part-header">
+    <div class="part-num">Part IV</div>
+    <h2>⚡ Excitability + Least Squares</h2>
+    <p class="tagline">Which Chopin patterns make the worm's nervous system resonate?</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════ SLIDE 11: PEARSON EXCITABILITY ══════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Part IV — Pearson Cross-Correlation</span>
+  <h3>Ranking patterns by worm <span class="hl2">excitability</span></h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="eq-box" style="margin-bottom:6px">
+        $$r_{ij} = \frac{\langle V_p[:,i],\, Z_\text{worm}[:,j] \rangle}
+                        {\|V_p[:,i]\|\,\|Z_\text{worm}[:,j]\|}$$
+        <p style="font-size:.72em;margin:4px 0 0">
+          $\text{excitability}(i) = \max_j |r_{ij}|$
+        </p>
+      </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            $V_p[:,i]$ — temporal envelope of Chopin pattern $i$ (from RSVD)
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            $Z_\text{worm}[:,j]$ — worm neural score $j$
+            (from forward HH simulation, projected onto mode $j$)
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-text">
+            High $|r|$ → the worm's nervous system naturally oscillates
+            <em>in sync with</em> that Chopin pattern
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--accent3)"></div>
+          <div class="tl-text">
+            Patterns ranked by excitability → highest-ranked patterns
+            drive the worm's dance poses
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:7px">
+        <h4>Why Pearson (not Euclidean)?</h4>
+        <p>Pearson r is <em>scale-invariant</em> — it measures
+          <strong>shape correlation</strong>, not amplitude.
+          The worm's neural oscillations may have different amplitude from
+          Chopin's temporal modes but the same rhythmic structure.</p>
+      </div>
+      <!-- Excitability bar chart mock -->
+      <div style="font-size:.72em;text-align:left">
+        <div style="opacity:.7;margin-bottom:3px">Excitability ranking (mock):</div>
+        <div class="bar-row">
+          <div class="bar-lbl">Pattern 3</div>
+          <div class="bar-track"><div class="bar-fill" style="width:88%;background:var(--accent3)"></div></div>
+          <div class="bar-val">0.88</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lbl">Pattern 1</div>
+          <div class="bar-track"><div class="bar-fill" style="width:72%;background:var(--accent)"></div></div>
+          <div class="bar-val">0.72</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lbl">Pattern 7</div>
+          <div class="bar-track"><div class="bar-fill" style="width:61%;background:var(--green)"></div></div>
+          <div class="bar-val">0.61</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lbl">Pattern 2</div>
+          <div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--purple)"></div></div>
+          <div class="bar-val">0.45</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE 12: LS MUSCLE MAP ════════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Part IV — Least-Squares Regression (L07 / L11 / Lab03)</span>
+  <h3>Neural scores → 96 muscles via <span class="hl">lstsq</span></h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="eq-box" style="margin-bottom:6px">
+        $$W_{nm} = \arg\min_W \| Z_\text{worm} W - V_\text{mus} \|_F$$
+        $$W_{nm} = Z_\text{worm}^+ \, V_\text{mus} = \mathtt{lstsq}(Z_\text{worm}, V_\text{mus})$$
+      </div>
+      <div class="card">
+        <h4>Shapes</h4>
+        <p>
+          $Z_\text{worm} \in \mathbb{R}^{T_p \times k_w}$ — worm neural scores<br>
+          $V_\text{mus} \in \mathbb{R}^{T_p \times 96}$ — muscle modes<br>
+          $W_{nm} \in \mathbb{R}^{k_w \times 96}$ — <span class="hl">neural→muscle map</span>
+        </p>
+      </div>
+      <div class="card" style="margin-top:5px">
+        <h4>What it means</h4>
+        <p>Each column of $W_{nm}$ tells us
+          how neural modes linearly combine to activate
+          one muscle. This is the biological <em>motor program</em>
+          encoded as a matrix.</p>
+      </div>
+    </div>
+    <div>
+      <div class="step-card done">
+        <div class="step-label">Why pseudoinverse?</div>
+        <div class="step-title">Z_worm is often underdetermined</div>
+        <div class="step-meta">More muscles (96) than neural modes (k_w ≈ 4–8).
+          $Z^+ = V \Sigma^+ U^T$ handles rank-deficiency gracefully.</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">Per-pattern pose</div>
+        <div class="step-title">avg(Z_worm[cluster==j]) × W_nm → pose_j ∈ ℝ^{96}</div>
+        <div class="step-meta">Each of the K*=8 musical patterns maps to
+          a 96-muscle activation pose — the worm's dance.</div>
+      </div>
+      <pre><code class="language-python">
+# step2_clustering/motor_primitives.py
+W_nm = np.linalg.lstsq(Z_worm_p, V_mus_p, rcond=None)[0]
+pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
+        for j in range(K)}
+      </code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART V HEADER ════════════════════════ -->
+<section data-background-color="#030810">
+  <div class="part-header">
+    <div class="part-num">Part V</div>
+    <h2>🐛 The Worm Dance</h2>
+    <p class="tagline">From piano patterns to body waves — watch it happen on the right →</p>
+  </div>
+</section>
+
+<!-- ═════════════════════════════ SLIDE 13: BODY WAVE ═══════════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Part V — Synthetic Body Wave</span>
+  <h3>Piano modes → <span class="hl">locomotion signals</span></h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="card" style="margin-bottom:6px">
+        <h4>synthMusFromVp(vp) — 4 mode roles</h4>
+        <p>
+          <span class="hl">Mode 0</span> — amplitude: scales overall muscle contraction<br>
+          <span class="hl2">Mode 1</span> — body-wave phase: $\phi(s) = \phi_0 + s \cdot 2\pi/24$<br>
+          <span class="hl3">Mode 2</span> — D/V bias: dorsal vs ventral imbalance<br>
+          <span class="hl4">Mode 3</span> — L/R offset: lateral turning signal
+        </p>
+      </div>
+      <div class="eq-box">
+        $$\text{mus}[q,s] = A \cdot \bigl(1 + \sin(\phi(s) + \phi_q)\bigr)/2$$
+        <p style="font-size:.7em;margin:3px 0 0">
+          $\phi_q \in \{0, \pi, \epsilon, \pi+\epsilon\}$ for DL/VL/DR/VR quadrants<br>
+          Wave travels head→tail as $s$ increases from 0 to 23.
+        </p>
+      </div>
+    </div>
+    <div>
+      <div class="step-card active">
+        <div class="step-label">From HH to synthetic</div>
+        <div class="step-title">Why not use raw HH muscle output?</div>
+        <div class="step-meta">The HH simulator reaches a fixed-point attractor — every
+          pattern drives the same steady muscle state. No variety.
+          Synthetic wave from piano modes gives rich, pattern-specific motion.</div>
+      </div>
+      <div class="step-card done">
+        <div class="step-label">Navigation from muscles</div>
+        <div class="step-title">headDL vs headDR → L/R turn</div>
+        <div class="step-meta">Both dorsal quadrant head segments (s=0..7) —
+          avoids D/V anti-phase cancellation (proved below).</div>
+      </div>
+      <!-- Body wave SVG -->
+      <svg width="100%" height="60" viewBox="0 0 200 60"
+        style="background:rgba(255,255,255,.03);border-radius:6px;border:1px solid var(--border)">
+        <text x="100" y="11" text-anchor="middle" fill="var(--accent)" font-size="8">
+          Dorsal body-wave (propagating)
+        </text>
+        <path d="M 15 30 C 35 10, 55 50, 75 30 S 115 10, 135 30 S 175 50, 195 30"
+          fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+        <path d="M 15 30 C 35 50, 55 10, 75 30 S 115 50, 135 30 S 175 10, 195 30"
+          fill="none" stroke="rgba(107,203,119,.4)" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="15"  y="55" fill="rgba(255,255,255,.4)" font-size="7">head</text>
+        <text x="175" y="55" fill="rgba(255,255,255,.4)" font-size="7">tail</text>
+        <text x="100" y="55" text-anchor="middle" fill="var(--accent3)" font-size="7">→ direction</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE 14: L/R PROBLEM ═════════════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Part V — An Interesting Anti-Phase Problem</span>
+  <h3>Why <span class="hl5">DL + VL never gives L/R signal</span></h3>
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
+    <div>
+      <div class="eq-box" style="margin-bottom:6px;text-align:left;font-size:.78em;padding:8px 11px">
+        <strong>Mathematical proof:</strong><br><br>
+        DL body wave: $A \cdot \tfrac{1}{2}(1 + \sin\theta)$ where $\theta = \phi_0 + s\omega$<br>
+        VL body wave: $A \cdot \tfrac{1}{2}(1 + \sin(\theta + \pi))
+                     = A \cdot \tfrac{1}{2}(1 - \sin\theta)$<br><br>
+        $\text{leftM} = \frac{\text{DL} + \text{VL}}{2}
+        = \frac{A}{2}\left[\frac{1+\sin\theta}{2} + \frac{1-\sin\theta}{2}\right]
+        = \frac{A}{4}$ <span class="hl5">← constant!</span><br><br>
+        <strong>The $\sin\theta$ terms cancel exactly.</strong>
+        DL+VL is always $A/4$, regardless of body wave phase.
+        No L/R information survives the averaging.
+      </div>
+      <div class="card">
+        <h4>Fix: use same-side quadrants</h4>
+        <p>
+          <span class="hl">headDL</span> = mean(DL[s=0..7]) — dorsal-left head<br>
+          <span class="hl4">headDR</span> = mean(DR[s=0..7]) — dorsal-right head<br><br>
+          Both dorsal → no D/V cancellation.<br>
+          Bilateral offset $\varepsilon=0.05$ rad preserved → <span class="hl3">real L/R signal</span>.
+        </p>
+      </div>
+    </div>
+    <div>
+      <div class="step-card done">
+        <div class="step-label">Behavior distribution (verified)</div>
+        <div class="step-title">After fix — 800 patterns sampled</div>
+        <div class="step-meta"></div>
+      </div>
+      <div style="margin-top:6px">
+        <div class="bar-row">
+          <div class="bar-lbl">HALT</div>
+          <div class="bar-track"><div class="bar-fill" style="width:51%;background:rgba(255,255,255,.4)"></div></div>
+          <div class="bar-val">51%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lbl">FORWARD</div>
+          <div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--accent)"></div></div>
+          <div class="bar-val">26%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lbl">FWD+R</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--accent3)"></div></div>
+          <div class="bar-val">15%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lbl">FWD+L</div>
+          <div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--green)"></div></div>
+          <div class="bar-val">8%</div>
+        </div>
+      </div>
+      <div class="eq-box" style="margin-top:7px;font-size:.72em">
+        <strong>Key insight:</strong> Anti-phase is not a bug — it is how
+        C. elegans generates propulsive thrust.
+        We must measure it <em>on one side only</em>.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════ SLIDE 15: LIVE DEMO ════════════════════ -->
+<section data-background-gradient="radial-gradient(circle at 30% 50%, #0a2540 0%, #030810 100%)">
+  <span class="section-label">Part V — Live Demo</span>
+  <h3>The worm dances while Chopin plays</h3>
+  <div class="card-grid two" style="margin:8px 0">
+    <div class="card">
+      <h4>🐛 Left canvas — Worm body</h4>
+      <p>Body-wave from piano temporal modes.
+        Color = current pattern (P1–P8).
+        Trail = locomotion history (FORWARD / TURN / HALT).</p>
+    </div>
+    <div class="card">
+      <h4>🔌 Right canvas — Neural circuit</h4>
+      <p>302-neuron connectome compressed to 6 MN classes
+        (DA/DB/VA/VB/DD/VD). Connections visible at resting activation.
+        CMD nodes: AVA/AVD/AVB/PVC.</p>
+    </div>
+  </div>
+  <div class="card-grid two">
+    <div class="card">
+      <h4>📊 Temporal timeline</h4>
+      <p>Pattern ID bar at bottom. Each color segment = one K-means musical state.
+        Pattern transitions align with harmonic changes in the nocturne.</p>
+    </div>
+    <div class="card">
+      <h4>🎵 Piano patterns</h4>
+      <p>8 circular pattern indicators.
+        Active pattern glows and shows excitability score.
+        Pattern 3 most excitable (r≈0.88).</p>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:14px">
+    <span class="arrow-right">→ →</span>
+    <span style="font-size:.85em;color:var(--accent3);margin-left:6px">
+      Look at the right panel
+    </span>
+    <span class="arrow-right">→ →</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ NAML CONNECTIONS TABLE ════════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Synthesis — NAML Course Connections</span>
+  <h3>Every method comes from <span class="hl">NAML lectures</span></h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>NAML reference</th>
+        <th>Applied to</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="hl">RSVD</span> (Halko 2011)</td>
+        <td>L06–L09 · Lab01</td>
+        <td>Extract top-k musical basis from piano-roll M</td>
+      </tr>
+      <tr>
+        <td><span class="hl2">Eckart-Young</span> theorem</td>
+        <td>L06 · core theorem</td>
+        <td>Guarantees RSVD is <em>optimal</em> rank-k approximation</td>
+      </tr>
+      <tr>
+        <td><span class="hl3">PCA equivalence</span></td>
+        <td>L08–L10 · Lab02</td>
+        <td>V_k rows = PCA coordinates of time frames</td>
+      </tr>
+      <tr>
+        <td><span class="hl4">K-means</span></td>
+        <td>L10 · Lab02 / Lab05</td>
+        <td>Cluster T frames in V_k space → 8 musical states</td>
+      </tr>
+      <tr>
+        <td><span class="hl">Silhouette score</span></td>
+        <td>Lab02 / AppStat</td>
+        <td>Data-driven choice of K* = 8</td>
+      </tr>
+      <tr>
+        <td><span class="hl5">Least squares</span> / pseudoinverse</td>
+        <td>L07 · L09 · Lab03</td>
+        <td>Neural scores → 96-muscle activation (W_nm)</td>
+      </tr>
+      <tr>
+        <td><span class="hl4">Pearson correlation</span></td>
+        <td>Lab02 / AppStat</td>
+        <td>Rank patterns by biological excitability</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="eq-box" style="margin-top:8px;font-size:.75em">
+    <strong>The full pipeline is a chain of NAML primitives:</strong>
+    $M \xrightarrow{\text{RSVD}} U_k, \Sigma_k, V_k
+      \xrightarrow{\text{K-means}} \text{labels}
+      \xrightarrow{\text{Pearson}} \text{excitability}
+      \xrightarrow{\text{lstsq}} W_{nm}
+      \xrightarrow{\text{synth}} \text{muscles}
+      \xrightarrow{} \text{dance}$
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE: KEY INSIGHTS ══════════════════ -->
+<section data-background-color="#030d1a">
+  <span class="section-label">Discussion — What We Learned</span>
+  <h3>Insights from building <span class="hl">PyANNOW v2</span></h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div>
+      <div class="step-card active">
+        <div class="step-label">Eckart-Young in practice</div>
+        <div class="step-title">SVD is not just compression</div>
+        <div class="step-meta">
+          The top-k singular vectors of a music matrix are
+          musically interpretable: U[:,0] = the tonic chord,
+          V[:,0] = the repeating rhythmic motif.
+          The theorem tells us they are <em>optimal</em>.
+        </div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">K-means + silhouette</div>
+        <div class="step-title">K*=8 matches musical intuition</div>
+        <div class="step-meta">
+          A nocturne has 4–8 distinct phrase types.
+          The silhouette criterion recovered this without
+          listening to the music — pure geometry on V_k.
+        </div>
+      </div>
+      <div class="step-card active">
+        <div class="step-label">Pseudoinverse</div>
+        <div class="step-title">Underdetermined systems everywhere in biology</div>
+        <div class="step-meta">
+          302 neurons driving 96 muscles: system is rank-deficient.
+          lstsq / pseudoinverse handles this naturally —
+          the same algebra as Lab03 Ridge on California housing.
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="step-card purple">
+        <div class="step-label">Anti-phase cancellation</div>
+        <div class="step-title">Biology breaks naive signal processing</div>
+        <div class="step-meta">
+          DL + VL is identically constant — the biological anti-phase
+          design cancels the locomotion signal.
+          You must understand the data-generating process before
+          computing a mean.
+        </div>
+      </div>
+      <div class="step-card purple">
+        <div class="step-label">HH fixed-point attractor</div>
+        <div class="step-title">Simulation ≠ exploration</div>
+        <div class="step-meta">
+          Without external input, HH neurons settle to a
+          periodic attractor — not ideal for varied visualization.
+          Synthetic waves from piano modes give richer dynamics.
+        </div>
+      </div>
+      <div class="step-card done">
+        <div class="step-label">OpenWorm connection</div>
+        <div class="step-title">C. elegans is the perfect ML lab animal</div>
+        <div class="step-meta">
+          302 neurons, fully mapped connectome, published kinematics.
+          Large enough to be interesting; small enough to simulate in Python.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE: OPEN QUESTIONS ════════════════ -->
+<section data-background-gradient="radial-gradient(circle at 60% 40%, #0d1f3c 0%, #050a15 100%)">
+  <span class="section-label">Open Questions + v3 Ideas</span>
+  <h3>Where could this go next?</h3>
+  <div class="card-grid two" style="margin-top:8px">
+    <div class="card">
+      <h4>🔬 Real electrophysiology data</h4>
+      <p>Replace synthetic HH with actual patch-clamp data from
+        <strong>chModeler</strong> (~270 channels, Xenopus oocytes).
+        Can the ML predictor recover Chopin-correlated kinetics?</p>
+    </div>
+    <div class="card">
+      <h4>🧠 PINN for HH dynamics</h4>
+      <p>Use a <strong>Physics-Informed Neural Network</strong>
+        (NAML L27) to replace the HH ODE solver.
+        Loss = data residual + HH PDE residual.
+        Faster inference, differentiable w.r.t. channel parameters.</p>
+    </div>
+    <div class="card">
+      <h4>🔄 Closed loop</h4>
+      <p>Music → worm → sensor signal → modify music.
+        The worm's movement generates a new piano-roll →
+        re-run the RSVD pipeline → update dance.
+        Biological <em>feedback</em> as an artistic medium.</p>
+    </div>
+    <div class="card">
+      <h4>🎓 NAML extensions</h4>
+      <p>Replace K-means with <strong>kernel K-means</strong> (L12-13)
+        for non-linear musical clusters.
+        Replace lstsq with <strong>Tikhonov regularization</strong>
+        when W_nm is ill-conditioned.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE: THANK YOU ═════════════════════ -->
+<section data-background-gradient="radial-gradient(circle at 30% 40%, #0a2540 0%, #050a15 100%)">
+  <span class="section-label">Summary</span>
+  <h2 style="color:var(--accent);margin-bottom:.3em">Thank you!</h2>
+  <div class="step-card done" style="margin:6px 0;text-align:left">
+    <div class="step-label">What we built</div>
+    <div class="step-title">Piano → RSVD → K-means → Pearson → lstsq → Worm Dance</div>
+    <div class="step-meta">7 NAML methods, 8 musical patterns, 96 muscles, one live visualization →</div>
+  </div>
+  <div class="step-card active" style="margin:6px 0;text-align:left">
+    <div class="step-label">Eckart-Young</div>
+    <div class="step-title">The best rank-k basis is the SVD — in music and biology alike</div>
+    <div class="step-meta">σ₁ captures 42% of Chopin's variance; the top modes are musically interpretable</div>
+  </div>
+  <div class="step-card purple" style="margin:6px 0;text-align:left">
+    <div class="step-label">Key surprise</div>
+    <div class="step-title">Anti-phase cancellation: DL + VL ≡ constant regardless of body wave</div>
+    <div class="step-meta">A mathematical property of worm locomotion — and a lesson about understanding data before computing means</div>
+  </div>
+  <div style="margin-top:14px;display:flex;align-items:center;gap:14px;justify-content:center">
+    <div>
+      <p style="font-size:.68em;opacity:.6;margin:0">Code + notebook:</p>
+      <p style="font-size:.72em;color:var(--accent);margin:2px 0">
+        github.com/vahidgh/wormuse · PyANNOW/notebooks/06_chopin_patterns_worm_dance_v2.ipynb
+      </p>
+      <p style="font-size:.65em;opacity:.45;margin:0">vahidghayoomi@gmail.com</p>
+    </div>
+    <span class="arrow-right" style="font-size:2em">→</span>
+    <div style="font-size:.78em;color:var(--accent3);text-align:center">
+      The worm is still<br>dancing →
+    </div>
+  </div>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+</div><!-- #slides-panel -->
+
+<!-- ═══════════════════════════════════════ WORM PANEL ══════════════════════ -->
+<div id="worm-panel">
+  <div id="worm-panel-header">
+    <div id="worm-status-dot"></div>
+    <span>PyANNOW v2.0.0 — Live Worm Dance</span>
+    <span style="opacity:.5;font-size:9px;margin-left:auto">
+      chopin_nocturne_csharp_minor · 96 BWM · 302 neurons
+    </span>
+  </div>
+  <iframe
+    id="worm-frame"
+    src="../worm_dance/worm_dance.html?embedded=1&autoplay=1"
+    title="PyANNOW Worm Dance"
+    allow="autoplay"
+  ></iframe>
+</div>
+
+<!-- ════════════════════════════════ KEYBOARD HINT ═════════════════════════ -->
+<div id="key-hint">← → navigate · F full-screen · Space next</div>
+
+<!-- ═══════════════════════════════════════ SCRIPTS ═════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+
+<script>
+// ── Reveal.js: embedded inside #slides-panel ────────────────────────────────
+Reveal.initialize({
+  embedded:    true,
+  hash:        true,
+  controls:    true,
+  progress:    true,
+  slideNumber: 'c/t',
+  transition:  'slide',
+  transitionSpeed: 'fast',
+  width:       900,
+  height:      680,
+  margin:      0.04,
+  minScale:    0.4,
+  maxScale:    1.4,
+  plugins:     [],
+  keyboard: {
+    // Keep arrow keys working when focus is on left panel
+    37: 'prev',
+    39: 'next',
+    38: 'up',
+    40: 'down',
+  }
+});
+
+// Ensure Reveal gets keyboard events when clicking left panel
+document.getElementById('slides-panel').addEventListener('click', () => {
+  document.getElementById('slides-panel').focus();
+});
+document.getElementById('slides-panel').setAttribute('tabindex', '0');
+
+// ── postMessage bridge → worm dance iframe ──────────────────────────────────
+const wormFrame = document.getElementById('worm-frame');
+const statusDot = document.getElementById('worm-status-dot');
+
+// When iframe loads, mark as live
+wormFrame.addEventListener('load', () => {
+  statusDot.classList.add('live');
+  console.log('[PyANNOW] Worm frame loaded');
+});
+
+// On first slide change, ensure worm is playing
+let wormTriggered = false;
+Reveal.on('slidechanged', (event) => {
+  if (!wormTriggered) {
+    wormTriggered = true;
+    try {
+      wormFrame.contentWindow.postMessage({ type: 'worm:play' }, '*');
+    } catch(e) { /* cross-origin: autoplay=1 param handles it */ }
+  }
+});
+
+// On slide change to "live demo" slide (index ~14), send reset
+Reveal.on('slidechanged', (event) => {
+  const slide = event.currentSlide;
+  if (slide && slide.querySelector && slide.querySelector('.arrow-right')) {
+    // On the demo slide — reset worm position for a fresh view
+    try {
+      wormFrame.contentWindow.postMessage({ type: 'worm:reset' }, '*');
+      setTimeout(() => {
+        wormFrame.contentWindow.postMessage({ type: 'worm:play' }, '*');
+      }, 300);
+    } catch(e) {}
+  }
+});
+
+// ── MathJax re-typeset after Reveal transitions ─────────────────────────────
+Reveal.on('slidechanged', () => {
+  if (typeof MathJax !== 'undefined' && MathJax.typeset) {
+    MathJax.typeset();
+  }
+});
+
+// ── F key → fullscreen ──────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+});
+
+// ── Window resize: let Reveal re-layout ─────────────────────────────────────
+window.addEventListener('resize', () => {
+  Reveal.layout();
+});
+
+console.log('[PyANNOW v2.0.0] Presentation initialized. Worm dancing on the right →');
+</script>
+</body>
+</html>

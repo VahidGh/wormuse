@@ -1,15 +1,73 @@
 # PyANNOW — NAML Progression
 
 **Living document.** Updated as each step is implemented.  
-*Last updated: v1.1.0 — Karplus-Strong piano engine (`render_ks`), direct HH biophysics synthesis path (`synthesise_from_hh`), worm–piano analogy formalised (2026-05-25).*
+*Last updated: v2.0.0 — inverse pipeline (Music→Worm Dance): RSVD/Eckart-Young + K-means + Pearson excitability + lstsq muscle map + live JS visualizer + 24-slide NAML presentation (2026-05-25).*
 
 ---
 
-## The question
+## The two questions
 
-> Can a biological neural system with limited physical constraints learn to play Chopin?
+> **v1.x:** Can a biological neural system with limited physical constraints *learn to play Chopin*?
+>
+> **v2.0.0:** Can we run the pipeline in reverse — extract recurring patterns from Chopin and *make the worm dance* to them?
 
-We use **only the methods taught in the Numerical Analysis for Machine Learning (NAML)** course at Politecnico di Milano to build a composer that maps the *C. elegans* worm's 302-neuron activity onto a piano melody, then measure how close we can get to Chopin's Nocturne in C# minor.
+**v1.x** uses only the methods taught in the NAML course at Politecnico di Milano to build a composer that maps the *C. elegans* worm's 302-neuron activity onto a piano melody, measuring proximity to Chopin's Nocturne in C# minor (F1 metric).
+
+**v2.0.0** inverts the direction: piano-roll M → RSVD → K-means → Pearson excitability → lstsq → 96-muscle body-wave → live browser dance.  Same NAML methods, opposite direction, no F1 metric — the output is the visualisation.
+
+---
+
+## v2.0.0 — Inverse pipeline: Music → Worm Dance
+
+### Problem
+
+The HH simulator, when driven by constant AVA/AVB command input, converges to a
+**fixed-point attractor** — every starting condition produces the same periodic muscle
+pattern.  This makes the raw HH muscle output useless for varied dance visualisation.
+
+### Solution: invert the pipeline
+
+Instead of simulating the worm and mapping muscles to notes, we extract recurring
+patterns from Chopin first, then drive the muscles from those patterns.
+
+### Pipeline (notebook `06_chopin_patterns_worm_dance_v2.ipynb`)
+
+| Step | NAML method | Input → Output |
+|---|---|---|
+| 1 | Piano-roll matrix | MIDI → M ∈ ℝ^{56×11711} (20 ms / frame) |
+| 2 | **RSVD (Eckart-Young)** | M → U_k Σ_k V_k^T, k=12 (90% var) |
+| 3 | **K-means on V_k** | T frames → K labels |
+| 4 | **Silhouette score** | K ∈ {2..15} → K*=8 |
+| 5 | **Pearson cross-correlation** | V_p[:,i] ↔ Z_worm[:,j] → excitability(i) |
+| 6 | **lstsq / pseudoinverse** | Z_worm, V_mus → W_nm ∈ ℝ^{k_w×96} |
+| 7 | Per-cluster muscle pose | avg(Z_worm[labels==j]) @ W_nm → pose_j ∈ ℝ^{96} |
+| 8 | Synthetic body wave | pose_j → `synthMusFromVp` → muscle activations |
+| 9 | JSON export + live viz | → `worm_dance_data.json` → `worm_dance.html` |
+
+### Key insight: anti-phase D/V cancellation
+
+Using `leftM = (DL + VL) / 2` as a locomotion signal is identically constant:
+
+```
+DL = A/2 · (1 + sin θ)
+VL = A/2 · (1 - sin θ)     ← 180° anti-phase
+(DL + VL) / 2 = A/2        ← constant, no locomotion info
+```
+
+Fix: use same-side dorsal head segments only — `headDL = qSeg(0,0,8)` vs
+`headDR = qSeg(1,0,8)`.  The 0.05 rad bilateral offset is preserved; L/R signal
+is recovered.  Verified behavior distribution after fix: FORWARD 26%, FWD+R 15%,
+FWD+L 8%, HALT 51%.
+
+### Presentation
+
+`PyANNOW/presentation/index_v2.html` — 24-slide split-screen Reveal.js presentation:
+- Left 55%: slides with MathJax equations and code snippets
+- Right 45%: live worm dance iframe (`?embedded=1&autoplay=1`)
+- `QA_v2.md` — 23 NAML Q&A pairs
+- `SCENARIO_v2.md` — complete 20-minute speaking script
+
+---
 
 ---
 

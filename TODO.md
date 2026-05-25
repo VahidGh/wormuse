@@ -14,6 +14,31 @@
 ## Status key
 🔴 Open · 🟡 In Progress · ✅ Resolved · ⏸ Deferred
 
+---
+
+## v2.0.0 — Inverse pipeline: Music → Worm Dance + NAML presentation (2026-05-25)
+
+**5 issues resolved** — new inverse pipeline, live visualizer, and 24-slide NAML presentation.
+
+| Issue | Title | Status |
+|---|---|---|
+| ISSUE-044 ✅ | Worm Dance HTML visualizer (body wave, circuit panel, audio) | v1.2.0 |
+| ISSUE-045 ✅ | Circuit panel readability (font ≥9px, base alpha ≥0.48, S-curve bezier) | v1.2.0 |
+| ISSUE-046 ✅ | L/R navigation anti-phase cancellation (DL+VL=const; fix: headDL vs headDR) | v1.2.0 |
+| ISSUE-047 ✅ | Default file auto-load (JSON+WAV on every page load; controls always visible) | v2.0.0 |
+| ISSUE-048 ✅ | v2 inverse pipeline: RSVD→K-means→Pearson→lstsq→dance (notebook 06 + presentation) | v2.0.0 |
+
+**New files (v1.2.0 / v2.0.0):**
+- `PyANNOW/worm_dance/worm_dance.html` — JS live dance visualizer
+- `PyANNOW/worm_dance/chopin.wav` — Chopin nocturne audio (auto-loaded)
+- `PyANNOW/worm_dance/data/worm_dance_data.json` — pre-built K*=8 pattern bank
+- `PyANNOW/notebooks/06_chopin_patterns_worm_dance_v2.ipynb` — inverse pipeline
+- `PyANNOW/presentation/index_v2.html` — 24-slide split-screen NAML presentation
+- `PyANNOW/presentation/QA_v2.md` — 23 Q&A pairs
+- `PyANNOW/presentation/SCENARIO_v2.md` — 20-min speaking script
+
+---
+
 ### ISSUE-043 — Add detailed Chopin score-model explainer cell
 
 | Field | Value |
