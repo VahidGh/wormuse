@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "worm-dance",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "7432", "--directory", "PyANNOW/worm_dance"],
+      "port": 7432
+    }
+  ]
+}

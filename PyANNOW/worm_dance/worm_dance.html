@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyANNOW v2.0.0 — C. elegans Worm Dance</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --subtext: #8b949e;
+    --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  h1 span { color: var(--subtext); font-weight: 400; font-size: 0.85rem; }
+
+  #main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 960px;
+  }
+
+  /* ── Pattern legend ─────────────────────────────────────────── */
+  #pattern-legend {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .legend-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1.5px solid transparent;
+    cursor: default;
+    transition: border-color 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .legend-chip.active { transform: scale(1.08); border-color: rgba(255,255,255,0.5); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { font-weight: 500; }
+  .legend-sub { color: var(--subtext); font-size: 0.72rem; }
+
+  /* ── Worm canvas wrapper ────────────────────────────────────── */
+  #worm-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    position: relative;
+  }
+  #worm-canvas {
+    display: block;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 920px;
+  }
+
+  /* ── Pattern active label (overlay) ────────────────────────── */
+  #pattern-label {
+    position: absolute;
+    top: 18px; left: 22px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0.95;
+    pointer-events: none;
+    transition: color 0.3s;
+  }
+  #excitability-badge {
+    position: absolute;
+    top: 18px; right: 22px;
+    font-size: 0.75rem;
+    color: var(--subtext);
+    pointer-events: none;
+  }
+
+  /* ── Piano-roll strip ─────────────────────────────────────────*/
+  #piano-canvas {
+    display: block;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 920px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Timeline progress ────────────────────────────────────────*/
+  #timeline-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  #timeline-canvas {
+    display: block;
+    border-radius: 4px;
+    width: 100%;
+    height: 28px;
+    cursor: pointer;
+  }
+  #time-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--subtext);
+  }
+
+  /* ── Controls ─────────────────────────────────────────────────*/
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #21262d;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button:hover { background: #30363d; border-color: var(--accent); }
+  button.active { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+
+  label { font-size: 0.8rem; color: var(--subtext); }
+  input[type=range] { accent-color: var(--accent); width: 100px; }
+
+  #status {
+    font-size: 0.75rem;
+    color: var(--subtext);
+    margin-left: auto;
+  }
+  #audio-status {
+    font-size: 0.72rem;
+    color: var(--subtext);
+    opacity: 0.7;
+  }
+  #audio-status.loaded { color: #5cb85c; opacity: 1; }
+
+  /* ── Lower panels: circuit + navigation ──────────────────────*/
+  #lower-panels {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 960px;
+  }
+  .lpanel {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+    overflow: hidden;
+    min-width: 0;
+  }
+  #circuit-canvas, #nav-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  /* ── Load overlay ─────────────────────────────────────────────*/
+  #overlay {
+    position: fixed; inset: 0;
+    background: rgba(13,17,23,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+  }
+  #overlay h2 { color: var(--accent); font-size: 1.2rem; }
+  #overlay p  { color: var(--subtext); font-size: 0.9rem; text-align: center; max-width: 400px; }
+  #overlay input[type=file] { display: none; }
+  #load-btn {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #load-btn:hover { opacity: 0.85; }
+  .hint { font-size: 0.75rem !important; opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div id="overlay">
+  <h2>🪱 PyANNOW v2.0.0 — Worm Dance</h2>
+  <p>Load the <code>worm_dance_data.json</code> generated by notebook 06 to start the animation.</p>
+  <button id="load-btn" onclick="document.getElementById('file-input').click()">
+    Load worm_dance_data.json
+  </button>
+  <input type="file" id="file-input" accept=".json">
+  <input type="file" id="wav-input" accept=".wav,.mp3,.ogg" style="display:none">
+  <p class="hint">File → <code>worm_dance/data/worm_dance_data.json</code></p>
+</div>
+<audio id="audio-player" preload="auto"></audio>
+
+<h1>PyANNOW v2.0.0 <span>— C. elegans Worm Dance · Chopin Nocturne in C# minor</span></h1>
+
+<div id="main-container">
+  <div id="pattern-legend"></div>
+
+  <div id="worm-wrapper">
+    <canvas id="worm-canvas" width="920" height="320"></canvas>
+    <div id="pattern-label">—</div>
+    <div id="excitability-badge">—</div>
+  </div>
+
+  <canvas id="piano-canvas" width="920" height="64"></canvas>
+
+  <div id="lower-panels">
+    <div class="lpanel">
+      <canvas id="circuit-canvas" width="460" height="280"></canvas>
+    </div>
+    <div class="lpanel">
+      <canvas id="nav-canvas" width="460" height="280"></canvas>
+    </div>
+  </div>
+
+  <div id="timeline-container">
+    <canvas id="timeline-canvas" width="920" height="28"></canvas>
+    <div id="time-info">
+      <span id="time-current">0.0 s</span>
+      <span id="time-total">—</span>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="btn-play" onclick="togglePlay()">▶ Play</button>
+    <button id="btn-reset" onclick="resetAnim()">↺ Reset</button>
+    <button id="btn-wav" onclick="document.getElementById('wav-input').click()">♪ Load WAV</button>
+    <label>Speed
+      <input type="range" id="speed-slider" min="0.5" max="8" step="0.5" value="2"
+             oninput="onSpeedChange(this.value)">
+      <span id="speed-val">2×</span>
+    </label>
+    <label>Glow
+      <input type="range" id="glow-slider" min="0" max="1" step="0.1" value="0.5"
+             oninput="document.getElementById('glow-val').textContent=this.value">
+      <span id="glow-val">0.5</span>
+    </label>
+    <span id="audio-status">no audio</span>
+    <div id="status">No data loaded</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Data state
+// ═══════════════════════════════════════════════════════════════════════════
+let D = null;           // parsed JSON data
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Audio
+// ═══════════════════════════════════════════════════════════════════════════
+const audio = document.getElementById('audio-player');
+let audioReady = false;
+
+document.getElementById('wav-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (audioReady) URL.revokeObjectURL(audio.src);
+  audio.src = URL.createObjectURL(file);
+  audioReady = true;
+  audio.playbackRate = parseFloat(document.getElementById('speed-slider').value);
+  const el = document.getElementById('audio-status');
+  el.textContent = '♪ ' + file.name;
+  el.classList.add('loaded');
+  document.getElementById('btn-wav').textContent = '♪ ' + file.name.replace(/\.[^.]+$/, '');
+});
+
+function audioPlay() {
+  if (!audioReady) return;
+  audio.play().catch(() => {});
+}
+function audioPause() {
+  if (!audioReady) return;
+  audio.pause();
+}
+function audioSeek(t) {
+  if (!audioReady) return;
+  audio.currentTime = Math.max(0, Math.min(audio.duration || 0, t));
+}
+
+function onSpeedChange(val) {
+  document.getElementById('speed-val').textContent = val + '×';
+  if (audioReady) {
+    audio.playbackRate = parseFloat(val);
+    // Resync position to current animation frame so drift doesn't accumulate
+    audioSeek(frame / (D ? D.fps : 5));
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Animation state
+// ═══════════════════════════════════════════════════════════════════════════
+let frame   = 0;
+let playing = false;
+let lastTs  = null;
+let rafId   = null;
+let frameAccum = 0;     // fractional frame accumulator
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Canvas contexts
+// ═══════════════════════════════════════════════════════════════════════════
+const wormCvs    = document.getElementById('worm-canvas');
+const wormCtx    = wormCvs.getContext('2d');
+const pianoCvs   = document.getElementById('piano-canvas');
+const pianoCtx   = pianoCvs.getContext('2d');
+const tlCvs      = document.getElementById('timeline-canvas');
+const tlCtx      = tlCvs.getContext('2d');
+const circCvs    = document.getElementById('circuit-canvas');
+const circCtx    = circCvs.getContext('2d');
+const navCvs     = document.getElementById('nav-canvas');
+const navCtx     = navCvs.getContext('2d');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── Connectome: 6 motor-neuron classes ─────────────────────────────────────
+// Real C. elegans circuit: each class innervates all 24 body segments across
+// their target quadrants.  Crossed inhibition (DD/VD) is the CPG mechanism.
+// ─────────────────────────────────────────────────────────────────────────────
+const CMD_NAMES = ['AVA','AVD','AVB','PVC'];
+const CMD_COL   = ['#e8734a','#e87350','#4a90d9','#5ab0ff'];
+
+// 6 MN classes: DA, DB, VA, VB, DD(inh), VD(inh)
+const MN_CLASS = [
+  { name:'DA', col:'#e8734a', excitatory:true,  quads:[0,1] }, // bwd dorsal exc
+  { name:'DB', col:'#4a90d9', excitatory:true,  quads:[0,1] }, // fwd dorsal exc
+  { name:'VA', col:'#e86040', excitatory:true,  quads:[2,3] }, // bwd ventral exc
+  { name:'VB', col:'#5ab0ff', excitatory:true,  quads:[2,3] }, // fwd ventral exc
+  { name:'DD', col:'#9b59b6', excitatory:false, quads:[2,3] }, // fwd→ventral inh
+  { name:'VD', col:'#7d3c98', excitatory:false, quads:[0,1] }, // bwd→dorsal inh
+];
+// CMD → MN class weights  [DA, DB, VA, VB, DD, VD]
+const CMD_TO_MNC = [
+  [5, 0, 5, 0, 0, 2],  // AVA → DA, VA excitatory;  VD reciprocal inh
+  [3, 0, 3, 0, 0, 1],  // AVD → DA, VA
+  [0, 5, 0, 5, 2, 0],  // AVB → DB, VB excitatory;  DD reciprocal inh
+  [0, 3, 0, 3, 1, 0],  // PVC → DB, VB
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Navigation state
+// ═══════════════════════════════════════════════════════════════════════════
+let nav = { x:0, y:0, z:0, theta:-Math.PI/2, phi:0, vx:0, vy:0, path:[], behavior:'HALT' };
+
+function resetNav() {
+  nav.x=0; nav.y=0; nav.z=0;
+  nav.theta=-Math.PI/2; nav.phi=0;
+  nav.vx=0; nav.vy=0; nav.path=[]; nav.behavior='HALT';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Synthetic body-wave muscles from piano temporal modes (vp_timeline)
+// vp: z-scored piano modes at this frame (length k_piano)
+//   mode 0 (≥0): wave amplitude (musical energy)
+//   mode 1 (±): body-wave phase (which segment is active)
+//   mode 2 (±): dorsal-ventral bias
+//   mode 3 (±): L/R phase offset → turning direction
+// Biological: dorsal and ventral muscles are in anti-phase (π offset);
+// L/R phase difference creates the body curvature for turning.
+// ═══════════════════════════════════════════════════════════════════════════
+function synthMusFromVp(vp) {
+  const k       = vp ? vp.length : 0;
+  const amp     = Math.max(0.15, Math.min(1.0, (k > 0 ? vp[0] : 1) / 4.5));
+  const phase   = k > 1 ? vp[1] * 0.55 : 0;
+  const dv_bias = k > 2 ? vp[2] * 0.18 : 0;
+  const lr_off  = k > 3 ? vp[3] * 0.38 : 0;  // radians L/R phase offset
+
+  const muscles = new Array(96);
+  for (let q = 0; q < 4; q++) {
+    const isDorsal = q < 2;
+    const isLeft   = (q === 0 || q === 2);
+    const dvPhase  = isDorsal ? 0 : Math.PI;   // biological anti-phase D/V
+    const lrPhase  = isLeft   ? 0 : lr_off;    // left side leads/lags right → turn
+
+    for (let s = 0; s < 24; s++) {
+      const spatial = (s / 24) * 2 * Math.PI;
+      const wave    = amp * 0.5 * (1 + Math.sin(phase - spatial + dvPhase + lrPhase));
+      const dvMod   = isDorsal ? dv_bias : -dv_bias;
+      muscles[q * 24 + s] = Math.max(0, Math.min(1, wave + dvMod * 0.25));
+    }
+  }
+  return muscles;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Infer 6-class MN activations from 96 muscles (already in [0,1])
+// Quadrant layout: muscles[q*24+s], q=0(DL),1(DR),2(VL),3(VR), s=0..23
+// ═══════════════════════════════════════════════════════════════════════════
+function inferNeuronActivations(muscles) {
+  const qMean = q => { let s=0; for(let i=0;i<24;i++) s+=muscles[q*24+i]; return s/24; };
+  const qSeg  = (q,s0,s1) => { let s=0; for(let i=s0;i<s1;i++) s+=muscles[q*24+i]; return s/(s1-s0); };
+
+  const dorsal  = (qMean(0) + qMean(1)) / 2;
+  const ventral = (qMean(2) + qMean(3)) / 2;
+  const ant     = [0,1,2,3].reduce((s,q) => s + qSeg(q,0,8), 0) / 4;
+  const post    = [0,1,2,3].reduce((s,q) => s + qSeg(q,16,24), 0) / 4;
+  const bwd     = Math.max(0, ant - post) * 2;
+  const fwd     = Math.max(0, post - ant) * 2;
+
+  const mn = [
+    Math.min(1, dorsal  * (0.3 + bwd)),  // DA
+    Math.min(1, dorsal  * (0.3 + fwd)),  // DB
+    Math.min(1, ventral * (0.3 + bwd)),  // VA
+    Math.min(1, ventral * (0.3 + fwd)),  // VB
+    Math.min(1, fwd  * 0.65),            // DD inhibitory
+    Math.min(1, bwd  * 0.65),            // VD inhibitory
+  ];
+
+  const cmd = CMD_TO_MNC.map(row => {
+    let ws=0, wa=0;
+    row.forEach((w,j) => { ws+=w; wa+=w*mn[j]; });
+    return ws > 0 ? Math.min(1, wa/ws) : 0;
+  });
+  return { mn, cmd, dorsal, ventral, bwd, fwd };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Neural circuit: 4 CMD INs → 6 MN classes → 96 body-wall muscles (4×24)
+// ═══════════════════════════════════════════════════════════════════════════
+function drawCircuit(muscles, pat) {
+  const W = circCvs.width, H = circCvs.height;
+  const ctx = circCtx;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  const { mn, cmd } = inferNeuronActivations(muscles);
+  const glow = parseFloat(document.getElementById('glow-slider').value);
+
+  // ── Layout ────────────────────────────────────────────────────────
+  const X1 = 52;                       // CMD IN column
+  const X2 = 152;                      // MN class column
+  const MUS_X0 = 210;                  // muscle grid left edge
+  const MUS_CW = Math.max(5, Math.floor((W - MUS_X0 - 14) / 24));
+  const MUS_RH = Math.max(9, Math.floor((H - 60) / 10));  // cell height
+  const MUS_GAP = 2;                   // gap between D rows and V rows
+  // 4 rows: DL, DR, (gap), VL, VR
+  const rowY = [
+    H/2 - MUS_RH*2 - MUS_GAP - 4,     // DL
+    H/2 - MUS_RH   - MUS_GAP - 2,     // DR
+    H/2             + MUS_GAP/2,       // VL
+    H/2 + MUS_RH   + MUS_GAP + 2,     // VR
+  ];
+  const CMD_Y = [H*0.14, H*0.37, H*0.63, H*0.86];
+  const MN_Y  = MN_CLASS.map((_,j) => H * (0.08 + j * 0.165));
+
+  // ── Edges CMD → MN classes ────────────────────────────────────────
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 6; j++) {
+      const w = CMD_TO_MNC[i][j];
+      if (!w) continue;
+      const a = (w / 5) * (cmd[i] * 0.75 + 0.06);
+      ctx.strokeStyle = hexToRgba(CMD_COL[i], a);
+      ctx.lineWidth = 0.5 + cmd[i] * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(X1 + 10, CMD_Y[i]);
+      ctx.lineTo(X2 - 9, MN_Y[j]);
+      ctx.stroke();
+    }
+  }
+
+  // ── Edges MN classes → muscle grid regions ────────────────────────
+  // Draw a colored bracket from each MN node to the rows it innervates
+  for (let j = 0; j < 6; j++) {
+    const mc = MN_CLASS[j];
+    const act = mn[j];
+    if (act < 0.02) continue;
+    const a = act * 0.55 + 0.05;
+    const y0 = rowY[mc.quads[0]];
+    const y1 = rowY[mc.quads[mc.quads.length-1]] + MUS_RH;
+    const cx  = X2 + 10;
+    const tx  = MUS_X0 - 4;
+    // Vertical bracket line
+    ctx.strokeStyle = hexToRgba(mc.col, a * 0.7);
+    ctx.lineWidth = mc.excitatory ? (0.5 + act * 2) : (0.5 + act * 1.5);
+    ctx.setLineDash(mc.excitatory ? [] : [3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(cx, MN_Y[j]);
+    ctx.bezierCurveTo(tx - 20, MN_Y[j], tx - 20, (y0+y1)/2, tx, (y0+y1)/2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Arrowhead / T-bar
+    if (mc.excitatory) {
+      ctx.fillStyle = hexToRgba(mc.col, a);
+      ctx.beginPath();
+      ctx.moveTo(tx, (y0+y1)/2);
+      ctx.lineTo(tx - 5, (y0+y1)/2 - 3);
+      ctx.lineTo(tx - 5, (y0+y1)/2 + 3);
+      ctx.closePath(); ctx.fill();
+    } else {
+      ctx.strokeStyle = hexToRgba(mc.col, a * 1.2);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tx, y0); ctx.lineTo(tx, y1); ctx.stroke();
+    }
+  }
+
+  // ── 96 Muscle cells (4 rows × 24 cols) ───────────────────────────
+  // muscles are already in [0,1] (synthetic wave from vp_timeline)
+  const QUAD_LABELS = ['DL','DR','VL','VR'];
+  for (let q = 0; q < 4; q++) {
+    const ry = rowY[q];
+    ctx.font = '7px monospace';
+    ctx.fillStyle = hexToRgba('#ffffff', 0.35);
+    ctx.textAlign = 'right';
+    ctx.fillText(QUAD_LABELS[q], MUS_X0 - 6, ry + MUS_RH * 0.7);
+    ctx.textAlign = 'left';
+
+    for (let s = 0; s < 24; s++) {
+      const t  = muscles[q * 24 + s];   // directly [0,1]
+      const cx = MUS_X0 + s * MUS_CW;
+      // Muscle cell fill: pattern color blended by activation
+      ctx.fillStyle = blendColor('#111827', pat.color, t * 0.85 + 0.05);
+      ctx.fillRect(cx, ry, MUS_CW - 1, MUS_RH - 1);
+      // Glow for highly active cells
+      if (glow > 0 && t > 0.7) {
+        ctx.save();
+        ctx.shadowColor = pat.color;
+        ctx.shadowBlur = glow * t * 8;
+        ctx.fillStyle = hexToRgba(pat.color, (t - 0.7) * 0.8);
+        ctx.fillRect(cx, ry, MUS_CW - 1, MUS_RH - 1);
+        ctx.restore();
+      }
+    }
+    // Segment tick marks every 6 (ant/mid/post thirds)
+    for (let s = 0; s <= 24; s += 6) {
+      const cx = MUS_X0 + s * MUS_CW;
+      ctx.strokeStyle = hexToRgba('#ffffff', 0.12);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx, ry); ctx.lineTo(cx, ry + MUS_RH); ctx.stroke();
+    }
+  }
+
+  // D/V divider
+  const dvY = (rowY[1] + MUS_RH + rowY[2]) / 2;
+  ctx.setLineDash([3,4]);
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.1);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(MUS_X0 - 22, dvY); ctx.lineTo(W - 4, dvY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Segment axis label
+  ctx.font = '7px monospace';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.18);
+  ctx.fillText('ant', MUS_X0, rowY[3] + MUS_RH + 10);
+  ctx.textAlign = 'right';
+  ctx.fillText('post', MUS_X0 + 24 * MUS_CW, rowY[3] + MUS_RH + 10);
+  ctx.textAlign = 'left';
+
+  // ── CMD IN nodes ──────────────────────────────────────────────────
+  CMD_NAMES.forEach((name, i) => {
+    const r = 5 + cmd[i] * 8;
+    ctx.save();
+    if (glow > 0 && cmd[i] > 0.15) { ctx.shadowColor = CMD_COL[i]; ctx.shadowBlur = glow * cmd[i] * 14; }
+    ctx.beginPath();
+    ctx.arc(X1, CMD_Y[i], r, 0, Math.PI * 2);
+    ctx.fillStyle = blendColor('#1a1a2e', CMD_COL[i], cmd[i] * 0.85 + 0.15);
+    ctx.fill();
+    ctx.strokeStyle = hexToRgba(CMD_COL[i], 0.55);
+    ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+    ctx.font = `${7 + cmd[i]*2}px monospace`;
+    ctx.fillStyle = hexToRgba(CMD_COL[i], 0.9);
+    ctx.textAlign = 'right';
+    ctx.fillText(name, X1 - r - 3, CMD_Y[i] + 3);
+    ctx.textAlign = 'left';
+  });
+
+  // ── MN class nodes ────────────────────────────────────────────────
+  MN_CLASS.forEach((mc, j) => {
+    const r = 4 + mn[j] * 7;
+    ctx.save();
+    if (glow > 0 && mn[j] > 0.15) { ctx.shadowColor = mc.col; ctx.shadowBlur = glow * mn[j] * 10; }
+    ctx.beginPath();
+    ctx.arc(X2, MN_Y[j], r, 0, Math.PI * 2);
+    ctx.fillStyle = blendColor('#1a1a2e', mc.col, mn[j] * 0.85 + 0.15);
+    ctx.fill();
+    ctx.strokeStyle = hexToRgba(mc.col, mc.excitatory ? 0.5 : 0.3);
+    ctx.lineWidth = mc.excitatory ? 1 : 1.5;
+    if (!mc.excitatory) ctx.setLineDash([2,2]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.font = '7.5px monospace';
+    ctx.fillStyle = hexToRgba(mc.col, 0.85);
+    ctx.fillText(mc.name, X2 + r + 3, MN_Y[j] + 3);
+    if (!mc.excitatory) {
+      ctx.fillStyle = hexToRgba(mc.col, 0.5);
+      ctx.fillText('⊣', X2 + r + 24, MN_Y[j] + 3);
+    }
+  });
+
+  // ── Labels ────────────────────────────────────────────────────────
+  ctx.font = '8px monospace';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.15);
+  ctx.textAlign = 'center';
+  ctx.fillText('CMD', X1, H - 5);
+  ctx.fillText('MN class', X2, H - 5);
+  ctx.fillText('96 BWM', MUS_X0 + 12 * MUS_CW, H - 5);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.18);
+  ctx.fillText('neural circuit', 6, 11);
+  ctx.font = '7px monospace';
+  ctx.fillStyle = hexToRgba('#9b59b6', 0.6);
+  ctx.fillText('⊣ inh', X2 + 26, H - 5);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Navigation: update state each frame
+// ═══════════════════════════════════════════════════════════════════════════
+const BEH_COL = {
+  'FORWARD':'#5cb85c','FWD+R':'#7ecf7e','FWD+L':'#7ecf7e',
+  'REVERSAL':'#e8734a','TURN L':'#f0ad4e','TURN R':'#f0ad4e',
+  'Ω-TURN':'#9b59b6','HALT':'#8b949e','COIL':'#58a6ff',
+};
+
+function updateNav(muscles, patId) {
+  // muscles are [0,1] with D/V anti-phase and L/R phase-offset body wave.
+  //
+  // Why NOT average all 4 quadrants for F/B or L/R:
+  //   DL + VL cancel (anti-phase) → mean always = amp*0.5 regardless of wave.
+  //   DR + VR cancel similarly.  So DL+VL vs DR+VR = 0 always.
+  //
+  // Correct signals:
+  //   F/B → use one quadrant (DL) anterior vs posterior — no cancellation
+  //   L/R → use DL head vs DR head — same D side, L/R phase offset is preserved
+
+  const qSeg = (q,s0,s1) => { let s=0; for(let i=s0;i<s1;i++) s+=muscles[q*24+i]; return s/(s1-s0); };
+
+  const dlAnt  = qSeg(0,  0,  8);   // DL anterior  (q=0=DL)
+  const dlPost = qSeg(0, 16, 24);   // DL posterior
+  const headDL = dlAnt;             // reuse
+  const headDR = qSeg(1,  0,  8);   // DR head (q=1=DR, same dorsal side)
+
+  // D/V pitch and total activity
+  const dorsal  = (qSeg(0,0,24) + qSeg(1,0,24)) / 2;
+  const ventral = (qSeg(2,0,24) + qSeg(3,0,24)) / 2;
+  const total   = (dorsal + ventral) / 2;
+  const dpitch  = (dorsal - ventral) * 0.05;
+
+  const net_fwd = Math.max(-1, Math.min(1, (dlPost - dlAnt)   * 6.0));
+  const turn    = Math.max(-1, Math.min(1, (headDR - headDL)  * 8.0));
+
+  let beh;
+  if (total < 0.10)                                          beh = 'HALT';
+  else if (dlAnt > 0.72 && dlAnt > dlPost * 1.5)            beh = 'Ω-TURN';
+  else if (net_fwd > 0.10 && Math.abs(turn) > 0.12)         beh = turn > 0 ? 'FWD+R' : 'FWD+L';
+  else if (net_fwd > 0.10)                                   beh = 'FORWARD';
+  else if (net_fwd < -0.10)                                  beh = 'REVERSAL';
+  else if (Math.abs(turn) > 0.12)                            beh = turn > 0 ? 'TURN R' : 'TURN L';
+  else                                                       beh = 'COIL';
+
+  nav.theta += turn    * 0.08;
+  nav.phi    = nav.phi * 0.90 + dpitch;
+  nav.z      = nav.z   * 0.85 + nav.phi * 8;
+  nav.vx     = nav.vx  * 0.78 + net_fwd * Math.cos(nav.theta) * 0.28;
+  nav.vy     = nav.vy  * 0.78 + net_fwd * Math.sin(nav.theta) * 0.28;
+  nav.x += nav.vx;
+  nav.y += nav.vy;
+
+  nav.path.push({ x:nav.x, y:nav.y, z:nav.z, pid:patId, beh, spd:Math.abs(net_fwd) });
+  if (nav.path.length > 800) nav.path.shift();
+  nav.behavior = beh;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Navigation map: isometric 3D path view
+// ═══════════════════════════════════════════════════════════════════════════
+function drawNavMap(pat) {
+  const W = navCvs.width, H = navCvs.height;
+  const ctx = navCtx;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.font = '8.5px monospace';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.2);
+  ctx.fillText('navigation  (isometric 3D)', 8, 12);
+
+  if (!D || nav.path.length < 2) return;
+
+  const N = nav.path.length;
+  const ELEV_W = 14, ML = 26, MR = 12, MT = 22, MB = 26;
+  const CW = W - ELEV_W - ML - MR, CH = H - MT - MB;
+  const cx0 = ELEV_W + ML, cy0 = MT;
+
+  // ── Isometric projection ──────────────────────────────────────────
+  // Screen: sx = cx + (wx-wy)*cos30*scale, sy = cy + (wx+wy)*sin30*scale*0.5 - wz*vscale
+  const COS30 = Math.cos(Math.PI/6), SIN30 = Math.sin(Math.PI/6);
+
+  // Auto-scale from path bounding box in iso space
+  let minSx=Infinity,maxSx=-Infinity,minSy=Infinity,maxSy=-Infinity;
+  nav.path.forEach(p => {
+    const sx = (p.x - p.y) * COS30;
+    const sy = (p.x + p.y) * SIN30 * 0.5 - p.z * 0.9;
+    if (sx<minSx) minSx=sx; if (sx>maxSx) maxSx=sx;
+    if (sy<minSy) minSy=sy; if (sy>maxSy) maxSy=sy;
+  });
+  const rngX = Math.max(maxSx-minSx, 20), rngY = Math.max(maxSy-minSy, 20);
+  const scale = Math.min(CW/rngX, CH/rngY) * 0.82;
+  const offX  = (ELEV_W + ML) + CW/2 - (minSx+maxSx)/2*scale;
+  const offY  = MT + CH/2 - (minSy+maxSy)/2*scale;
+
+  const toScreen = (wx, wy, wz) => ({
+    sx: offX + (wx - wy) * COS30 * scale,
+    sy: offY + ((wx + wy) * SIN30 * 0.5 - wz * 0.9) * scale,
+  });
+
+  // ── Floor grid (z=0 plane) ────────────────────────────────────────
+  const gridStep = Math.max(5, Math.round(20 / scale));
+  const gx0 = Math.floor(Math.min(...nav.path.map(p=>p.x)) / gridStep) * gridStep;
+  const gx1 = Math.ceil( Math.max(...nav.path.map(p=>p.x)) / gridStep) * gridStep;
+  const gy0 = Math.floor(Math.min(...nav.path.map(p=>p.y)) / gridStep) * gridStep;
+  const gy1 = Math.ceil( Math.max(...nav.path.map(p=>p.y)) / gridStep) * gridStep;
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.05);
+  ctx.lineWidth = 1;
+  for (let gx = gx0; gx <= gx1; gx += gridStep) {
+    const a = toScreen(gx, gy0, 0), b = toScreen(gx, gy1, 0);
+    ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+  }
+  for (let gy = gy0; gy <= gy1; gy += gridStep) {
+    const a = toScreen(gx0, gy, 0), b = toScreen(gx1, gy, 0);
+    ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+  }
+
+  // ── Path trail ────────────────────────────────────────────────────
+  for (let i = 1; i < N; i++) {
+    const a = nav.path[i-1], b = nav.path[i];
+    const pa = toScreen(a.x, a.y, a.z), pb = toScreen(b.x, b.y, b.z);
+    const age = i / N;
+    ctx.strokeStyle = hexToRgba(D.patterns[b.pid].color, age * 0.65 + 0.06);
+    ctx.lineWidth = 0.8 + b.spd * age * 1.2;
+    ctx.beginPath(); ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy); ctx.stroke();
+
+    // Vertical stem to floor for elevated segments (every 8th point)
+    if (i % 8 === 0 && Math.abs(b.z) > 3) {
+      const pf = toScreen(b.x, b.y, 0);
+      ctx.strokeStyle = hexToRgba(D.patterns[b.pid].color, age * 0.18);
+      ctx.lineWidth = 0.6;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(pb.sx, pb.sy); ctx.lineTo(pf.sx, pf.sy); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // ── Current position ─────────────────────────────────────────────
+  const cur = nav.path[N-1];
+  const cp  = toScreen(cur.x, cur.y, cur.z);
+  const glow = parseFloat(document.getElementById('glow-slider').value);
+  ctx.save();
+  if (glow > 0) { ctx.shadowColor = pat.color; ctx.shadowBlur = glow * 18; }
+  ctx.beginPath(); ctx.arc(cp.sx, cp.sy, 5, 0, Math.PI*2);
+  ctx.fillStyle = pat.color; ctx.fill();
+  ctx.restore();
+
+  // Heading arrow projected into iso space
+  const ahead = 12;
+  const nx = cur.x + ahead * Math.cos(nav.theta);
+  const ny = cur.y + ahead * Math.sin(nav.theta);
+  const ap  = toScreen(nx, ny, cur.z);
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.7); ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.moveTo(cp.sx, cp.sy); ctx.lineTo(ap.sx, ap.sy); ctx.stroke();
+  // Arrowhead
+  const ang = Math.atan2(ap.sy - cp.sy, ap.sx - cp.sx);
+  ctx.beginPath();
+  ctx.moveTo(ap.sx, ap.sy);
+  ctx.lineTo(ap.sx - 6*Math.cos(ang-0.45), ap.sy - 6*Math.sin(ang-0.45));
+  ctx.lineTo(ap.sx - 6*Math.cos(ang+0.45), ap.sy - 6*Math.sin(ang+0.45));
+  ctx.closePath();
+  ctx.fillStyle = hexToRgba('#ffffff', 0.7); ctx.fill();
+
+  // ── Elevation gauge (left strip) ─────────────────────────────────
+  const GH = H - MT - MB, GY = MT;
+  ctx.fillStyle = hexToRgba('#ffffff', 0.04);
+  ctx.fillRect(4, GY, ELEV_W - 2, GH);
+  const zMax = 30;
+  const zFrac = Math.max(0, Math.min(1, (cur.z + zMax) / (zMax * 2)));
+  const barH  = zFrac * GH;
+  ctx.fillStyle = hexToRgba(pat.color, 0.75);
+  ctx.fillRect(4, GY + GH - barH, ELEV_W - 2, barH);
+  ctx.font = '7px monospace'; ctx.fillStyle = hexToRgba('#ffffff', 0.25);
+  ctx.fillText('+z', 4, GY + 9);
+  ctx.fillText('-z', 4, GY + GH - 2);
+
+  // ── Behavior label ────────────────────────────────────────────────
+  ctx.font = 'bold 13px monospace';
+  ctx.fillStyle = BEH_COL[nav.behavior] || '#ffffff';
+  ctx.fillText(nav.behavior, ELEV_W + ML + 4, H - 8);
+
+  // ── Axis labels ───────────────────────────────────────────────────
+  // Show A→P (anterior→posterior) arrow for reference
+  const ox = toScreen(0, 0, 0);
+  const fwdP = toScreen(12, 0, 0);
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.15); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ox.sx, ox.sy); ctx.lineTo(fwdP.sx, fwdP.sy); ctx.stroke();
+  ctx.font = '7px monospace'; ctx.fillStyle = hexToRgba('#ffffff', 0.2);
+  ctx.fillText('fwd', fwdP.sx+2, fwdP.sy+3);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// File loading
+// ═══════════════════════════════════════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      D = JSON.parse(ev.target.result);
+      initViz();
+      document.getElementById('overlay').style.display = 'none';
+    } catch(err) {
+      alert('Failed to parse JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Initialization
+// ═══════════════════════════════════════════════════════════════════════════
+function initViz() {
+  buildLegend();
+  drawTimeline();
+  document.getElementById('time-total').textContent =
+    D.duration_s.toFixed(1) + ' s  ·  ' + D.bpm + ' BPM';
+  document.getElementById('status').textContent =
+    `${D.n_frames} frames · ${D.n_patterns} patterns · ${D.n_muscles} muscles`;
+  frame = 0;
+  resetNav();
+  drawFrame(0);
+}
+
+function buildLegend() {
+  const el = document.getElementById('pattern-legend');
+  el.innerHTML = '';
+  D.patterns.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'legend-chip';
+    chip.id = `chip-${p.id}`;
+    chip.style.background = hexToRgba(p.color, 0.12);
+    chip.innerHTML = `
+      <div class="legend-dot" style="background:${p.color}"></div>
+      <span class="legend-label">P${p.id}</span>
+      <span class="legend-sub">${(p.frame_fraction*100).toFixed(0)}% ·
+        exc=${p.excitability.toFixed(3)}
+        ${p.excitability_rank===0 ? ' ★' : ''}</span>`;
+    el.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Timeline
+// ═══════════════════════════════════════════════════════════════════════════
+function drawTimeline() {
+  const W = tlCvs.width, H = tlCvs.height;
+  tlCtx.clearRect(0, 0, W, H);
+  const N = D.n_frames;
+  const pw = W / N;
+  D.timeline.forEach((pid, i) => {
+    tlCtx.fillStyle = D.patterns[pid].color;
+    tlCtx.fillRect(Math.floor(i * pw), 0, Math.ceil(pw) + 1, H);
+  });
+}
+
+function drawTimelineCursor(f) {
+  drawTimeline();
+  const W = tlCvs.width, H = tlCvs.height;
+  const x = (f / D.n_frames) * W;
+  tlCtx.save();
+  tlCtx.strokeStyle = '#ffffff';
+  tlCtx.lineWidth = 2;
+  tlCtx.beginPath();
+  tlCtx.moveTo(x, 0); tlCtx.lineTo(x, H);
+  tlCtx.stroke();
+  tlCtx.restore();
+}
+
+tlCvs.addEventListener('click', e => {
+  if (!D) return;
+  const rect = tlCvs.getBoundingClientRect();
+  const frac = (e.clientX - rect.left) / rect.width;
+  frame = Math.floor(frac * D.n_frames);
+  frameAccum = 0;
+  audioSeek(frame / D.fps);
+  drawFrame(frame);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Worm body geometry
+// ═══════════════════════════════════════════════════════════════════════════
+const SEGS = 24;
+const QUADS = 4;  // DL, DR, VL, VR
+
+function getMusAct(muscles, seg, quad) {
+  // muscles: flat (96,) array, layout: quadrant-major [q*24 + s]
+  return muscles[quad * SEGS + seg];
+}
+
+function dorsal(muscles, seg) {
+  // Dorsal = average of DL (quad 0) and DR (quad 1)
+  return (getMusAct(muscles, seg, 0) + getMusAct(muscles, seg, 1)) * 0.5;
+}
+
+function ventral(muscles, seg) {
+  // Ventral = average of VL (quad 2) and VR (quad 3)
+  return (getMusAct(muscles, seg, 2) + getMusAct(muscles, seg, 3)) * 0.5;
+}
+
+function totalAct(muscles, seg) {
+  return (dorsal(muscles, seg) + ventral(muscles, seg)) * 0.5;
+}
+
+// Smooth catmull-rom spline point
+function catmullRomPoint(p0, p1, p2, p3, t) {
+  const t2 = t*t, t3 = t2*t;
+  return 0.5 * (
+    (2*p1) +
+    (-p0 + p2) * t +
+    (2*p0 - 5*p1 + 4*p2 - p3) * t2 +
+    (-p0 + 3*p1 - 3*p2 + p3) * t3
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Draw one frame
+// ═══════════════════════════════════════════════════════════════════════════
+function drawFrame(f) {
+  if (!D) return;
+  f = Math.max(0, Math.min(D.n_frames - 1, f));
+
+  // Use piano-driven synthetic body wave when vp_timeline is available;
+  // fall back to raw HH muscle data otherwise.
+  const muscles = (D.vp_timeline && D.vp_timeline[f])
+    ? synthMusFromVp(D.vp_timeline[f])
+    : D.muscle_timeline[f];   // (96,) in [0,1]
+  const patId   = D.timeline[f];
+  const pat     = D.patterns[patId];
+  const t_s     = (f / D.fps).toFixed(1);
+
+  // Update legend highlight
+  D.patterns.forEach(p => {
+    const chip = document.getElementById(`chip-${p.id}`);
+    if (chip) chip.classList.toggle('active', p.id === patId);
+  });
+
+  // Update labels
+  const lbl = document.getElementById('pattern-label');
+  lbl.textContent = `Pattern ${patId}  ·  top pitches: ${pat.top_pitches.slice(0,3).join(', ')}`;
+  lbl.style.color = pat.color;
+
+  document.getElementById('excitability-badge').textContent =
+    `excitability ${pat.excitability.toFixed(3)}${pat.excitability_rank===0 ? ' ★ most excitable' : ''}`;
+
+  document.getElementById('time-current').textContent = t_s + ' s';
+
+  drawWorm(muscles, pat, f);
+  drawPianoRoll(pat);
+  drawTimelineCursor(f);
+  updateNav(muscles, patId);
+  drawCircuit(muscles, pat);
+  drawNavMap(pat);
+}
+
+function drawWorm(muscles, pat, frameIdx) {
+  const W = wormCvs.width, H = wormCvs.height;
+  const ctx = wormCtx;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  const glow   = parseFloat(document.getElementById('glow-slider').value);
+  const MARGIN = 50;
+  const cx_step = (W - 2 * MARGIN) / (SEGS - 1);
+  const cy_base = H * 0.48;
+  const undulAmp = H * 0.18;       // max undulation amplitude
+
+  // Compute body centerline y-positions from D-V activation difference
+  const raw_dy = [];
+  for (let s = 0; s < SEGS; s++) {
+    const dv = dorsal(muscles, s) - ventral(muscles, s);
+    raw_dy.push(dv * undulAmp);
+  }
+
+  // Add gentle travelling wave for visual appeal (biological locomotion)
+  const phase = (frameIdx / D.fps) * Math.PI * 2 * 1.5;  // 1.5 Hz locomotion wave
+  const wave_amp = undulAmp * 0.35;
+  for (let s = 0; s < SEGS; s++) {
+    const spatial = (s / (SEGS - 1)) * Math.PI * 2;
+    raw_dy[s] += Math.sin(phase - spatial) * wave_amp;
+  }
+
+  // Segment centers
+  const pts = [];
+  for (let s = 0; s < SEGS; s++) {
+    pts.push({
+      x: MARGIN + s * cx_step,
+      y: cy_base + raw_dy[s],
+    });
+  }
+
+  // Half-widths: wider in mid-body, tapered at head/tail
+  const halfW = s => {
+    const rel = s / (SEGS - 1);
+    const taper = Math.sin(rel * Math.PI);   // 0 at ends, 1 in middle
+    const base_r = H * 0.085;
+    const act = totalAct(muscles, s);
+    return base_r * (0.55 + 0.45 * taper) * (1 + act * 0.18);
+  };
+
+  // Draw each segment as filled ellipse with activation color
+  for (let s = SEGS - 1; s >= 0; s--) {
+    const act   = totalAct(muscles, s);
+    const dAct  = dorsal(muscles, s);
+    const vAct  = ventral(muscles, s);
+    const hw    = halfW(s);
+
+    const cx = pts[s].x, cy = pts[s].y;
+
+    // Dorsal half (top)
+    const dorCol = blendColor('#1a1a2e', pat.color, dAct * 0.9 + 0.08);
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, hw, hw * 0.75, 0, Math.PI, 2 * Math.PI);
+    ctx.fillStyle = dorCol;
+    if (glow > 0 && dAct > 0.3) {
+      ctx.shadowColor = pat.color;
+      ctx.shadowBlur  = glow * dAct * 18;
+    }
+    ctx.fill();
+    ctx.restore();
+
+    // Ventral half (bottom)
+    const venCol = blendColor('#1a1a2e', pat.color, vAct * 0.9 + 0.08);
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, hw, hw * 0.75, 0, 0, Math.PI);
+    ctx.fillStyle = venCol;
+    if (glow > 0 && vAct > 0.3) {
+      ctx.shadowColor = pat.color;
+      ctx.shadowBlur  = glow * vAct * 18;
+    }
+    ctx.fill();
+    ctx.restore();
+
+    // Segment divider
+    ctx.beginPath();
+    ctx.arc(cx, cy, hw, 0, 2 * Math.PI);
+    ctx.strokeStyle = hexToRgba(pat.color, 0.12 + act * 0.15);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Cuticle centerline
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let s = 1; s < SEGS; s++) {
+    ctx.lineTo(pts[s].x, pts[s].y);
+  }
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.06);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Head circle (slightly larger)
+  const hact = totalAct(muscles, 0);
+  const headR = halfW(0) * 1.25;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(pts[0].x, pts[0].y, headR, 0, 2 * Math.PI);
+  ctx.fillStyle = blendColor('#1a1a2e', pat.color, hact * 0.8 + 0.2);
+  if (glow > 0) { ctx.shadowColor = pat.color; ctx.shadowBlur = glow * 20; }
+  ctx.fill();
+  ctx.strokeStyle = hexToRgba(pat.color, 0.4);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Pharynx dot
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(pts[0].x + headR * 0.25, pts[0].y, headR * 0.22, 0, 2 * Math.PI);
+  ctx.fillStyle = hexToRgba('#ffffff', 0.35);
+  ctx.fill();
+  ctx.restore();
+
+  // Label: anterior / posterior
+  ctx.font = '10px monospace';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.3);
+  ctx.fillText('A', MARGIN - 18, cy_base + 4);
+  ctx.fillText('P', W - MARGIN + 6, cy_base + 4);
+
+  // Activation bar (right side)
+  drawActivationBar(ctx, W - 28, 20, 14, H - 40, muscles, pat);
+}
+
+function drawActivationBar(ctx, x, y, w, h, muscles, pat) {
+  // Vertical bar: total activation per segment as heatmap strip
+  for (let s = 0; s < SEGS; s++) {
+    const act   = totalAct(muscles, s);
+    const yy    = y + (s / SEGS) * h;
+    const hh    = h / SEGS + 1;
+    ctx.fillStyle = blendColor('#1a1a2e', pat.color, act);
+    ctx.fillRect(x, yy, w, hh);
+  }
+  ctx.strokeStyle = hexToRgba('#ffffff', 0.15);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.font = '9px monospace';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.3);
+  ctx.fillText('A', x + 1, y - 3);
+  ctx.fillText('P', x + 1, y + h + 11);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Piano-roll strip (current pattern's pitch profile)
+// ═══════════════════════════════════════════════════════════════════════════
+function drawPianoRoll(pat) {
+  const W = pianoCvs.width, H = pianoCvs.height;
+  const ctx = pianoCtx;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  const pitches = D.pitches || pat.pitch_profile.map((_,i) => i);
+  const P = pitches.length;
+  const bw = W / P;
+
+  pat.pitch_profile.forEach((w, i) => {
+    const x  = i * bw;
+    const bh = w * (H - 12);
+    ctx.fillStyle = blendColor('#1a263a', pat.color, w * 0.9 + 0.05);
+    ctx.fillRect(x + 1, H - 12 - bh, bw - 2, bh);
+
+    // MIDI pitch label for strong notes
+    if (w > 0.55) {
+      ctx.font = '8px monospace';
+      ctx.fillStyle = hexToRgba('#ffffff', 0.6);
+      ctx.fillText(pitches[i], x + 1, H - 2);
+    }
+  });
+
+  // Axis label
+  ctx.font = '9px monospace';
+  ctx.fillStyle = hexToRgba('#ffffff', 0.25);
+  ctx.fillText('MIDI pitch →', 4, 10);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Animation loop
+// ═══════════════════════════════════════════════════════════════════════════
+function animLoop(ts) {
+  if (!playing) return;
+  if (lastTs === null) lastTs = ts;
+  const dt   = ts - lastTs;
+  lastTs = ts;
+
+  const speed = parseFloat(document.getElementById('speed-slider').value);
+  frameAccum += (dt / 1000) * D.fps * speed;
+
+  while (frameAccum >= 1) {
+    frame++;
+    frameAccum -= 1;
+  }
+
+  if (frame >= D.n_frames) {
+    frame = 0;
+    frameAccum = 0;
+  }
+
+  drawFrame(frame);
+  rafId = requestAnimationFrame(animLoop);
+}
+
+function togglePlay() {
+  if (!D) return;
+  playing = !playing;
+  const btn = document.getElementById('btn-play');
+  if (playing) {
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('active');
+    lastTs = null;
+    audioSeek(frame / D.fps);
+    audioPlay();
+    rafId = requestAnimationFrame(animLoop);
+  } else {
+    btn.textContent = '▶ Play';
+    btn.classList.remove('active');
+    cancelAnimationFrame(rafId);
+    audioPause();
+  }
+}
+
+function resetAnim() {
+  playing = false;
+  cancelAnimationFrame(rafId);
+  audioPause();
+  audioSeek(0);
+  frame = 0;
+  frameAccum = 0;
+  lastTs = null;
+  document.getElementById('btn-play').textContent = '▶ Play';
+  document.getElementById('btn-play').classList.remove('active');
+  resetNav();
+  if (D) drawFrame(0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Colour utilities
+// ═══════════════════════════════════════════════════════════════════════════
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r, g, b];
+}
+function hexToRgba(hex, a) {
+  const [r,g,b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function blendColor(hex0, hex1, t) {
+  t = Math.max(0, Math.min(1, t));
+  const [r0,g0,b0] = hexToRgb(hex0);
+  const [r1,g1,b1] = hexToRgb(hex1);
+  const r = Math.round(r0 + (r1-r0)*t);
+  const g = Math.round(g0 + (g1-g0)*t);
+  const b = Math.round(b0 + (b1-b0)*t);
+  return `rgb(${r},${g},${b})`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Responsive canvas resizing
+// ═══════════════════════════════════════════════════════════════════════════
+function resizeCanvases() {
+  const W = Math.min(920, wormCvs.parentElement.clientWidth - 24);
+  wormCvs.width   = W;
+  pianoCvs.width  = W;
+  tlCvs.width     = W;
+  const panelW = Math.floor((W - 10) / 2);
+  circCvs.width   = panelW;
+  navCvs.width    = panelW;
+  if (D) { drawTimeline(); drawFrame(frame); }
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+</script>
+</body>
+</html>
