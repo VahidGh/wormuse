@@ -582,7 +582,7 @@
 
   <!-- Phase structure legend -->
   <div style="margin-top:8px;background:#101520;border:1px solid var(--border);border-radius:4px;padding:6px;">
-    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Phase structure (Boyle 2012 Fig. 1):</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Phase structure (Boyle, Berri &amp; Cohen 2012 Fig. 1C · <em>Front. Comput. Neurosci.</em>):</div>
     <div style="font-size:9px;line-height:1.6;">
       <span style="color:var(--mus-dl)">■</span> DL (0–23)&nbsp; phase 0→2π &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       <span style="color:var(--mus-vl)">■</span> VL (24–47) phase π→3π &nbsp;(antiphase)<br>
@@ -993,24 +993,33 @@ VR[72-95] → C7-B8  (MIDI 96-119)
 8 octaves × 12 semitones = 96 piano keys</div>
   </div>
 
-  <!-- v2 piano synth -->
+  <!-- v3 KS piano synth (default) -->
+  <div class="ch-box" style="border-color:#1a3040;">
+    <div class="ch-name" style="color:#48dbfb">render_ks &nbsp;<span style="color:#2ecc71;font-size:9px">v1.1.0 · default</span></div>
+    <div class="ch-gene">Karplus-Strong IIR · velocity→brightness · 3 detuned strings</div>
+    <div class="ch-eq">g = exp(−1/(2·T_decay·f₀))  T_decay=5s×(440/f₀)^0.6
+α = 0.25+0.65·vel/127  (LP cutoff: pp warm, ff bright)
+y[n] − g/2·y[n−N] − g/2·y[n−N−1] = x[n]
+→ scipy.signal.lfilter · no Python sample loop</div>
+  </div>
+
+  <!-- v2 piano synth (legacy) -->
   <div class="ch-box" style="border-color:#2a2040;">
-    <div class="ch-name" style="color:#e84393">render_string_v2 &nbsp;<span style="color:#2ecc71;font-size:9px">v1.0.0</span></div>
+    <div class="ch-name" style="color:#e84393">render_string_v2 &nbsp;<span style="color:#7a8299;font-size:9px">v1.0.0 · legacy</span></div>
     <div class="ch-gene">3 detuned strings + hammer noise + reverb · ISSUE-003</div>
-    <div class="ch-eq">Strings: f0 at 0, +5, −5 cents → ≈3Hz beating
+    <div class="ch-eq">Modal: σ₀=1.5 (τ≈0.67s) — drum-like decay
 Hammer: 4ms white-noise × exp(−t/2ms)
-Reverb: _room_ir · RT60≈0.3s · 20% wet
-→ render_string(f0, vel, dur_s, fs=8000)×3</div>
+→ use engine="v2" to select</div>
   </div>
 
   <!-- synthesise_melody -->
   <div class="ch-box" style="border-color:#2a2040;">
-    <div class="ch-name" style="color:#fd79a8">synthesise_melody</div>
-    <div class="ch-gene">Mix all note events · scipy.signal.fftconvolve</div>
-    <div class="ch-eq">duration_s = None → max(t)+2s (ISSUE-004)
-fs = 8 000 Hz (matches source WAV)
-scale → int16 × 28000 → WAV
-→ ≈ 3.5 MB / 229s (source: 3.6 MB)</div>
+    <div class="ch-name" style="color:#fd79a8">synthesise_melody / synthesise_from_hh</div>
+    <div class="ch-gene">Mix note events · engine="ks"|"v2"|"modal" · scipy reverb</div>
+    <div class="ch-eq">engine="ks" → render_ks  (default, v1.1.0)
+engine="v2" → render_string_v2  (legacy)
+synthesise_from_hh(V_muscles, t_sim) → Ca²⁺ spikes → KS
+duration_s=None → max(t)+2s · fs=8 000 Hz → ≈3.5 MB/229s</div>
   </div>
 
   <!-- WAV outputs -->
@@ -1054,6 +1063,128 @@ scale → int16 × 28000 → WAV
 </div>
 
 </div><!-- end .main -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PIANO KEYBOARD — 96 WORM KEYS (MIDI 24-119)
+═══════════════════════════════════════════════════════════ -->
+<div style="padding:0 10px 10px;">
+<div style="background:var(--panel-bg);border:1px solid var(--border);border-radius:8px;padding:14px;">
+  <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">
+    Piano Keyboard — 96 Worm-Piano Keys
+    <span style="color:var(--muted);font-weight:400;font-size:10px;">&nbsp;·&nbsp;MIDI 24–119 · C₁–B₈ · 4 muscle quadrants → 4 octave registers · <code>render_ks()</code> v1.1.0</span>
+  </div>
+  <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
+    Each of the 96 BWM muscles maps to one chromatic key. Colour = muscle quadrant (body-wave phase group).
+    Standard 88-key piano ends at C₈ (MIDI 108); worm VR treble extends 11 keys further to B₈ (MIDI 119).
+    Hover any key for MIDI note + muscle index.
+  </div>
+  <svg id="piano-svg" width="1010" height="150" viewBox="0 0 1010 150"
+       style="display:block;max-width:100%;overflow:visible;"></svg>
+  <div style="display:flex;gap:24px;margin-top:7px;font-size:10px;flex-wrap:wrap;">
+    <span><span style="color:#e76f51;font-size:15px;">■</span> <strong>DL</strong> muscles 0–23 · MIDI 24–47 · C₁–B₂ · bass</span>
+    <span><span style="color:#f4a261;font-size:15px;">■</span> <strong>VL</strong> muscles 24–47 · MIDI 48–71 · C₃–B₄ · tenor</span>
+    <span><span style="color:#e9c46a;font-size:15px;">■</span> <strong>DR</strong> muscles 48–71 · MIDI 72–95 · C₅–B₆ · alto</span>
+    <span><span style="color:#95d5b2;font-size:15px;">■</span> <strong>VR</strong> muscles 72–95 · MIDI 96–119 · C₇–B₈ · treble</span>
+    <span style="color:var(--muted);">― ― C₈ = standard 88-key piano end</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     REFERENCE FIGURES — Boyle, Berri & Cohen (2012) — unified slider
+═══════════════════════════════════════════════════════════ -->
+<div style="padding:0 10px 10px;">
+<div style="background:var(--panel-bg);border:1px solid var(--border);border-radius:8px;padding:14px;">
+  <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">
+    Reference Figures
+    <a href="https://doi.org/10.3389/fncom.2012.00010" target="_blank"
+       style="color:var(--rsvd);font-size:10px;font-weight:400;text-decoration:none;margin-left:8px;">
+      Boyle, Berri &amp; Cohen (2012) <em>Front. Comput. Neurosci.</em> 6:10
+      · doi:10.3389/fncom.2012.00010 · CC BY 4.0
+    </a>
+  </div>
+
+  <!-- ── Unified figure carousel: Fig 1 + Fig 5 ── -->
+  <div id="ref-slider"
+       style="max-width:800px;border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;"
+       title="Click to pause · ‹ › to browse">
+
+    <!-- Image viewport 540 px — both slides use object-fit:contain to preserve original scale -->
+    <div style="position:relative;height:540px;background:#1a2035;">
+
+      <!-- Slide 0: Fig 1 — full physical-model + circuit diagram -->
+      <img class="ref-slide"
+           src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/bc1e/3296079/d82586145668/fncom-06-00010-g001.jpg"
+           alt="Fig. 1: Physical model & neuromuscular circuit"
+           style="position:absolute;inset:0;width:100%;height:100%;
+                  object-fit:contain;object-position:50% 50%;
+                  opacity:1;z-index:2;transition:opacity 0.6s ease-in-out;">
+
+      <!-- Slide 1: Fig 5 — full locomotion stills (all three panels A/B/C side by side) -->
+      <img class="ref-slide"
+           src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/bc1e/3296079/906421265d0b/fncom-06-00010-g005.jpg"
+           alt="Fig. 5: Locomotion behaviour — swim / gelatin / crawl"
+           style="position:absolute;inset:0;width:100%;height:100%;
+                  object-fit:contain;object-position:50% 50%;
+                  opacity:0;z-index:1;transition:opacity 0.6s ease-in-out;">
+
+      <!-- Label overlay (updated by JS) -->
+      <div id="ref-label"
+           style="position:absolute;bottom:8px;left:8px;z-index:10;
+                  background:rgba(10,14,23,0.88);padding:4px 10px;
+                  border-radius:4px;font-size:10px;color:#fff;font-weight:600;
+                  border-left:3px solid #aaaaaa;pointer-events:none;">
+        Fig. 1 — Physical model &amp; neuromuscular circuit
+      </div>
+
+      <!-- Progress dots (2 slides) -->
+      <div style="position:absolute;bottom:10px;right:10px;z-index:10;display:flex;gap:5px;pointer-events:none;">
+        <div id="ref-dot-0" style="width:7px;height:7px;border-radius:50%;background:#aaaaaa;opacity:1;  transition:opacity 0.3s;"></div>
+        <div id="ref-dot-1" style="width:7px;height:7px;border-radius:50%;background:#74b9ff;opacity:0.35;transition:opacity 0.3s;"></div>
+      </div>
+
+      <!-- AUTO / PAUSED badge -->
+      <div id="ref-badge"
+           style="position:absolute;top:7px;right:8px;z-index:10;
+                  background:rgba(0,0,0,0.55);padding:2px 7px;
+                  border-radius:10px;font-size:8px;color:#aaa;letter-spacing:0.06em;">
+        ▶ AUTO
+      </div>
+
+      <!-- Prev / Next arrows -->
+      <button id="ref-prev"
+              style="position:absolute;left:6px;top:50%;transform:translateY(-50%);z-index:10;
+                     background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.15);
+                     color:#fff;font-size:16px;line-height:1;padding:5px 9px;
+                     border-radius:4px;cursor:pointer;">&#8249;</button>
+      <button id="ref-next"
+              style="position:absolute;right:6px;top:50%;transform:translateY(-50%);z-index:10;
+                     background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.15);
+                     color:#fff;font-size:16px;line-height:1;padding:5px 9px;
+                     border-radius:4px;cursor:pointer;">&#8250;</button>
+    </div>
+
+    <!-- Caption strip (updated by JS) -->
+    <div style="padding:8px 12px;background:#0e1117;">
+      <div id="ref-title" style="font-size:10px;color:#fff;font-weight:600;margin-bottom:2px;">
+        Figure 1 — Physical model &amp; neuromuscular circuit
+      </div>
+      <div id="ref-desc" style="font-size:9px;color:var(--muted);line-height:1.5;">
+        (A) 49-segment body (rods + springs). (B) Single segment: D/V muscle pairs.
+        (C) B-class excitatory MNs (circles) + D-class inhibitory MNs (squares) + muscles (diamonds)
+        — 12 repeating units → <code>generate_neural_activity_302()</code>.
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:9px;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--border);">
+    Figures reproduced under CC BY 4.0 · Boyle JH, Berri S, Cohen N (2012)
+    "Gait Modulation in C. elegans: An Integrated Neuromechanical Model."
+    <em>Front. Comput. Neurosci.</em> 6:10. PMID: 22408616 · PMC: 3296079.
+    <a href="https://doi.org/10.3389/fncom.2012.00010" target="_blank" style="color:var(--rsvd);">doi:10.3389/fncom.2012.00010</a>
+  </div>
+</div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      BIOLOGY → NN MAPPING TABLE
@@ -1244,7 +1375,8 @@ scale → int16 × 28000 → WAV
     <div class="leg-item"><div class="leg-dot" style="background:var(--body-n)"></div>Body/remaining neurons</div>
   </div>
   <div class="note" style="margin-top:10px;">
-    Reference: Boyle, Berri &amp; Cohen (2012) <em>"Gait modulation in C. elegans: an integrated neuromechanical model"</em> PLOS Comput. Biol. 8(11) e1002890.
+    Boyle JH, Berri S, Cohen N (2012) <em>"Gait Modulation in C. elegans: An Integrated Neuromechanical Model"</em>
+    <a href="https://doi.org/10.3389/fncom.2012.00010" target="_blank" style="color:var(--rsvd)">Front. Comput. Neurosci. 6:10</a> · PMID 22408616 · PMC 3296079 · CC BY 4.0.
     &nbsp;·&nbsp; White et al. (1986) <em>"The structure of the nervous system of the nematode C. elegans"</em>
     &nbsp;·&nbsp; Jospin et al. (2002) EGL-19 / EXP-2 kinetics.
     &nbsp;·&nbsp; PyANNOW v1.1.0 · <code>src/pyannow/composer/piano_synth.py</code> (<code>render_ks</code>, <code>synthesise_from_hh</code>) · <code>worm_optimizer.py</code>
@@ -1252,7 +1384,121 @@ scale → int16 × 28000 → WAV
 </footer>
 
 <script>
-// Render sensory and body neuron dots via JS since 100+102=202 dots are too verbose in HTML
+// ── Piano keyboard (96 keys, MIDI 24-119, colour-coded by muscle quadrant) ────
+(function(){
+  var svg = document.getElementById('piano-svg');
+  if (!svg) return;
+
+  var WW=18, HW=90, WB=11, HB=58, Y0=24;
+
+  // White-key fill, black-key fill — two octaves per quadrant, slightly alternating shade
+  var wFill = ['#c85c3e','#d96845',  // DL oct1(C1-B1), oct2(C2-B2)
+               '#e89558','#f4a261',  // VL oct3, oct4
+               '#dab860','#e9c46a',  // DR oct5, oct6
+               '#7fc9a1','#95d5b2']; // VR oct7, oct8
+  var bFill = ['#803824','#964228',  // DL
+               '#b06030','#c47038',  // VL
+               '#a07828','#b08838',  // DR
+               '#3a9060','#4db884']; // VR
+
+  // Quadrant label colours / text
+  var qBorder=['#e76f51','#f4a261','#e9c46a','#95d5b2'];
+  var qText  =['DL  ·  muscles 0–23  ·  MIDI 24–47  (C₁–B₂)',
+               'VL  ·  muscles 24–47  ·  MIDI 48–71  (C₃–B₄)',
+               'DR  ·  muscles 48–71  ·  MIDI 72–95  (C₅–B₆)',
+               'VR  ·  muscles 72–95  ·  MIDI 96–119  (C₇–B₈)'];
+
+  // White-key semitone offsets: C D E F G A B
+  var wSemi=[0,2,4,5,7,9,11];
+  var wName=['C','D','E','F','G','A','B'];
+  // Black-key x offsets (relative to octave start) and semitones
+  var bXoff=[WW-WB/2, 2*WW-WB/2, 4*WW-WB/2, 5*WW-WB/2, 6*WW-WB/2];
+  var bSemi=[1,3,6,8,10];
+  // Semitone → white-key index within octave (for label positioning)
+  var s2w=[0,0,1,1,2,3,3,4,4,5,5,6];
+
+  var h='';
+
+  // ── Quadrant span banners ─────────────────────────────────────────────
+  for(var q=0;q<4;q++){
+    var x0=q*2*7*WW, qw=2*7*WW;
+    h+='<rect x="'+x0+'" y="0" width="'+qw+'" height="21" rx="3"'
+      +' fill="'+qBorder[q]+'28" stroke="'+qBorder[q]+'" stroke-width="1"/>';
+    h+='<text x="'+(x0+qw/2)+'" y="14" text-anchor="middle"'
+      +' font-size="8.5" font-family="Segoe UI,system-ui,sans-serif"'
+      +' font-weight="700" fill="'+qBorder[q]+'">'+qText[q]+'</text>';
+  }
+
+  // ── White keys ────────────────────────────────────────────────────────
+  for(var oct=0;oct<8;oct++){
+    var ox=oct*7*WW, ci=wFill[oct];
+    for(var w=0;w<7;w++){
+      var x=ox+w*WW;
+      var midi=24+oct*12+wSemi[w];
+      var mIdx=midi-24;  // muscle index (0-95)
+      var noteName=wName[w]+(oct+1);
+      h+='<rect x="'+(x+0.5)+'" y="'+Y0+'" width="'+(WW-1)+'" height="'+HW+'"'
+        +' rx="2" fill="'+ci+'" stroke="#0a0e17" stroke-width="0.7">'
+        +'<title>'+noteName+' · MIDI '+midi+' · muscle '+mIdx+'</title></rect>';
+      // C-note label at bottom
+      if(w===0){
+        h+='<text x="'+(x+WW/2)+'" y="'+(Y0+HW-5)+'" text-anchor="middle"'
+          +' font-size="7" font-family="monospace" fill="#0a0e17" font-weight="800">'+noteName+'</text>';
+      }
+    }
+  }
+
+  // ── Standard-piano end marker (C8 = MIDI 108, after octave 7 white key 0) ──
+  var c8x=7*7*WW;
+  h+='<line x1="'+c8x+'" y1="'+(Y0-3)+'" x2="'+c8x+'" y2="'+(Y0+HW+28)+'"'
+    +' stroke="#aaaaaa" stroke-width="1.5" stroke-dasharray="4,3"/>';
+  h+='<text x="'+(c8x+3)+'" y="'+(Y0+HW+26)+'"'
+    +' font-size="8" font-family="Segoe UI,sans-serif" fill="#999">← std 88-key end</text>';
+
+  // ── Black keys (on top) ───────────────────────────────────────────────
+  for(var oct=0;oct<8;oct++){
+    var ox=oct*7*WW, ci=bFill[oct];
+    for(var b=0;b<5;b++){
+      var x=ox+bXoff[b];
+      var midi=24+oct*12+bSemi[b];
+      var mIdx=midi-24;
+      var noteName=['C#','D#','F#','G#','A#'][b]+(oct+1);
+      h+='<rect x="'+x+'" y="'+Y0+'" width="'+WB+'" height="'+HB+'"'
+        +' rx="1.5" fill="'+ci+'" stroke="#0a0e17" stroke-width="0.7">'
+        +'<title>'+noteName+' · MIDI '+midi+' · muscle '+mIdx+'</title></rect>';
+    }
+  }
+
+  // ── Quadrant dividers (white vertical lines at C1/C3/C5/C7 boundaries) ──
+  for(var q=1;q<4;q++){
+    var xd=q*2*7*WW;
+    h+='<line x1="'+xd+'" y1="'+Y0+'" x2="'+xd+'" y2="'+(Y0+HW)+'"'
+      +' stroke="#ffffff" stroke-width="2" stroke-dasharray="5,3"/>';
+  }
+
+  // ── Muscle-index tick labels (bottom) ─────────────────────────────────
+  // Show m0, m12, m24, m36, m48, m60, m72, m84, m95 at their key x positions
+  var mIdxTicks=[0,12,24,36,48,60,72,84,95];
+  for(var i=0;i<mIdxTicks.length;i++){
+    var mOff=mIdxTicks[i];
+    var mOct=Math.floor(mOff/12), mSem=mOff%12;
+    var wx=mOct*7*WW + s2w[mSem]*WW + WW/2;
+    h+='<text x="'+wx+'" y="'+(Y0+HW+18)+'" text-anchor="middle"'
+      +' font-size="7.5" font-family="monospace" fill="#7a8299">m'+mIdxTicks[i]+'</text>';
+  }
+
+  // Middle-C highlight (MIDI 60 = C4, muscle 36, oct3 white-key 0)
+  var mc4x=3*7*WW+0.5;
+  h+='<rect x="'+mc4x+'" y="'+Y0+'" width="'+(WW-1)+'" height="'+HW+'"'
+    +' rx="2" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="3,2"'
+    +' pointer-events="none"/>';
+  h+='<text x="'+(mc4x+WW/2)+'" y="'+(Y0-3)+'" text-anchor="middle"'
+    +' font-size="7" font-family="Segoe UI,sans-serif" fill="#ffffff">middle C</text>';
+
+  svg.innerHTML=h;
+})();
+
+// ── Sensory and body neuron dots ──────────────────────────────────────────────
 (function(){
   var sens=document.querySelector('#p-302 div[style*="grid-template-columns:repeat(20"]');
   if(sens){
@@ -1271,6 +1517,63 @@ scale → int16 × 28000 → WAV
     }
     body[1].innerHTML=html2;
   }
+})();
+
+/* ── Reference figures — unified slider ── */
+(function(){
+  var SLIDES = [
+    { label:'Fig. 1 — Physical model & neuromuscular circuit', color:'#aaaaaa',
+      title:'Figure 1 — Physical model & neuromuscular circuit',
+      desc: '(A) 49-segment body (rods + springs). (B) Single segment: D/V muscle pairs. (C) B-class excitatory MNs (circles) + D-class inhibitory MNs (squares) + muscles (diamonds) — 12 repeating units → generate_neural_activity_302().' },
+    { label:'Fig. 5 — Locomotion: swim → crawl transition', color:'#74b9ff',
+      title:'Figure 5 — Locomotion behaviour: swim-to-crawl',
+      desc: '(A) Swimming in virtual water — high-amplitude undulation, minimal drag. (B) Intermediate gelatin. (C) Crawling on agar — lower frequency, higher curvature. Gait modulation produces the quasi-periodic V(t) that trains the NAML MLP and drives the KS biophysics path.' }
+  ];
+
+  var imgs    = document.querySelectorAll('.ref-slide');
+  var lbl     = document.getElementById('ref-label');
+  var badge   = document.getElementById('ref-badge');
+  var ttl     = document.getElementById('ref-title');
+  var dsc     = document.getElementById('ref-desc');
+  var dots    = SLIDES.map(function(_, i){ return document.getElementById('ref-dot-'+i); });
+  var btnPrev = document.getElementById('ref-prev');
+  var btnNext = document.getElementById('ref-next');
+  var wrap    = document.getElementById('ref-slider');
+  if (!imgs.length || !lbl || !wrap) return;
+
+  var cur = 0, paused = false;
+
+  function show(i) {
+    imgs.forEach(function(el, j){
+      el.style.opacity = j === i ? '1' : '0';
+      el.style.zIndex  = j === i ? '2' : '1';
+    });
+    var s = SLIDES[i];
+    lbl.textContent = s.label;
+    lbl.style.borderLeftColor = s.color;
+    if (ttl) ttl.textContent = s.title;
+    if (dsc) dsc.textContent  = s.desc;
+    dots.forEach(function(d, j){ if (d) d.style.opacity = j === i ? '1' : '0.35'; });
+    cur = i;
+  }
+
+  show(0);
+  setInterval(function(){ if (!paused) show((cur + 1) % SLIDES.length); }, 4000);
+
+  wrap.addEventListener('click', function(e){
+    if (e.target === btnPrev || e.target === btnNext) return;
+    paused = !paused;
+    badge.textContent = paused ? '⏸ PAUSED' : '▶ AUTO';
+  });
+
+  if (btnPrev) btnPrev.addEventListener('click', function(e){
+    e.stopPropagation(); paused = true; badge.textContent = '⏸ PAUSED';
+    show((cur - 1 + SLIDES.length) % SLIDES.length);
+  });
+  if (btnNext) btnNext.addEventListener('click', function(e){
+    e.stopPropagation(); paused = true; badge.textContent = '⏸ PAUSED';
+    show((cur + 1) % SLIDES.length);
+  });
 })();
 </script>
 
