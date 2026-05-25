@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyANNOW — Boyle et al. (2012) → NAML Architecture Map</title>
+<style>
+  :root {
+    --bg:        #0e1117;
+    --panel-bg:  #161b27;
+    --border:    #2a3045;
+    --text:      #e2e8f0;
+    --muted:     #7a8299;
+    --drive:     #f4d03f;
+    --cmd:       #52b788;
+    --mn-a:      #4cc9f0;
+    --mn-b:      #74b9ff;
+    --mn-d:      #a29bfe;
+    --mus-dl:    #e76f51;
+    --mus-vl:    #f4a261;
+    --mus-dr:    #e9c46a;
+    --mus-vr:    #95d5b2;
+    --hh:        #ff6b6b;
+    --pinn:      #ff9f43;
+    --rsvd:      #48dbfb;
+    --ml:        #6c5ce7;
+    --output:    #00d2d3;
+    --accent:    #fd79a8;
+    --dim:       #2d3748;
+    --sensory:   #dfe6e9;
+    --body-n:    #636e72;
+    --step0:     #778ca3;
+    --arrow:     #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
+    overflow-x: auto;
+    min-width: 2300px;
+  }
+  header {
+    padding: 18px 30px 10px;
+    border-bottom: 1px solid var(--border);
+    background: #111623;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; color: #fff; }
+  header p  { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; margin-right: 6px;
+  }
+  .main {
+    display: flex; flex-direction: row; gap: 0;
+    padding: 16px 10px;
+    align-items: flex-start;
+  }
+  /* ──── panels ──── */
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .panel-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  /* connector arrows drawn in SVG overlay */
+  .connector-svg {
+    position: absolute; top: 0; left: 0;
+    pointer-events: none; z-index: 10;
+    width: 100%; height: 100%;
+  }
+  /* ──── Section headers within panels ──── */
+  .sec { margin-top: 10px; margin-bottom: 4px; font-size: 10px;
+         font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  /* ──── Neuron / cell dots ──── */
+  .dot-row { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 3px; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+  }
+  .dot-sq { width: 7px; height: 7px; border-radius: 1px; display: inline-block; flex-shrink: 0; }
+  /* ──── neuron group label ──── */
+  .ng { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; }
+  .ng-label { min-width: 110px; color: var(--text); font-size: 10.5px; line-height: 1.4; }
+  .ng-count { color: var(--muted); font-size: 9.5px; }
+  /* ──── muscle grid ──── */
+  .muscle-grid { display: flex; flex-direction: column; gap: 2px; }
+  .muscle-row  { display: flex; gap: 2px; align-items: center; }
+  .m-label { font-size: 9px; width: 28px; color: var(--muted); flex-shrink: 0; }
+  .m-cell  { width: 9px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+  /* ──── connectome weight table ──── */
+  .ctable { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 4px; }
+  .ctable th { background: var(--dim); color: var(--muted); padding: 2px 4px; text-align: center; }
+  .ctable td { text-align: center; padding: 2px 4px; border: 1px solid var(--border); }
+  .ctable .w-hi { background: #2d4a3e; color: #52b788; font-weight: 700; }
+  .ctable .w-lo { background: #2a2d40; color: #9b5de5; }
+  .ctable .w-0  { color: #2a3045; }
+  .ctable .row-label { color: var(--cmd); font-weight: 600; text-align: left; }
+  .ctable .col-label { color: var(--mn-a); }
+  /* ──── channel box ──── */
+  .ch-box {
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 6px 8px; margin-bottom: 6px;
+  }
+  .ch-name { font-size: 11px; font-weight: 700; }
+  .ch-gene { font-size: 9px; color: var(--muted); }
+  .ch-eq   { font-family: monospace; font-size: 9px; color: #e2e8f0; background: #0e1117;
+              padding: 3px 5px; border-radius: 3px; margin-top: 3px; line-height: 1.5; }
+  /* ──── NAML step box ──── */
+  .step-box {
+    border-radius: 6px; padding: 7px 9px; margin-bottom: 6px;
+    border-left: 3px solid transparent;
+  }
+  .step-title { font-size: 11px; font-weight: 700; }
+  .step-sub   { font-size: 9.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .step-f1    { font-size: 10px; font-weight: 700; color: #52b788; margin-top: 3px; }
+  /* ──── arrow connector between panels ──── */
+  .arr {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px; flex-shrink: 0;
+  }
+  .arr svg { fill: none; stroke: var(--arrow); stroke-width: 1.5; }
+  /* ──── param badge ──── */
+  .param {
+    display: inline-block; background: #1a1f2e; border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 6px; font-size: 9.5px;
+    font-family: monospace; margin: 2px; color: var(--pinn);
+  }
+  /* ──── feature vector visual ──── */
+  .feat-vec { display: flex; gap: 2px; margin-top: 6px; flex-wrap: wrap; }
+  .fv-block {
+    height: 20px; border-radius: 2px; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; white-space: nowrap; padding: 0 3px;
+    color: rgba(255,255,255,0.85);
+  }
+  /* ──── wave strip ──── */
+  .wave-strip { width: 100%; height: 40px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  /* ──── legend ──── */
+  footer { padding: 12px 30px 20px; border-top: 1px solid var(--border); background: #111623; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .note { font-size: 9.5px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PyANNOW — Boyle et al. (2012) → NAML Architecture Map &nbsp;
+    <span class="badge" style="background:#1e3a2e;color:#52b788;">v1.0.0</span>
+    <span class="badge" style="background:#1a1f3a;color:#74b9ff;">96-cell model</span>
+    <span class="badge" style="background:#2a1a3a;color:#a29bfe;">Step 9b + v2 piano</span>
+  </h1>
+  <p>Every neuron group and BWM muscle cell in the C. elegans locomotion circuit mapped to the equivalent layers of the PyANNOW neural network pipeline.
+     Reference: Boyle, Berri &amp; Cohen (2012) <em>PLoS Comput. Biol.</em> 8(11) · White et al. (1986) · generate_neural_activity_302()</p>
+</header>
+
+<div class="main" id="main">
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 1 — Rhythmic Drive + Command Interneurons
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:230px;" id="p-drive">
+  <div class="panel-title" style="color:var(--drive)">① Drive + Command INs</div>
+
+  <!-- Rhythmic drive -->
+  <div class="sec">Rhythmic ACh Drive</div>
+  <div style="background:#12110a;border:1px solid #3d3c20;border-radius:4px;padding:6px;">
+    <svg class="wave-strip" viewBox="0 0 220 40" preserveAspectRatio="none">
+      <polyline points="0,20 18,5 36,35 54,5 72,35 90,5 108,35 126,5 144,35 162,5 180,35 198,5 220,20"
+        fill="none" stroke="#f4d03f" stroke-width="1.8"/>
+    </svg>
+    <div style="color:var(--drive);font-size:9.5px;margin-top:4px;font-family:monospace;">
+      I(t) = A·sin(2π·f·t + φ) + ε<br>
+      <span style="color:var(--muted)">A=12 μA/cm²  f=1.5 Hz  ε~N(0,0.3)</span>
+    </div>
+  </div>
+
+  <!-- 4 command interneuron types, 3 copies each = 12 -->
+  <div class="sec">Command Interneurons — 12 neurons</div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:6px;">
+    White et al. 1986 · Chalfie 1985 · Kato 2015
+  </div>
+
+  <!-- AVA -->
+  <div class="ng">
+    <div>
+      <div class="ng-label"><span style="color:var(--cmd);font-weight:700;">AVA</span> <span class="ng-count">× 3</span></div>
+      <div style="font-size:9px;color:var(--muted)">Backward command<br>Phase: 0° &nbsp;→ A-class MNs</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <div class="dot" style="background:var(--cmd)"></div>
+        <div class="dot" style="background:var(--cmd)"></div>
+        <div class="dot" style="background:var(--cmd)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVD -->
+  <div class="ng">
+    <div>
+      <div class="ng-label"><span style="color:#81c995;font-weight:700;">AVD</span> <span class="ng-count">× 3</span></div>
+      <div style="font-size:9px;color:var(--muted)">Backward command<br>Phase: 90° → A-class MNs</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <div class="dot" style="background:#81c995"></div>
+        <div class="dot" style="background:#81c995"></div>
+        <div class="dot" style="background:#81c995"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVB -->
+  <div class="ng">
+    <div>
+      <div class="ng-label"><span style="color:#74b9ff;font-weight:700;">AVB</span> <span class="ng-count">× 3</span></div>
+      <div style="font-size:9px;color:var(--muted)">Forward command<br>Phase: 180° → B-class MNs</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <div class="dot" style="background:#74b9ff"></div>
+        <div class="dot" style="background:#74b9ff"></div>
+        <div class="dot" style="background:#74b9ff"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PVC -->
+  <div class="ng">
+    <div>
+      <div class="ng-label"><span style="color:#4fc3f7;font-weight:700;">PVC</span> <span class="ng-count">× 3</span></div>
+      <div style="font-size:9px;color:var(--muted)">Forward command<br>Phase: 270° → B-class MNs</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <div class="dot" style="background:#4fc3f7"></div>
+        <div class="dot" style="background:#4fc3f7"></div>
+        <div class="dot" style="background:#4fc3f7"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#0f1825;border:1px solid var(--border);border-radius:4px;padding:5px;margin-top:8px;">
+    <div style="font-size:9px;color:var(--muted)">CMD_TO_MN connectome (4×8):</div>
+    <table class="ctable" style="margin-top:4px;">
+      <tr>
+        <th class="col-label"></th>
+        <th class="col-label">VA1</th><th class="col-label">VA2</th>
+        <th class="col-label">DA1</th><th class="col-label">DA2</th>
+        <th class="col-label" style="color:var(--mn-b)">VB1</th>
+        <th class="col-label" style="color:var(--mn-b)">VB2</th>
+        <th class="col-label" style="color:var(--mn-b)">DB1</th>
+        <th class="col-label" style="color:var(--mn-b)">DB2</th>
+      </tr>
+      <tr>
+        <td class="row-label">AVA</td>
+        <td class="w-hi">5</td><td class="w-hi">4</td><td class="w-hi">3</td><td class="w-hi">3</td>
+        <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+      </tr>
+      <tr>
+        <td class="row-label" style="color:#81c995">AVD</td>
+        <td class="w-lo">3</td><td class="w-lo">3</td><td class="w-lo">2</td><td class="w-lo">2</td>
+        <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+      </tr>
+      <tr>
+        <td class="row-label" style="color:#74b9ff">AVB</td>
+        <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+        <td class="w-hi">5</td><td class="w-hi">4</td><td class="w-hi">3</td><td class="w-hi">3</td>
+      </tr>
+      <tr>
+        <td class="row-label" style="color:#4fc3f7">PVC</td>
+        <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+        <td class="w-lo">3</td><td class="w-lo">3</td><td class="w-lo">2</td><td class="w-lo">2</td>
+      </tr>
+    </table>
+    <div style="font-size:8.5px;color:var(--muted);margin-top:4px;">Units: pS (normalised) · 0 = no connection</div>
+  </div>
+</div>
+
+<!-- ARROW 1→2 -->
+<div class="arr" style="padding:0 6px;">
+  <svg width="28" height="600" viewBox="0 0 28 600">
+    <defs><marker id="arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/>
+    </marker></defs>
+    <line x1="14" y1="10" x2="14" y2="580" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="7" y="300" font-size="8" fill="#4a5568" transform="rotate(-90,7,300)">ACh → NMJ</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 2 — Motor Neurons (A/B/D class)
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:240px;" id="p-mn">
+  <div class="panel-title" style="color:var(--mn-a)">② Motor Neurons — 57 cells</div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">
+    MN_TO_MUSCLE connectome (8×8 weight matrix)
+  </div>
+
+  <!-- A-class: 21 neurons -->
+  <div class="sec">A-class (backward) — 21 MNs</div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:3px;">VA1-VA12 (12) + DA1-DA9 (9)</div>
+  <div class="dot-row" style="margin-bottom:4px;">
+    <!-- VA1-VA12: 12 dots -->
+    <div class="dot" style="background:var(--mn-a)" title="VA1"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA2"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA3"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA4"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA5"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA6"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA7"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA8"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA9"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA10"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA11"></div>
+    <div class="dot" style="background:var(--mn-a)" title="VA12"></div>
+    <!-- DA1-DA9: 9 dots -->
+    <div class="dot" style="background:#2980b9" title="DA1"></div>
+    <div class="dot" style="background:#2980b9" title="DA2"></div>
+    <div class="dot" style="background:#2980b9" title="DA3"></div>
+    <div class="dot" style="background:#2980b9" title="DA4"></div>
+    <div class="dot" style="background:#2980b9" title="DA5"></div>
+    <div class="dot" style="background:#2980b9" title="DA6"></div>
+    <div class="dot" style="background:#2980b9" title="DA7"></div>
+    <div class="dot" style="background:#2980b9" title="DA8"></div>
+    <div class="dot" style="background:#2980b9" title="DA9"></div>
+  </div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">
+    <span style="color:var(--mn-a)">■</span> VA1-12
+    <span style="color:#2980b9">■</span> DA1-9 &nbsp;·&nbsp; Phase: π + i·(2π/21), i=0..20
+  </div>
+
+  <!-- B-class: 18 neurons -->
+  <div class="sec">B-class (forward) — 18 MNs</div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:3px;">VB1-VB11 (11) + DB1-DB7 (7)</div>
+  <div class="dot-row" style="margin-bottom:4px;">
+    <div class="dot" style="background:var(--mn-b)" title="VB1"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB2"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB3"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB4"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB5"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB6"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB7"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB8"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB9"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB10"></div>
+    <div class="dot" style="background:var(--mn-b)" title="VB11"></div>
+    <div class="dot" style="background:#0984e3" title="DB1"></div>
+    <div class="dot" style="background:#0984e3" title="DB2"></div>
+    <div class="dot" style="background:#0984e3" title="DB3"></div>
+    <div class="dot" style="background:#0984e3" title="DB4"></div>
+    <div class="dot" style="background:#0984e3" title="DB5"></div>
+    <div class="dot" style="background:#0984e3" title="DB6"></div>
+    <div class="dot" style="background:#0984e3" title="DB7"></div>
+  </div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">
+    <span style="color:var(--mn-b)">■</span> VB1-11
+    <span style="color:#0984e3">■</span> DB1-7 &nbsp;·&nbsp; Phase: i·(2π/18), i=0..17
+  </div>
+
+  <!-- D-class: 19 neurons -->
+  <div class="sec">D-class (inhibitory, GABA) — 19 MNs</div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:3px;">VD1-VD13 (13) + DD1-DD6 (6)</div>
+  <div class="dot-row" style="margin-bottom:4px;">
+    <div class="dot" style="background:var(--mn-d)" title="VD1"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD2"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD3"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD4"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD5"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD6"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD7"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD8"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD9"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD10"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD11"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD12"></div>
+    <div class="dot" style="background:var(--mn-d)" title="VD13"></div>
+    <div class="dot" style="background:#7158e2" title="DD1"></div>
+    <div class="dot" style="background:#7158e2" title="DD2"></div>
+    <div class="dot" style="background:#7158e2" title="DD3"></div>
+    <div class="dot" style="background:#7158e2" title="DD4"></div>
+    <div class="dot" style="background:#7158e2" title="DD5"></div>
+    <div class="dot" style="background:#7158e2" title="DD6"></div>
+  </div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">
+    <span style="color:var(--mn-d)">■</span> VD1-13
+    <span style="color:#7158e2">■</span> DD1-6 &nbsp;·&nbsp; Phase: π + i·(2π/19) (antiphase to B)
+  </div>
+
+  <!-- MN→Muscle table -->
+  <div class="sec">MN_TO_MUSCLE weights (8 MNs × 8 groups)</div>
+  <table class="ctable">
+    <tr>
+      <th></th>
+      <th>D1</th><th>D2</th><th>D3</th><th>D4</th>
+      <th>V1</th><th>V2</th><th>V3</th><th>V4</th>
+    </tr>
+    <tr><td class="row-label" style="color:var(--mn-a)">VA1</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+      <td class="w-hi">4</td><td class="w-lo">2</td><td class="w-0">0</td><td class="w-0">0</td></tr>
+    <tr><td class="row-label" style="color:var(--mn-a)">VA2</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+      <td class="w-lo">2</td><td class="w-hi">4</td><td class="w-lo">1</td><td class="w-0">0</td></tr>
+    <tr><td class="row-label" style="color:#2980b9">DA1</td>
+      <td class="w-hi">4</td><td class="w-lo">2</td><td class="w-0">0</td><td class="w-0">0</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td></tr>
+    <tr><td class="row-label" style="color:#2980b9">DA2</td>
+      <td class="w-lo">2</td><td class="w-hi">4</td><td class="w-lo">1</td><td class="w-0">0</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td></tr>
+    <tr><td class="row-label" style="color:var(--mn-b)">VB1</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+      <td class="w-0">0</td><td class="w-lo">2</td><td class="w-hi">4</td><td class="w-lo">2</td></tr>
+    <tr><td class="row-label" style="color:var(--mn-b)">VB2</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-lo">2</td><td class="w-hi">4</td></tr>
+    <tr><td class="row-label" style="color:#0984e3">DB1</td>
+      <td class="w-0">0</td><td class="w-lo">2</td><td class="w-hi">4</td><td class="w-lo">2</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td></tr>
+    <tr><td class="row-label" style="color:#0984e3">DB2</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-lo">2</td><td class="w-hi">4</td>
+      <td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td><td class="w-0">0</td></tr>
+  </table>
+  <div style="font-size:8px;color:var(--muted);margin-top:3px;">
+    Anterior excitation (4) → posterior (2) → distal (1) · D-class provides reciprocal inhibition
+  </div>
+</div>
+
+<!-- ARROW 2→3 -->
+<div class="arr" style="padding:0 6px;">
+  <svg width="28" height="600" viewBox="0 0 28 600">
+    <defs><marker id="arr2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/></marker></defs>
+    <line x1="14" y1="10" x2="14" y2="580" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arr2)"/>
+    <text x="7" y="300" font-size="8" fill="#4a5568" transform="rotate(-90,7,300)">ACh drive</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 3 — 96 BWM Muscles + HH Ion Channels
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:310px;" id="p-muscles">
+  <div class="panel-title" style="color:var(--mus-vl)">③ Body Wall Muscles — 96 cells (4×24 Boyle quadrants)</div>
+
+  <!-- 4×24 muscle grid -->
+  <div style="font-size:9px;color:var(--muted);margin-bottom:6px;">
+    Each cell = 1 BWM cell · Color = quadrant · Head (left) → Tail (right) within each row
+  </div>
+
+  <div class="muscle-grid">
+    <!-- DL row: 24 cells, MIDI 24-47, C1-B2 -->
+    <div class="muscle-row">
+      <div class="m-label" style="color:var(--mus-dl)">DL</div>
+      <div style="display:flex;gap:2px;flex-wrap:nowrap;align-items:center;">
+        <!-- 24 cells with gradient: darker at head, lighter at tail -->
+        <div class="m-cell" style="background:#c0392b" title="DL-0 MIDI24 C1"></div>
+        <div class="m-cell" style="background:#c0392b" title="DL-1 MIDI25"></div>
+        <div class="m-cell" style="background:#c0392b" title="DL-2 MIDI26"></div>
+        <div class="m-cell" style="background:#c23c2e" title="DL-3 MIDI27"></div>
+        <div class="m-cell" style="background:#c33e31" title="DL-4 MIDI28"></div>
+        <div class="m-cell" style="background:#c44034" title="DL-5 MIDI29"></div>
+        <div class="m-cell" style="background:#c54337" title="DL-6 MIDI30"></div>
+        <div class="m-cell" style="background:#c6453a" title="DL-7 MIDI31"></div>
+        <div class="m-cell" style="background:#c7473d" title="DL-8 MIDI32"></div>
+        <div class="m-cell" style="background:#c84940" title="DL-9 MIDI33"></div>
+        <div class="m-cell" style="background:#c94c43" title="DL-10 MIDI34"></div>
+        <div class="m-cell" style="background:#ca4e46" title="DL-11 MIDI35"></div>
+        <div class="m-cell" style="background:#cb5049" title="DL-12 MIDI36"></div>
+        <div class="m-cell" style="background:#cc524c" title="DL-13 MIDI37"></div>
+        <div class="m-cell" style="background:#cd544f" title="DL-14 MIDI38"></div>
+        <div class="m-cell" style="background:#ce5752" title="DL-15 MIDI39"></div>
+        <div class="m-cell" style="background:#cf5955" title="DL-16 MIDI40"></div>
+        <div class="m-cell" style="background:#d05b58" title="DL-17 MIDI41"></div>
+        <div class="m-cell" style="background:#d15d5b" title="DL-18 MIDI42"></div>
+        <div class="m-cell" style="background:#d2605e" title="DL-19 MIDI43"></div>
+        <div class="m-cell" style="background:#d36261" title="DL-20 MIDI44"></div>
+        <div class="m-cell" style="background:#d46464" title="DL-21 MIDI45"></div>
+        <div class="m-cell" style="background:#d56667" title="DL-22 MIDI46"></div>
+        <div class="m-cell" style="background:#e76f51" title="DL-23 MIDI47 B2"></div>
+      </div>
+      <div style="font-size:8px;color:var(--muted);margin-left:4px;white-space:nowrap;">C1–B2&nbsp;(24–47)</div>
+    </div>
+
+    <!-- VL row -->
+    <div class="muscle-row">
+      <div class="m-label" style="color:var(--mus-vl)">VL</div>
+      <div style="display:flex;gap:2px;flex-wrap:nowrap;">
+        <div class="m-cell" style="background:#c87133" title="VL-0 MIDI48 C3"></div>
+        <div class="m-cell" style="background:#c97536"></div>
+        <div class="m-cell" style="background:#ca7939"></div>
+        <div class="m-cell" style="background:#cb7d3c"></div>
+        <div class="m-cell" style="background:#cc813f"></div>
+        <div class="m-cell" style="background:#cd8542"></div>
+        <div class="m-cell" style="background:#ce8945"></div>
+        <div class="m-cell" style="background:#cf8d48"></div>
+        <div class="m-cell" style="background:#d0914b"></div>
+        <div class="m-cell" style="background:#d1954e"></div>
+        <div class="m-cell" style="background:#d29951"></div>
+        <div class="m-cell" style="background:#d39d54"></div>
+        <div class="m-cell" style="background:#d4a157"></div>
+        <div class="m-cell" style="background:#d5a55a"></div>
+        <div class="m-cell" style="background:#d6a95d"></div>
+        <div class="m-cell" style="background:#d7ad60"></div>
+        <div class="m-cell" style="background:#d8b163"></div>
+        <div class="m-cell" style="background:#d9b566"></div>
+        <div class="m-cell" style="background:#dab969"></div>
+        <div class="m-cell" style="background:#dbbd6c"></div>
+        <div class="m-cell" style="background:#dcc16f"></div>
+        <div class="m-cell" style="background:#ddc572"></div>
+        <div class="m-cell" style="background:#dec975"></div>
+        <div class="m-cell" style="background:#f4a261" title="VL-23 MIDI71 B4"></div>
+      </div>
+      <div style="font-size:8px;color:var(--muted);margin-left:4px;white-space:nowrap;">C3–B4&nbsp;(48–71)</div>
+    </div>
+
+    <!-- DR row -->
+    <div class="muscle-row">
+      <div class="m-label" style="color:var(--mus-dr)">DR</div>
+      <div style="display:flex;gap:2px;flex-wrap:nowrap;">
+        <div class="m-cell" style="background:#b8860b" title="DR-0 MIDI72 C5"></div>
+        <div class="m-cell" style="background:#b98c0e"></div>
+        <div class="m-cell" style="background:#ba9211"></div>
+        <div class="m-cell" style="background:#bb9814"></div>
+        <div class="m-cell" style="background:#bc9e17"></div>
+        <div class="m-cell" style="background:#bda41a"></div>
+        <div class="m-cell" style="background:#beaa1d"></div>
+        <div class="m-cell" style="background:#bfb020"></div>
+        <div class="m-cell" style="background:#c0b623"></div>
+        <div class="m-cell" style="background:#c1bc26"></div>
+        <div class="m-cell" style="background:#c2c229"></div>
+        <div class="m-cell" style="background:#c3c82c"></div>
+        <div class="m-cell" style="background:#c4ce2f"></div>
+        <div class="m-cell" style="background:#c5d432"></div>
+        <div class="m-cell" style="background:#c6da35"></div>
+        <div class="m-cell" style="background:#c7da38"></div>
+        <div class="m-cell" style="background:#c8d83b"></div>
+        <div class="m-cell" style="background:#c9d63e"></div>
+        <div class="m-cell" style="background:#cad441"></div>
+        <div class="m-cell" style="background:#cbd244"></div>
+        <div class="m-cell" style="background:#ccd047"></div>
+        <div class="m-cell" style="background:#cdce4a"></div>
+        <div class="m-cell" style="background:#cecc4d"></div>
+        <div class="m-cell" style="background:#e9c46a" title="DR-23 MIDI95 B6"></div>
+      </div>
+      <div style="font-size:8px;color:var(--muted);margin-left:4px;white-space:nowrap;">C5–B6&nbsp;(72–95)</div>
+    </div>
+
+    <!-- VR row -->
+    <div class="muscle-row">
+      <div class="m-label" style="color:var(--mus-vr)">VR</div>
+      <div style="display:flex;gap:2px;flex-wrap:nowrap;">
+        <div class="m-cell" style="background:#1e8449" title="VR-0 MIDI96 C7"></div>
+        <div class="m-cell" style="background:#218a4d"></div>
+        <div class="m-cell" style="background:#249051"></div>
+        <div class="m-cell" style="background:#279655"></div>
+        <div class="m-cell" style="background:#2a9c59"></div>
+        <div class="m-cell" style="background:#2da25d"></div>
+        <div class="m-cell" style="background:#30a861"></div>
+        <div class="m-cell" style="background:#33ae65"></div>
+        <div class="m-cell" style="background:#36b469"></div>
+        <div class="m-cell" style="background:#39ba6d"></div>
+        <div class="m-cell" style="background:#3cc071"></div>
+        <div class="m-cell" style="background:#3fc675"></div>
+        <div class="m-cell" style="background:#42cc79"></div>
+        <div class="m-cell" style="background:#45d27d"></div>
+        <div class="m-cell" style="background:#48d881"></div>
+        <div class="m-cell" style="background:#4bde85"></div>
+        <div class="m-cell" style="background:#4ee489"></div>
+        <div class="m-cell" style="background:#51ea8d"></div>
+        <div class="m-cell" style="background:#54f091"></div>
+        <div class="m-cell" style="background:#57f695"></div>
+        <div class="m-cell" style="background:#5af99a"></div>
+        <div class="m-cell" style="background:#6cfa9f"></div>
+        <div class="m-cell" style="background:#80fba4"></div>
+        <div class="m-cell" style="background:#95d5b2" title="VR-23 MIDI119 B8"></div>
+      </div>
+      <div style="font-size:8px;color:var(--muted);margin-left:4px;white-space:nowrap;">C7–B8&nbsp;(96–119)</div>
+    </div>
+  </div>
+
+  <!-- Phase structure legend -->
+  <div style="margin-top:8px;background:#101520;border:1px solid var(--border);border-radius:4px;padding:6px;">
+    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Phase structure (Boyle 2012 Fig. 1):</div>
+    <div style="font-size:9px;line-height:1.6;">
+      <span style="color:var(--mus-dl)">■</span> DL (0–23)&nbsp; phase 0→2π &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <span style="color:var(--mus-vl)">■</span> VL (24–47) phase π→3π &nbsp;(antiphase)<br>
+      <span style="color:var(--mus-dr)">■</span> DR (48–71) phase 0.05→2π+0.05 &nbsp;
+      <span style="color:var(--mus-vr)">■</span> VR (72–95) phase π.05→3π.05<br>
+      <span style="color:var(--muted)">96 cells ≡ 8 octaves × 12 semitones = full piano keyboard</span>
+    </div>
+  </div>
+
+  <!-- HH Ion Channels per muscle -->
+  <div class="sec" style="margin-top:10px;">Hodgkin-Huxley Model — Per Muscle Cell</div>
+  <div style="font-family:monospace;font-size:9px;background:#0e1117;border:1px solid var(--border);border-radius:4px;padding:7px;line-height:1.7;">
+    <span style="color:#f4d03f">dV/dt</span> = ( −I<sub>Ca</sub> − I<sub>K</sub> − I<sub>NCA</sub> − I<sub>leak</sub> + I<sub>mus</sub> ) / C<sub>m</sub><br>
+    <span style="color:var(--hh)">I<sub>Ca</sub></span> = g<sub>EGL19</sub> · m<sub>Ca</sub> · (V − E<sub>Ca</sub>)  &nbsp;&nbsp; E<sub>Ca</sub>=+60mV<br>
+    <span style="color:var(--mn-b)">I<sub>K</sub></span>&nbsp; = g<sub>EXP2</sub> · n<sub>K</sub>² · (V − E<sub>K</sub>)&nbsp;&nbsp;&nbsp; E<sub>K</sub>=−80mV<br>
+    <span style="color:var(--muted)">I<sub>NCA</sub></span>= g<sub>NCA</sub> · (V − E<sub>Na</sub>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; E<sub>Na</sub>=+50mV<br>
+    <span style="color:var(--muted)">I<sub>lk</sub></span>&nbsp;= g<sub>lk</sub> · (V − E<sub>lk</sub>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; E<sub>lk</sub>=−65mV<br>
+    <hr style="border-color:var(--border);margin:4px 0;">
+    <span style="color:var(--hh)">dm<sub>Ca</sub>/dt</span> = (m<sub>∞</sub>(V) − m<sub>Ca</sub>) / τ<sub>Ca</sub><br>
+    <span style="color:var(--mn-b)">dn<sub>K</sub>/dt</span>&nbsp;= (n<sub>∞</sub>(V) − n<sub>K</sub>) / τ<sub>K</sub>(V)<br>
+    <hr style="border-color:var(--border);margin:4px 0;">
+    State per cell: [V, m<sub>Ca</sub>, n<sub>K</sub>]&nbsp;&nbsp;Total: 96×3 = <span style="color:#52b788">288 state vars</span>
+  </div>
+
+  <!-- PINN tunable params -->
+  <div class="sec" style="margin-top:8px;">PINN-Tunable Parameters (5 dims)</div>
+  <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+    <div class="param" title="L-type Ca²⁺ conductance → loudness">g<sub>EGL19</sub>=8.0 mS/cm²</div>
+    <div class="param" title="EGL-19 half-activation → firing threshold">V<sub>½Ca</sub>=−20 mV</div>
+    <div class="param" title="Ca²⁺ activation speed → note attack">τ<sub>Ca</sub>=15 ms</div>
+    <div class="param" title="K⁺ repolarisation → note duration">g<sub>EXP2</sub>=5.0 mS/cm²</div>
+    <div class="param" title="Voltage gate for MIDI event detection">V<sub>thr</sub>=−10 mV</div>
+  </div>
+  <div class="note" style="margin-top:6px;">
+    ↑ These 5 params are the PINN optimization targets (Steps 8a/b/c).
+    g<sub>EGL19</sub> ↑ → louder notes. τ<sub>Ca</sub> ↓ → faster attack → higher BPM ceiling.
+  </div>
+</div>
+
+<!-- ARROW 3→4 -->
+<div class="arr" style="padding:0 6px;">
+  <svg width="28" height="700" viewBox="0 0 28 700">
+    <defs><marker id="arr3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/></marker></defs>
+    <line x1="14" y1="10" x2="14" y2="680" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arr3)"/>
+    <text x="7" y="340" font-size="8" fill="#4a5568" transform="rotate(-90,7,340)">V(t) → onset</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 4 — 302-Neuron Activity (generate_neural_activity_302)
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:295px;" id="p-302">
+  <div class="panel-title" style="color:#c8a2c8">④ 302-Neuron Activity Matrix &nbsp;<span style="color:var(--muted);font-weight:400">X ∈ ℝ^{302×T}</span></div>
+  <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">
+    generate_neural_activity_302() · White et al. (1986) connectome · k≥4 independent PCs
+  </div>
+
+  <!-- Group 1: Command INs (12) -->
+  <div class="ng">
+    <div style="flex:1;">
+      <div style="font-size:10px;font-weight:600;color:var(--cmd)">Cmd Interneurons <span style="color:var(--muted);font-weight:400">12</span></div>
+      <div style="font-size:8.5px;color:var(--muted)">AVA×3, AVD×3, AVB×3, PVC×3 · 4-phase rhythmic · Amp=10mV</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <span class="dot-sq" style="background:var(--cmd)"></span><span class="dot-sq" style="background:var(--cmd)"></span><span class="dot-sq" style="background:var(--cmd)"></span>
+        <span class="dot-sq" style="background:#81c995"></span><span class="dot-sq" style="background:#81c995"></span><span class="dot-sq" style="background:#81c995"></span>
+        <span class="dot-sq" style="background:#74b9ff"></span><span class="dot-sq" style="background:#74b9ff"></span><span class="dot-sq" style="background:#74b9ff"></span>
+        <span class="dot-sq" style="background:#4fc3f7"></span><span class="dot-sq" style="background:#4fc3f7"></span><span class="dot-sq" style="background:#4fc3f7"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group 2: A-MNs (21) -->
+  <div class="ng" style="margin-top:6px;">
+    <div style="flex:1;">
+      <div style="font-size:10px;font-weight:600;color:var(--mn-a)">A-class Motor Neurons <span style="color:var(--muted);font-weight:400">21</span></div>
+      <div style="font-size:8.5px;color:var(--muted)">VA1-VA12 + DA1-DA9 · backward wave · phase π+i·2π/21 · Amp=7mV</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <!-- 21 dots: VA blue, DA darker blue -->
+        <span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span><span class="dot-sq" style="background:var(--mn-a)"></span>
+        <span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span><span class="dot-sq" style="background:#2980b9"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group 3: B-MNs (18) -->
+  <div class="ng" style="margin-top:6px;">
+    <div style="flex:1;">
+      <div style="font-size:10px;font-weight:600;color:var(--mn-b)">B-class Motor Neurons <span style="color:var(--muted);font-weight:400">18</span></div>
+      <div style="font-size:8.5px;color:var(--muted)">VB1-VB11 + DB1-DB7 · forward wave · phase i·2π/18 · Amp=7mV</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span><span class="dot-sq" style="background:var(--mn-b)"></span>
+        <span class="dot-sq" style="background:#0984e3"></span><span class="dot-sq" style="background:#0984e3"></span><span class="dot-sq" style="background:#0984e3"></span><span class="dot-sq" style="background:#0984e3"></span><span class="dot-sq" style="background:#0984e3"></span><span class="dot-sq" style="background:#0984e3"></span><span class="dot-sq" style="background:#0984e3"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group 4: D-MNs (19) -->
+  <div class="ng" style="margin-top:6px;">
+    <div style="flex:1;">
+      <div style="font-size:10px;font-weight:600;color:var(--mn-d)">D-class Motor Neurons <span style="color:var(--muted);font-weight:400">19</span></div>
+      <div style="font-size:8.5px;color:var(--muted)">VD1-VD13 + DD1-DD6 · inhibitory antiphase · Amp=5mV</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span><span class="dot-sq" style="background:var(--mn-d)"></span>
+        <span class="dot-sq" style="background:#7158e2"></span><span class="dot-sq" style="background:#7158e2"></span><span class="dot-sq" style="background:#7158e2"></span><span class="dot-sq" style="background:#7158e2"></span><span class="dot-sq" style="background:#7158e2"></span><span class="dot-sq" style="background:#7158e2"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group 5: Other INs (30) -->
+  <div class="ng" style="margin-top:6px;">
+    <div style="flex:1;">
+      <div style="font-size:10px;font-weight:600;color:#fd79a8">Other Interneurons <span style="color:var(--muted);font-weight:400">30</span></div>
+      <div style="font-size:8.5px;color:var(--muted)">RIB, RIM, SMB, SMD etc. · mixed freq 0.5f/f/2f · Amp=4mV</div>
+      <div class="dot-row" style="margin-top:3px;">
+        <span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span><span class="dot-sq" style="background:#fd79a8"></span>
+        <span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span><span class="dot-sq" style="background:#e84393"></span>
+        <span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span><span class="dot-sq" style="background:#c0135a"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group 6: Sensory (100) — 10×10 grid -->
+  <div style="margin-top:6px;">
+    <div style="font-size:10px;font-weight:600;color:var(--sensory)">Sensory Neurons <span style="color:var(--muted);font-weight:400">100</span></div>
+    <div style="font-size:8.5px;color:var(--muted);margin-bottom:3px;">Mechanosensory, chemosensory, proprioceptive · sparse bursts · Amp=3mV</div>
+    <div style="display:grid;grid-template-columns:repeat(20,7px);gap:2px;">
+      <!-- 100 sensory dots -->
+      <script>
+        // 100 sensory dots generated via JS for compactness
+        for(var i=0;i<100;i++){
+          var h=parseInt(200+i*0.5)%256;
+          document.write('<div class="dot-sq" style="background:hsl('+h+',20%,70%)" title="SEN-'+i+'"></div>');
+        }
+      </script>
+    </div>
+  </div>
+
+  <!-- Group 7: Body/remaining (102) — 10×11 grid -->
+  <div style="margin-top:6px;">
+    <div style="font-size:10px;font-weight:600;color:var(--body-n)">Body / Remaining <span style="color:var(--muted);font-weight:400">102</span></div>
+    <div style="font-size:8.5px;color:var(--muted);margin-bottom:3px;">Proprioceptive, body neurons · slow oscillation + noise · Amp=1.5mV</div>
+    <div style="display:grid;grid-template-columns:repeat(20,7px);gap:2px;">
+      <script>
+        for(var j=0;j<102;j++){
+          document.write('<div class="dot-sq" style="background:#444c5a" title="BODY-'+j+'"></div>');
+        }
+      </script>
+    </div>
+  </div>
+
+  <!-- Total count and RSVD -->
+  <div style="margin-top:10px;background:#111928;border:1px solid var(--border);border-radius:5px;padding:8px;">
+    <div style="font-size:10.5px;font-weight:700;color:#c8a2c8;">
+      Total: 12 + 21 + 18 + 19 + 30 + 100 + 102 = <span style="color:white">302</span> neurons
+    </div>
+    <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:7px;">
+      <div style="font-size:10px;font-weight:700;color:var(--rsvd);">↓ RSVD Dimensionality Reduction</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.6;">
+        X ∈ ℝ^{302×T} → U_k ∈ ℝ^{302×k} (top-k left singular vectors)<br>
+        Z_worm = (U_k^T X)^T ∈ ℝ^{T×k} &nbsp;&nbsp; k = choose_k(≥90% variance) → k=4<br>
+        <span style="color:var(--rsvd)">RSVD(X, k=4, q=1)</span> — randomised SVD (NAML Lab01 / L06)
+      </div>
+      <div style="font-family:monospace;font-size:9px;background:#0e1117;padding:4px 6px;border-radius:3px;margin-top:4px;color:#e2e8f0;">
+        302D <span style="color:var(--rsvd)">───RSVD──→</span> 4D &nbsp;&nbsp;[Z_worm: T×4]
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARROW 4→5 -->
+<div class="arr" style="padding:0 6px;">
+  <svg width="28" height="700" viewBox="0 0 28 700">
+    <defs><marker id="arr4" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/></marker></defs>
+    <line x1="14" y1="10" x2="14" y2="680" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arr4)"/>
+    <text x="7" y="340" font-size="8" fill="#4a5568" transform="rotate(-90,7,340)">Z_worm (T×4)</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 5 — Feature Engineering
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:265px;" id="p-feat">
+  <div class="panel-title" style="color:#48dbfb">⑤ Feature Engineering — Step 9b</div>
+
+  <!-- Worm PCA -->
+  <div class="ch-box" style="border-color:#2a3a60;">
+    <div class="ch-name" style="color:var(--rsvd)">Worm PCA Scores &nbsp;<span style="color:var(--muted);font-size:9px;font-weight:400">k=4 dims</span></div>
+    <div class="ch-gene">RSVD output · StandardScaler → Zs ∈ ℝ^{T×4}</div>
+    <div class="ch-eq">Zs = StandardScaler(Z_worm)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+PC1 = locomotion phase · PC2 = head/tail gradient
+PC3 = lateral asymmetry · PC4 = body-wave depth</div>
+  </div>
+
+  <!-- Fourier time embeddings -->
+  <div class="ch-box" style="border-color:#2a3a60;margin-top:0;">
+    <div class="ch-name" style="color:#f39c12">Fourier Time Embeddings &nbsp;<span style="color:var(--muted);font-size:9px;font-weight:400">27 dims</span></div>
+    <div class="ch-gene">Step 9 · inspired by NB04 Chopin score-net</div>
+    <div class="ch-eq">phase = t / T_total &nbsp;&nbsp; (global position, no extrapolation)
+sin(2π·k·phase), cos(2π·k·phase) for k=1..12 &nbsp;→ 24D
+sin/cos(2π·beat_phase), beat_phase = t·BPM/60 → 2D
++ phase scalar → total 27D</div>
+  </div>
+
+  <!-- ODE residual -->
+  <div class="ch-box" style="border-color:#2a3a60;margin-top:0;">
+    <div class="ch-name" style="color:var(--pinn)">ODE Residual &nbsp;<span style="color:var(--muted);font-size:9px;font-weight:400">4 dims (=k)</span></div>
+    <div class="ch-gene">Step 9b physics feature · damped oscillator residual</div>
+    <div class="ch-eq">r(t) = d²Z/dt² + 2γ·dZ/dt + ω²·Z
+γ=0.3, ω=2.5 &nbsp;&nbsp;(fitted to locomotion cycle)
+Spikes at muscle contraction→relaxation transitions.
+StandardScaler → r_s ∈ ℝ^{T×4}</div>
+  </div>
+
+  <!-- Feature vector visual -->
+  <div class="sec">Combined Feature Vector — 35 dims per timestep</div>
+  <div class="feat-vec">
+    <div class="fv-block" style="background:#d68910;width:77px;" title="27 Fourier dims">Fourier (27)</div>
+    <div class="fv-block" style="background:#1a5276;width:24px;" title="4 worm PCA dims">Z (4)</div>
+    <div class="fv-block" style="background:#922b21;width:24px;" title="4 ODE residual dims">r (4)</div>
+  </div>
+  <div style="font-size:8.5px;color:var(--muted);margin-top:4px;">
+    X9b ∈ ℝ^{T×35} — full feature matrix for Step 9b
+  </div>
+
+  <!-- Class balance -->
+  <div style="margin-top:8px;background:#111520;border:1px solid var(--border);border-radius:4px;padding:6px;">
+    <div style="font-size:9.5px;font-weight:700;color:#e2e8f0;">Onset Label Engineering</div>
+    <div class="ch-eq" style="margin-top:4px;">
+y[i] = 1  if t_full[i] within ±50ms of any Chopin onset
+y[i] = 0  otherwise
+Positive rate ≈ 0.03%  (1000 onsets / 229s / 2kHz)
+sample_weight: 1/pos_ratio for positives → class balance</div>
+    <div style="font-size:8.5px;color:var(--muted);margin-top:3px;">
+      Subsample: 30 000 pts from 458 000 total (6.5%)
+    </div>
+  </div>
+
+  <!-- Procrustes note -->
+  <div style="margin-top:8px;background:#0f1520;border:1px solid var(--border);border-radius:4px;padding:6px;">
+    <div style="font-size:9.5px;font-weight:700;color:#e2e8f0;">Step 1b — Procrustes Alignment</div>
+    <div style="font-size:8.5px;color:var(--muted);margin-top:3px;font-family:monospace;line-height:1.6;">
+      min ||Z_worm·R − C_chopin||_F&nbsp;&nbsp;s.t. R^T·R = I<br>
+      Orthogonal rotation R ∈ ℝ^{k×k} aligns the worm<br>
+      neural subspace to the Chopin feature space.<br>
+      <span style="color:#52b788">NAML L06/L09 — "best rotation"</span>
+    </div>
+  </div>
+</div>
+
+<!-- ARROW 5→6 -->
+<div class="arr" style="padding:0 6px;">
+  <svg width="28" height="700" viewBox="0 0 28 700">
+    <defs><marker id="arr5" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/></marker></defs>
+    <line x1="14" y1="10" x2="14" y2="680" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arr5)"/>
+    <text x="7" y="340" font-size="8" fill="#4a5568" transform="rotate(-90,7,340)">X9b (T×35)</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 6 — NAML Pipeline (all steps)
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:295px;" id="p-naml">
+  <div class="panel-title" style="color:var(--ml)">⑥ NAML Learning Pipeline — Steps 0-10</div>
+
+  <!-- Step 0 -->
+  <div class="step-box" style="background:#1a1d28;border-left-color:var(--step0);">
+    <div class="step-title" style="color:var(--step0)">Step 0 — Deterministic body-wave baseline</div>
+    <div class="step-sub">Phase-gated crest detection · n_fires=3 · rate=3×1.5=4.5/s<br>No learning — pure physics rule</div>
+    <div class="step-f1">F1 = 0.217 (baseline)</div>
+  </div>
+
+  <!-- Step 1a -->
+  <div class="step-box" style="background:#0f1f2a;border-left-color:var(--rsvd);">
+    <div class="step-title" style="color:var(--rsvd)">Step 1a — RSVD (NAML L06, Lab01)</div>
+    <div class="step-sub">X_{302×T} → U_k, Σ_k, V_k^T · Eckart-Young thm: best rank-k approx<br>
+    choose_k: 90% variance threshold → k=4<br>
+    Z_worm = (U_k^T X)^T ∈ ℝ^{T×4}</div>
+    <div class="step-f1">Dimensionality: 302D → 4D</div>
+  </div>
+
+  <!-- Step 1b -->
+  <div class="step-box" style="background:#0f1f2a;border-left-color:var(--rsvd);">
+    <div class="step-title" style="color:var(--rsvd)">Step 1b — Procrustes (NAML L06/L09)</div>
+    <div class="step-sub">min_R ||Z·R − C||_F s.t. R^T R=I · solved via SVD of Z^T·C<br>Aligns worm 4-D subspace → Chopin k-D space</div>
+    <div class="step-f1">F1 = n/a (feature alignment, not classifier)</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-box" style="background:#1a1228;border-left-color:#9b59b6;">
+    <div class="step-title" style="color:#9b59b6">Step 2 — PCA + K-means (NAML L08/L10, Lab02)</div>
+    <div class="step-sub">pca_reduce(Z_worm, n=4) → scores<br>
+    choose_k_silhouette() → best cluster count<br>
+    KMeans: motor primitives = locomotion states</div>
+    <div class="step-f1">F1 = 0.211 (below baseline — clusters ≠ onsets)</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-box" style="background:#121a12;border-left-color:#2ecc71;">
+    <div class="step-title" style="color:#2ecc71">Step 3 — Ridge Regression (NAML L07/L11, Lab07)</div>
+    <div class="step-sub">RidgeComposer · λ by 5-fold CV · Lab V diagnostics:<br>
+    VIF (multicollinearity), Durbin-Watson (residual autocorr),<br>Breusch-Pagan (heteroscedasticity), Lasso CV</div>
+    <div class="step-f1">F1 = 0.286</div>
+  </div>
+
+  <!-- Steps 4-6 -->
+  <div class="step-box" style="background:#0f0f22;border-left-color:var(--ml);">
+    <div class="step-title" style="color:var(--ml)">Steps 4-6 — MLP + Adam + L-BFGS (NAML L14-22)</div>
+    <div class="step-sub">
+      <strong style="color:#e2e8f0">Step 4 (L14-17, Lab06):</strong> WormComposer = JAX/Flax MLP<br>
+      &nbsp;&nbsp;k_worm → Dense(32) → tanh → Dense(32) → tanh → Dense(k_chopin)<br>
+      &nbsp;&nbsp;Xavier init · Universal Approximation Thm (L24)<br>
+      <strong style="color:#e2e8f0">Step 5 (L18-20, Lab07):</strong> Adam optimizer (Optax)<br>
+      &nbsp;&nbsp;m←β₁m+(1-β₁)g · v←β₂v+(1-β₂)g² · θ←θ-αm̂/(√v̂+ε)<br>
+      <strong style="color:#e2e8f0">Step 6 (L21-22, Lab08):</strong> L-BFGS polish<br>
+      &nbsp;&nbsp;Quasi-Newton · approximates H⁻¹ from gradient history · 2nd-order
+    </div>
+    <div class="step-f1">F1 = 0.331</div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step-box" style="background:#1a1512;border-left-color:#e67e22;">
+    <div class="step-title" style="color:#e67e22">Step 7 — Random Forest (AppStat Lec07, Lab07)</div>
+    <div class="step-sub">RandomForestClassifier(n=100, class_weight='balanced', OOB)<br>
+    Input: Z_worm (4D) · binary onset labels (±50ms window)<br>
+    Permutation importance per PC · OOB score ≈ 0.829</div>
+    <div class="step-f1">F1 = 0.872</div>
+  </div>
+
+  <!-- Steps 8a/b/c -->
+  <div class="step-box" style="background:#1a1010;border-left-color:var(--hh);">
+    <div class="step-title" style="color:var(--hh)">Steps 8a/b/c — PINN (NAML L14/L27)</div>
+    <div class="step-sub">
+      <strong style="color:#e2e8f0">8a (ODE PINN):</strong> damped oscillator q̈+2γq̇+ω²q=0<br>
+      <strong style="color:#e2e8f0">8b (PDE PINN):</strong> 1-D wave equation ∂²u/∂t²=c²∂²u/∂x²<br>
+      <strong style="color:#e2e8f0">8c (PINN-CLS):</strong> BCE + ODE physics regularisation<br>
+      Physics loss = data loss + λ·physics_residual<br>
+      PINN tunes g_EGL19, V_half, τ_Ca, g_EXP2, V_thr</div>
+    <div class="step-f1">F1 ≈ 0.47 (prior mismatch — oscillator ≠ pulse spike)</div>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="step-box" style="background:#0f0f1a;border-left-color:var(--ml);">
+    <div class="step-title" style="color:var(--ml)">Step 9 — Hybrid MLP (Fourier+Worm)</div>
+    <div class="step-sub">MLPClassifier(128→64, ReLU, Adam, early_stopping)<br>
+    Features: Fourier(27D) + Z_worm(4D) = 31D<br>
+    Proves worm biology adds +0.007 F1 over pure timing</div>
+    <div class="step-f1">F1 = 0.879 ← best classifier on 10s window</div>
+  </div>
+
+  <!-- Step 9b -->
+  <div class="step-box" style="background:#140f1a;border-left-color:#e84393;border-width:3px;">
+    <div class="step-title" style="color:#e84393">Step 9b — Physics-Residual MLP ← CURRENT</div>
+    <div class="step-sub">Extends Step 9 with ODE residual features (k=4D)<br>
+    Total: Fourier(27) + Z_worm(4) + ODE_res(4) = 35D<br>
+    calibrated_onset_detect: logistic + Youden's J threshold<br>
+    Trained on <strong>full 229s piece</strong> (v1.0.0: no window cap)</div>
+    <div class="step-f1">F1 ≈ 0.879 (ODE residual redundant, but complete)</div>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="step-box" style="background:#0a150a;border-left-color:#00d2d3;">
+    <div class="step-title" style="color:#00d2d3">Step 10 — Full-piece NB04+Step9b (NAML L27)</div>
+    <div class="step-sub">NB04 recipe: train on complete 229s, no feature-shift gap<br>
+    Phase ∈ [0,1] over full piece → no Fourier extrapolation<br>
+    MLP trained on 30k subsampled pts from 458k total</div>
+    <div class="step-f1">F1 (full piece) via calibrated_onset_detect</div>
+  </div>
+</div>
+
+<!-- ARROW 6→7 -->
+<div class="arr" style="padding:0 6px;">
+  <svg width="28" height="700" viewBox="0 0 28 700">
+    <defs><marker id="arr6" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/></marker></defs>
+    <line x1="14" y1="10" x2="14" y2="680" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arr6)"/>
+    <text x="7" y="340" font-size="8" fill="#4a5568" transform="rotate(-90,7,340)">onset times</text>
+  </svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL 7 — Output: Piano Synth + WAV
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" style="width:215px;" id="p-output">
+  <div class="panel-title" style="color:var(--output)">⑦ Musical Output</div>
+
+  <!-- calibrated onset detect -->
+  <div class="ch-box" style="border-color:#1a3040;">
+    <div class="ch-name" style="color:var(--rsvd)">calibrated_onset_detect</div>
+    <div class="ch-gene">LogisticRegression on peak heights · Youden's J</div>
+    <div class="ch-eq">1. find_peaks(probs, distance=refractory)
+2. LogisticRegression: peak_height → binary onset
+3. threshold = Youden's J on ROC curve
+4. enforce 280ms refractory period
+→ onset_times ∈ ℝ^N</div>
+  </div>
+
+  <!-- pitch map -->
+  <div class="ch-box" style="border-color:#1a3040;">
+    <div class="ch-name" style="color:#e9c46a">Pitch Map (96 muscles → MIDI)</div>
+    <div class="ch-gene">Boyle 4×24 quadrant layout</div>
+    <div class="ch-eq">DL[0-23]  → C1-B2  (MIDI 24-47)
+VL[24-47] → C3-B4  (MIDI 48-71)
+DR[48-71] → C5-B6  (MIDI 72-95)
+VR[72-95] → C7-B8  (MIDI 96-119)
+8 octaves × 12 semitones = 96 piano keys</div>
+  </div>
+
+  <!-- v2 piano synth -->
+  <div class="ch-box" style="border-color:#2a2040;">
+    <div class="ch-name" style="color:#e84393">render_string_v2 &nbsp;<span style="color:#2ecc71;font-size:9px">v1.0.0</span></div>
+    <div class="ch-gene">3 detuned strings + hammer noise + reverb · ISSUE-003</div>
+    <div class="ch-eq">Strings: f0 at 0, +5, −5 cents → ≈3Hz beating
+Hammer: 4ms white-noise × exp(−t/2ms)
+Reverb: _room_ir · RT60≈0.3s · 20% wet
+→ render_string(f0, vel, dur_s, fs=8000)×3</div>
+  </div>
+
+  <!-- synthesise_melody -->
+  <div class="ch-box" style="border-color:#2a2040;">
+    <div class="ch-name" style="color:#fd79a8">synthesise_melody</div>
+    <div class="ch-gene">Mix all note events · scipy.signal.fftconvolve</div>
+    <div class="ch-eq">duration_s = None → max(t)+2s (ISSUE-004)
+fs = 8 000 Hz (matches source WAV)
+scale → int16 × 28000 → WAV
+→ ≈ 3.5 MB / 229s (source: 3.6 MB)</div>
+  </div>
+
+  <!-- WAV outputs -->
+  <div style="background:#0a1520;border:1px solid #1a3040;border-radius:5px;padding:8px;margin-top:4px;">
+    <div style="font-size:10px;font-weight:700;color:var(--output);">Output Files</div>
+    <div style="margin-top:5px;">
+      <div style="font-size:9.5px;margin-bottom:5px;">
+        <span style="color:#e84393">🐛</span>
+        <span style="font-family:monospace;color:#e2e8f0;">worm_step9b_v1.wav</span><br>
+        <span style="color:var(--muted);font-size:8.5px;">Step 9b onsets → v2 piano · 8kHz · ≈3.5MB · 229s</span>
+      </div>
+      <div style="font-size:9.5px;margin-bottom:5px;">
+        <span style="color:#e9c46a">🎼</span>
+        <span style="font-family:monospace;color:#e2e8f0;">chopin_synth_v1.wav</span><br>
+        <span style="color:var(--muted);font-size:8.5px;">Chopin MIDI → v2 piano · 8kHz · ≈3.5MB · 229s</span>
+      </div>
+      <div style="font-size:9.5px;">
+        <span style="color:var(--sensory)">🎵</span>
+        <span style="font-family:monospace;color:#e2e8f0;">chopin_nocturne.wav</span><br>
+        <span style="color:var(--muted);font-size:8.5px;">Original recording · 8kHz · 3.6MB · 234s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- F1 summary -->
+  <div style="background:#0a1810;border:1px solid #1a3020;border-radius:5px;padding:8px;margin-top:6px;">
+    <div style="font-size:10px;font-weight:700;color:#2ecc71;">F1 Progression</div>
+    <div style="margin-top:5px;font-size:9px;line-height:1.8;">
+      <div><span style="color:var(--step0)">Step 0</span> (body-wave) &nbsp;&nbsp;&nbsp;&nbsp;F1 = 0.217</div>
+      <div><span style="color:#2ecc71">Step 3</span> (Ridge) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;F1 = 0.286</div>
+      <div><span style="color:var(--ml)">Steps 4-6</span> (MLP+Adam) &nbsp;&nbsp;F1 = 0.331</div>
+      <div><span style="color:#e67e22">Step 7</span> (RF) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;F1 = 0.872</div>
+      <div><span style="color:var(--ml)">Step 9</span> (Hybrid MLP) &nbsp;&nbsp;&nbsp;F1 = 0.879</div>
+      <div><span style="color:#e84393">Step 9b</span> (+ ODE res.) &nbsp;&nbsp;F1 = 0.879</div>
+    </div>
+    <div style="font-size:8.5px;color:var(--muted);margin-top:4px;line-height:1.4;">
+      Metric: musical F1 ±50ms tolerance<br>
+      Beats Chopin's 4.40 notes/s? → Yes (4.5 allowed)
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     BIOLOGY → NN MAPPING TABLE
+═══════════════════════════════════════════════════════════ -->
+<div style="padding:0 10px 10px;">
+<div style="background:var(--panel-bg);border:1px solid var(--border);border-radius:8px;padding:14px;">
+  <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">
+    Biological → Neural Network Architecture Correspondence
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;">
+    <tr style="background:#1a2035;">
+      <th style="padding:6px 10px;text-align:left;color:var(--muted);font-weight:600;width:25%">Biological Element</th>
+      <th style="padding:6px 10px;text-align:left;color:var(--muted);font-weight:600;width:12%">Count</th>
+      <th style="padding:6px 10px;text-align:left;color:var(--muted);font-weight:600;width:28%">NN Equivalent</th>
+      <th style="padding:6px 10px;text-align:left;color:var(--muted);font-weight:600;width:35%">Notes</th>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--drive);font-weight:600;">Rhythmic sinusoidal drive</td>
+      <td style="padding:5px 10px;color:var(--muted);">A·sin(2πft+φ)</td>
+      <td style="padding:5px 10px;color:var(--output);">Fourier positional encoding</td>
+      <td style="padding:5px 10px;color:var(--muted);">Phase features in Steps 9/9b: sin/cos harmonics at k=1..12</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--cmd);font-weight:600;">Command interneurons × 4</td>
+      <td style="padding:5px 10px;color:var(--muted);">12 (4×3)</td>
+      <td style="padding:5px 10px;color:var(--output);">Input embedding rows 0–11</td>
+      <td style="padding:5px 10px;color:var(--muted);">Strong phase signal; maps to PC1 in RSVD (highest variance component)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--mn-a);font-weight:600;">A-class motor neurons</td>
+      <td style="padding:5px 10px;color:var(--muted);">21 (VA+DA)</td>
+      <td style="padding:5px 10px;color:var(--output);">Input rows 12–32</td>
+      <td style="padding:5px 10px;color:var(--muted);">Backward wave signal; contributes to PC2 (head-tail gradient)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--mn-b);font-weight:600;">B-class motor neurons</td>
+      <td style="padding:5px 10px;color:var(--muted);">18 (VB+DB)</td>
+      <td style="padding:5px 10px;color:var(--output);">Input rows 33–50</td>
+      <td style="padding:5px 10px;color:var(--muted);">Forward wave; strongest contributor to onset events (locomotion direction)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--mn-d);font-weight:600;">D-class motor neurons (GABA)</td>
+      <td style="padding:5px 10px;color:var(--muted);">19 (VD+DD)</td>
+      <td style="padding:5px 10px;color:var(--output);">Input rows 51–69</td>
+      <td style="padding:5px 10px;color:var(--muted);">Inhibitory; contributes to PC3 (lateral asymmetry) → note timing gaps</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:#fd79a8;font-weight:600;">Other interneurons</td>
+      <td style="padding:5px 10px;color:var(--muted);">30</td>
+      <td style="padding:5px 10px;color:var(--output);">Input rows 70–99</td>
+      <td style="padding:5px 10px;color:var(--muted);">Mixed-frequency modulation; contributes to PC4 (multi-harmonic texture)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--sensory);font-weight:600;">Sensory neurons</td>
+      <td style="padding:5px 10px;color:var(--muted);">100</td>
+      <td style="padding:5px 10px;color:var(--output);">Input rows 100–199</td>
+      <td style="padding:5px 10px;color:var(--muted);">Sparse bursts → low RSVD weight; noise regularisation for the learned mapping</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--body-n);font-weight:600;">Body/remaining neurons</td>
+      <td style="padding:5px 10px;color:var(--muted);">102</td>
+      <td style="padding:5px 10px;color:var(--output);">Input rows 200–301</td>
+      <td style="padding:5px 10px;color:var(--muted);">Low-amplitude slow oscillations; near-zero RSVD weight</td>
+    </tr>
+    <tr style="border-top:2px solid var(--border);background:#0e1117;">
+      <td style="padding:5px 10px;color:#fff;font-weight:700;">Total 302 neurons</td>
+      <td style="padding:5px 10px;color:#fff;font-weight:700;">302</td>
+      <td style="padding:5px 10px;color:var(--rsvd);font-weight:700;">RSVD input matrix X ∈ ℝ^{302×T}</td>
+      <td style="padding:5px 10px;color:var(--muted);">→ 4 principal components after RSVD (≥90% variance)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--mus-vl);font-weight:600;">DL muscles 0–23</td>
+      <td style="padding:5px 10px;color:var(--muted);">24</td>
+      <td style="padding:5px 10px;color:var(--output);">Pitch map: MIDI 24–47 (C1–B2)</td>
+      <td style="padding:5px 10px;color:var(--muted);">Bass register. Phase 0→2π (head→tail). Contribute to PC2 (dorsal body wave)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--mus-vl);font-weight:600;">VL muscles 24–47</td>
+      <td style="padding:5px 10px;color:var(--muted);">24</td>
+      <td style="padding:5px 10px;color:var(--output);">Pitch map: MIDI 48–71 (C3–B4)</td>
+      <td style="padding:5px 10px;color:var(--muted);">Tenor register. Phase π→3π (antiphase to DL). Ventral body wave → PC3</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--mus-dr);font-weight:600;">DR muscles 48–71</td>
+      <td style="padding:5px 10px;color:var(--muted);">24</td>
+      <td style="padding:5px 10px;color:var(--output);">Pitch map: MIDI 72–95 (C5–B6)</td>
+      <td style="padding:5px 10px;color:var(--muted);">Alto register. Phase 0.05→2π+0.05 (bilateral offset from DL)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--mus-vr);font-weight:600;">VR muscles 72–95</td>
+      <td style="padding:5px 10px;color:var(--muted);">24</td>
+      <td style="padding:5px 10px;color:var(--output);">Pitch map: MIDI 96–119 (C7–B8)</td>
+      <td style="padding:5px 10px;color:var(--muted);">Treble register. Phase π.05→3π.05. Highest velocity → MIDI velocity 1–127</td>
+    </tr>
+    <tr style="border-top:2px solid var(--border);background:#0e1117;">
+      <td style="padding:5px 10px;color:#fff;font-weight:700;">Total 96 BWM cells</td>
+      <td style="padding:5px 10px;color:#fff;font-weight:700;">96</td>
+      <td style="padding:5px 10px;color:var(--output);font-weight:700;">Output node: pitch_map[muscle_idx % 96]</td>
+      <td style="padding:5px 10px;color:var(--muted);">4 quadrants × 24 cells = 8 octaves × 12 semitones = full piano keyboard</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">EGL-19 Ca²⁺ channel (g_EGL19)</td>
+      <td style="padding:5px 10px;color:var(--muted);">1 param/cell</td>
+      <td style="padding:5px 10px;color:var(--output);">PINN physics loss term</td>
+      <td style="padding:5px 10px;color:var(--muted);">Controls amplitude of Ca²⁺ current → MIDI velocity scaling</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">EXP-2 K⁺ channel (g_EXP2)</td>
+      <td style="padding:5px 10px;color:var(--muted);">1 param/cell</td>
+      <td style="padding:5px 10px;color:var(--output);">PINN physics loss term</td>
+      <td style="padding:5px 10px;color:var(--muted);">Repolarisation speed → note duration / sustain</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">EGL-19 activation V_half, τ_Ca</td>
+      <td style="padding:5px 10px;color:var(--muted);">2 params/cell</td>
+      <td style="padding:5px 10px;color:var(--output);">PINN physics loss term</td>
+      <td style="padding:5px 10px;color:var(--muted);">Firing threshold → note density; activation time → maximum playable BPM</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--pinn);font-weight:600;">ODE residual r(t)</td>
+      <td style="padding:5px 10px;color:var(--muted);">k=4 per timestep</td>
+      <td style="padding:5px 10px;color:var(--output);">Step 9b feature: 4 extra dims</td>
+      <td style="padding:5px 10px;color:var(--muted);">q̈+2γq̇+ω²q · spikes at onset transitions. Redundant with Z_worm (linear ftn)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--ml);font-weight:600;">MLPClassifier (Step 9b)</td>
+      <td style="padding:5px 10px;color:var(--muted);">35 → 128 → 64 → 1</td>
+      <td style="padding:5px 10px;color:var(--output);">Binary onset predictor</td>
+      <td style="padding:5px 10px;color:var(--muted);">ReLU activations · Adam · early stopping · probability → calibrated_onset_detect</td>
+    </tr>
+  </table>
+</div>
+</div>
+
+<footer>
+  <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;">Legend</div>
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--drive)"></div>Rhythmic drive</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--cmd)"></div>Command interneurons</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mn-a)"></div>A-class motor neurons (backward)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mn-b)"></div>B-class motor neurons (forward)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mn-d)"></div>D-class motor neurons (GABA inhibitory)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mus-dl)"></div>DL muscles (C1–B2, bass)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mus-vl)"></div>VL muscles (C3–B4, tenor)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mus-dr)"></div>DR muscles (C5–B6, alto)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mus-vr)"></div>VR muscles (C7–B8, treble)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--hh)"></div>Ion channels (HH model / PINN params)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--rsvd)"></div>RSVD / dimensionality reduction</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--ml)"></div>ML steps (MLP, RF)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#e84393"></div>Step 9b (current / v1.0.0)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--output)"></div>Output (piano synth / WAV)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--sensory)"></div>Sensory neurons</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--body-n)"></div>Body/remaining neurons</div>
+  </div>
+  <div class="note" style="margin-top:10px;">
+    Reference: Boyle, Berri &amp; Cohen (2012) <em>"Gait modulation in C. elegans: an integrated neuromechanical model"</em> PLOS Comput. Biol. 8(11) e1002890.
+    &nbsp;·&nbsp; White et al. (1986) <em>"The structure of the nervous system of the nematode C. elegans"</em>
+    &nbsp;·&nbsp; Jospin et al. (2002) EGL-19 / EXP-2 kinetics.
+    &nbsp;·&nbsp; PyANNOW v1.0.0 · <code>src/pyannow/composer/worm_optimizer.py</code> · <code>worm_optimizer_fast.py</code>
+  </div>
+</footer>
+
+<script>
+// Render sensory and body neuron dots via JS since 100+102=202 dots are too verbose in HTML
+(function(){
+  var sens=document.querySelector('#p-302 div[style*="grid-template-columns:repeat(20"]');
+  if(sens){
+    var html='';
+    for(var i=0;i<100;i++){
+      var g=Math.round(150+i*0.4);
+      html+='<div class="dot-sq" style="background:rgb('+g+','+g+','+(g+15)+')" title="SEN-'+i+'"></div>';
+    }
+    sens.innerHTML=html;
+  }
+  var body=document.querySelectorAll('#p-302 div[style*="grid-template-columns:repeat(20"]');
+  if(body[1]){
+    var html2='';
+    for(var j=0;j<102;j++){
+      html2+='<div class="dot-sq" style="background:#3a4050" title="BODY-'+j+'"></div>';
+    }
+    body[1].innerHTML=html2;
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 # PyANNOW — NAML Progression
 
 **Living document.** Updated as each step is implemented.  
-*Last updated: v0.9.0 — calibrated onset detector, RF Step 7, Worm+Time hybrid Step 9, Step 9b (physics-residual MLP), Step 8c (PINN-Classifier), AppStat visualizations (2026-05-24).*
+*Last updated: v1.0.0 — realistic v2 piano synth (ISSUE-003), full-piece `duration_s=None` fix (ISSUE-004), Step 9b focused notebook `05_pyannow_step9b_audio.ipynb` (2026-05-25).*
 
 ---
 
@@ -542,6 +542,7 @@ EGL-19 conductances" instead of just "this minimises the PINN loss."
 ```
 PyANNOW/
 ├── src/pyannow/
+│   ├── composer/piano_synth.py       ← v1.0.0: render_string_v2 + reverb (ISSUE-003)
 │   ├── step1_svd/encoder.py          ← RSVD (L06 / Lab01)
 │   ├── step1_svd/procrustes.py       ← Procrustes alignment (L06 / L09)
 │   ├── step2_clustering/             ← PCA + K-means (L08 / L10 / Lab02)
@@ -551,9 +552,46 @@ PyANNOW/
 │   ├── step6_lbfgs/                  ← L-BFGS (L21-22 / Lab08)
 │   └── step8_pinn/                   ← PINN (L14 / L27)
 ├── notebooks/
-│   └── 03_pyannow_naml_progression.ipynb
+│   ├── 03_pyannow_naml_progression.ipynb   Full 10-step progression
+│   └── 05_pyannow_step9b_audio.ipynb  ← v1.0.0: Step 9b + v2 audio (full piece)
 ├── docs/
 │   └── PyANNOW_NAML_progression.md   ← this file
 └── presentation/
     └── index.html                     ← Reveal.js presentation
 ```
+
+---
+
+## v1.0.0 — Realistic piano audio + Step 9b full-piece notebook (2026-05-25)
+
+### Problem addressed (ISSUE-003)
+
+The v1 modal synthesiser used 40 decaying sine waves per note, producing a characteristic
+"tin can" resonance.  Missing components: multi-string detuning (unison choir), hammer-impact
+transient, room acoustics.
+
+### Solution — `render_string_v2` (Option B, no FluidSynth dependency)
+
+| Component | Implementation |
+|---|---|
+| **3 detuned strings** | Strings at 0, +5, −5 cents → ≈ 3 Hz beating at A4 |
+| **Hammer transient** | 4 ms shaped white-noise burst, 2 ms exponential decay |
+| **Room reverb** | `_room_ir()` + `scipy.signal.fftconvolve`, RT60 ≈ 0.3 s, 20% wet |
+
+`synthesise_melody()` new defaults: `use_v2=True`, `reverb=True`, `duration_s=None`
+(derives from last event + 2 s — fixes ISSUE-004).
+
+### New notebook — `05_pyannow_step9b_audio.ipynb`
+
+A stripped version of `03_pyannow_naml_progression.ipynb` keeping **only Step 9b**
+(Fourier time + worm PCA + ODE residual features).  Applied to the **full 229 s** Chopin
+piece from the start — no training-window cap.  Output WAV at **8 kHz ≈ 3.5 MB** (same
+size as the source recording).
+
+| Parameter | Value |
+|---|---|
+| Training window | Full 229 s (no 10 s cap) |
+| Feature dimension | 27 + 2·k (Fourier + worm + ODE) |
+| Sample rate | 8 000 Hz |
+| Output WAV size | ≈ 3.5 MB (source: 3.6 MB) |
+| Piano synth | `render_string_v2` (v1.0.0) |

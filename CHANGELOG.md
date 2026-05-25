@@ -14,7 +14,40 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`.
 
 ---
 
-## [0.9.0] — 2026-05-24  *(current)*
+## [1.0.0] — 2026-05-25  *(current)*
+
+### Realistic piano audio + Step 9b full-piece notebook (ISSUE-003 + ISSUE-004)
+
+First production-quality audio release.  The "tin can" modal synth is replaced by
+`render_string_v2` — a 3-string detuned choir with hammer-impact transient — and
+a room reverb post-process.  Output WAV at 8 kHz matches the source recording size
+(≈ 3.5 MB / 229 s).  A focused notebook `05_pyannow_step9b_audio.ipynb` extracts
+Step 9b from the full progression and applies it directly to the complete Chopin
+piece without a training-window cap.
+
+### Added
+- **`render_string_v2()`** in `piano_synth.py` — 3 detuned strings (0, +5, −5
+  cents) + 4 ms hammer-noise burst.  Removes the single-mode tin-can resonance.
+  Fixes ISSUE-003.
+- **`_room_ir()`** helper in `piano_synth.py` — synthetic room impulse response
+  (direct + 3 early reflections + late exponential decay, RT60 ≈ 0.3 s).
+- **`use_v2=True`** and **`reverb=True`** parameters in `synthesise_melody()` —
+  new defaults enable v2 piano and 20% wet room reverb.
+- **`duration_s=None`** default in `synthesise_melody()` — derives output length
+  from the last event time so the full Chopin piece renders without a 15 s cap.
+  Fixes ISSUE-004.
+- **`05_pyannow_step9b_audio.ipynb`** — stripped notebook with Step 9b only
+  (Fourier + worm PCA + ODE residual features), trained on the **full 229 s**
+  piece, synthesised at 8 kHz with the v2 piano.  Output WAV ≈ 3.5 MB.
+
+### Changed
+- `pyproject.toml` version → `1.0.0`.
+- `PyANNOW/README.md` — updated description and notebook layout for v1.0.0.
+- `docs/PyANNOW_NAML_progression.md` — v1.0.0 section added.
+
+---
+
+## [0.9.0] — 2026-05-24
 
 ### Calibrated onset detector + RF Step 7 + Worm+Time hybrid Step 9 + AppStat visualization cells
 

@@ -193,7 +193,7 @@ Expected new result: >90% reachable (task scheduling capacity >> demand).
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (v1.0.0) |
 | **Priority** | P1 |
 | **Severity** | Audio quality |
 
@@ -209,9 +209,11 @@ The output does not sound like a real piano.
 - `PyANNOW/pyproject.toml` — add `midi2audio` + optional `fluidsynth` dependency
 - `TODO.md` — this entry
 
-**Fix plan (two options):**
-- **Option A (best):** FluidSynth + Salamander Grand Piano .sf2 soundfont via `midi2audio`
-- **Option B (no-dep):** `render_string_v2()` — 3 detuned strings + 4ms hammer noise burst + scipy convolution reverb
+**Resolution (v1.0.0):** `render_string_v2()` added to `piano_synth.py` (Option B):
+3 detuned strings at (0, +5, −5) cents + 4 ms shaped hammer-noise burst + 20% wet room
+reverb via `scipy.signal.fftconvolve`.  `use_v2=True` and `reverb=True` are now the
+defaults in `synthesise_melody()`.  Applied in `05_pyannow_step9b_audio.ipynb` —
+synthesised WAV at 8 kHz ≈ 3.5 MB (matches source recording size).
 
 ---
 
@@ -219,7 +221,7 @@ The output does not sound like a real piano.
 
 | Field | Value |
 |---|---|
-| **Status** | 🔴 Open |
+| **Status** | ✅ Resolved (v1.0.0) |
 | **Priority** | P1 |
 | **Severity** | Completeness |
 
@@ -234,12 +236,10 @@ the audio comparison only render the first 15 seconds.
 - `PyANNOW/presentation/index.html` — "Listen" slide text ("first 15 seconds" → full piece)
 - `TODO.md` — this entry
 
-**Fix plan:**
-```python
-# piano_synth.py
-def synthesise_melody(events, duration_s=None, max_notes=None, ...):
-    # duration_s=None → use max(event.time_s) + 2s
-```
+**Resolution (v1.0.0):** `duration_s=None` is now the default in `synthesise_melody()`.
+When `None`, the function derives output length from `max(event.time_s) + 2 s`, so the
+full 229 s Nocturne renders without a cap.  `max_notes` was already `None`.  Applied in
+`05_pyannow_step9b_audio.ipynb`.
 
 ---
 

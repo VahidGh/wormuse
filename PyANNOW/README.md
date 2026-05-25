@@ -1,13 +1,15 @@
 # PyANNOW
 
 **The NAML sub-project.** Python / JAX / Flax composer that maps *C. elegans* 302-neuron
-activity to Chopin piano music using a 9-step NAML progression. The **ion-channel PINN
+activity to Chopin piano music using a 10-step NAML progression. The **ion-channel PINN
 is the scientific centrepiece** (see [`../ION_CHANNELS.md`](../ION_CHANNELS.md));
-the practical best result (v0.9.0) is the **Worm+Time hybrid MLP** (Step 9, F1=0.879).
+the best audio result (v1.0.0) is the **Step 9b physics-residual MLP on the full 229 s
+piece**, synthesised with the new `render_string_v2` piano (3 detuned strings + hammer
+transient + room reverb).
 
 `PyANNOW` ≈ **Py**thon **A**rtificial **N**eural-channel **N**etwork **O**rchestrator for **W**ormuse.
 
-*Current version: **v0.9.0***
+*Current version: **v1.0.0***
 
 ---
 
@@ -31,8 +33,9 @@ PyANNOW/
 ├── chopin_score_net/           NB04 module: Fourier→residual MLP→piano roll
 ├── notebooks/
 │   ├── 02_chopin_worm_optimizer.ipynb   Worm optimizer + audio playback
-│   ├── 03_pyannow_naml_progression.ipynb  ← MAIN (9-step NAML progression)
-│   └── 04_chopin_score_net.ipynb        Fourier time-net reference ceiling
+│   ├── 03_pyannow_naml_progression.ipynb  Full 10-step NAML progression
+│   ├── 04_chopin_score_net.ipynb        Fourier time-net reference ceiling
+│   └── 05_pyannow_step9b_audio.ipynb  ← v1.0.0: Step 9b on full piece + v2 piano
 ├── docs/
 │   └── PyANNOW_NAML_progression.md      Living doc with measured F1 scores
 ├── presentation/
