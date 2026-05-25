@@ -2,3 +2,7 @@ src/
 PyANNOW/notebooks/.DS_Store
 PyANNOW/notebooks/step_outputs
 shared/examples
+*_cache.npz
+PyANNOW/worm_dance/data/worm_forward_v2_cache.npz
+.DS_Store
+**/.DS_Store

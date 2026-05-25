@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Can a Worm Play Chopin? | wormuse v1.0.0</title>
-<meta name="description" content="A C. elegans–driven musical simulator: 302 neurons → Boyle 4×24 model → physical piano. NAML 10-step progression. Politecnico di Milano 2025-26.">
-<meta property="og:title" content="Can a Worm Play Chopin? | wormuse">
-<meta property="og:description" content="302-neuron C. elegans simulated by OpenWorm, wired into a physical piano. NAML algorithms reach F1=0.933 matching Chopin.">
+<title>Can a Worm Dance to Chopin? | wormuse v2.0.0</title>
+<meta name="description" content="PyANNOW v2.0.0: C. elegans worm dances to Chopin via RSVD + K-means + Pearson + least-squares. Live browser demo. NAML 2025-26, Politecnico di Milano.">
+<meta property="og:title" content="The Worm Dances to Chopin | wormuse v2.0.0">
+<meta property="og:description" content="Inverse pipeline: Chopin → RSVD → K-means (K*=8) → Pearson excitability → 96-muscle worm dance. Live in browser. F1=0.933 forward pipeline also included.">
 
 <style>
 /* ── Reset & tokens ── */
@@ -227,6 +227,38 @@ table.nbt tr:hover td { background: rgba(255,255,255,.03); }
 .open-btn.nb:hover { background: rgba(255,217,61,.08); }
 .open-btn.gh { border-color: rgba(255,255,255,.2); color: var(--muted); }
 
+/* ── v2 Dance section ── */
+.dance-split {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 28px; align-items: start;
+}
+@media (max-width: 780px) { .dance-split { grid-template-columns: 1fr; } }
+.dance-frame-wrap {
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid rgba(0,217,255,.25);
+  background: #030810;
+  position: relative;
+}
+.dance-frame-wrap iframe {
+  width: 100%; height: 480px; border: none; display: block;
+}
+.pipeline-row {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.pipe-step {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 7px 7px 0; padding: 8px 13px;
+}
+.pipe-step .ps-label { font-size: .63em; color: var(--accent); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; }
+.pipe-step .ps-title { font-size: .88em; font-weight: 600; margin: 1px 0; }
+.pipe-step .ps-meta  { font-size: .72em; color: var(--muted); }
+.pipe-step.km  { border-color: var(--accent3); }
+.pipe-step.pearson { border-color: var(--green); }
+.pipe-step.ls  { border-color: var(--purple); }
+
 /* ── Footer ── */
 footer {
   background: var(--bg2); border-top: 1px solid var(--border);
@@ -245,8 +277,9 @@ footer {
 <nav>
   <a class="nav-brand" href="#">🐛 wormuse</a>
   <div class="nav-links">
+    <a href="#dance">🐛 Dance Demo</a>
     <a href="#modules">Modules</a>
-    <a href="#pipeline">Pipeline</a>
+    <a href="#pipeline">v1 Pipeline</a>
     <a href="#notebooks">Notebooks</a>
     <a href="https://github.com/VahidGh/wormuse" target="_blank">GitHub ↗</a>
   </div>
@@ -254,8 +287,8 @@ footer {
 
 <!-- ═══════════════════════════════════ HERO ═══ -->
 <section class="hero">
-  <span class="hero-label">Politecnico di Milano · NAML 2025-26 · PyANNOW v1.0.0</span>
-  <h1>Can a Worm Play Chopin?</h1>
+  <span class="hero-label">Politecnico di Milano · NAML 2025-26 · PyANNOW v2.0.0</span>
+  <h1>The Worm Dances to Chopin</h1>
   <p class="sub">
     The 302-neuron nervous system of <em>C. elegans</em>, simulated by OpenWorm,
     wired into a physical piano model — each body wall muscle contraction triggers
@@ -282,7 +315,7 @@ footer {
       </marker>
     </defs>
     <text x="206" y="37" text-anchor="middle" fill="#ffd93d" font-size="7.5">PyANNOW</text>
-    <text x="206" y="57" text-anchor="middle" fill="rgba(255,217,61,.55)" font-size="6">v1.0.0</text>
+    <text x="206" y="57" text-anchor="middle" fill="rgba(255,217,61,.55)" font-size="6">v2.0.0</text>
     <!-- Piano keys -->
     <rect x="238" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
     <rect x="256" y="16" width="16" height="54" rx="2" fill="white" stroke="#222" stroke-width="1"/>
@@ -312,7 +345,7 @@ footer {
   </svg>
 
   <div class="badges">
-    <span class="badge c">v1.0.0</span>
+    <span class="badge c">v2.0.0</span>
     <span class="badge c">Python 3.10-3.13</span>
     <span class="badge g">NAML 2025-26</span>
     <span class="badge g">AppStat 2026</span>
@@ -321,9 +354,10 @@ footer {
     <span class="badge">MIT</span>
   </div>
   <div class="btn-row">
-    <a class="btn btn-primary"    href="#modules">Explore modules</a>
-    <a class="btn btn-secondary"  href="https://github.com/VahidGh/wormuse" target="_blank">⭐ GitHub</a>
-    <a class="btn btn-ghost"      href="#notebooks">📓 Notebooks</a>
+    <a class="btn btn-primary"   href="#dance">🐛 Watch the worm dance</a>
+    <a class="btn btn-secondary" href="PyANNOW/presentation/index_v2.html">📊 NAML Presentation v2</a>
+    <a class="btn btn-ghost"     href="https://github.com/VahidGh/wormuse" target="_blank">⭐ GitHub</a>
+    <a class="btn btn-ghost"     href="#notebooks">📓 Notebooks</a>
   </div>
 </section>
 
@@ -331,13 +365,15 @@ footer {
 <section class="section alt" id="about">
   <div class="container">
     <span class="slabel">The project</span>
-    <h2>Biology + Mathematics + Music</h2>
+    <h2>Biology + Mathematics + Music — two directions</h2>
     <p class="lead">
       <em>C. elegans</em> has exactly 302 neurons and 96 body wall muscles —
       the simplest animal with a fully mapped connectome (White et al. 1986).
-      <strong>wormuse</strong> turns that connectome into a composer:
-      each muscle contraction drives a piano hammer through a physical string model,
-      and NAML algorithms learn to align the worm's body wave to Chopin's nocturne.
+      <strong>v1.x</strong> turns that connectome into a composer: NAML algorithms
+      align the worm's body wave to Chopin's nocturne (best F1 = 0.933).
+      <strong>v2.0.0</strong> inverts the pipeline: Chopin's patterns are extracted
+      via RSVD + K-means, ranked by Pearson excitability, and mapped onto 96 muscles —
+      the worm dances to the music in real time in your browser.
     </p>
     <div class="stat-row">
       <div class="stat-card">
@@ -346,23 +382,78 @@ footer {
       </div>
       <div class="stat-card">
         <div class="stat-num" style="color:var(--green)">96</div>
-        <div class="stat-lbl">body wall muscles<br>→ 96 piano pitches</div>
+        <div class="stat-lbl">body wall muscles<br>= 96 piano pitches</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" style="color:var(--accent3)">10</div>
-        <div class="stat-lbl">NAML algorithm<br>steps (v1.0.0)</div>
+        <div class="stat-num" style="color:var(--accent3)">8</div>
+        <div class="stat-lbl">Chopin musical states<br>(K-means K*=8)</div>
       </div>
       <div class="stat-card">
         <div class="stat-num" style="color:var(--green)">0.933</div>
-        <div class="stat-lbl">best musical F1<br>(Step 9 Worm+Time)</div>
+        <div class="stat-lbl">best musical F1<br>(v1 Step 9 Worm+Time)</div>
       </div>
       <div class="stat-card">
         <div class="stat-num" style="color:var(--accent)">229 s</div>
-        <div class="stat-lbl">full Chopin piece<br>generated (Step 10)</div>
+        <div class="stat-lbl">Chopin nocturne<br>fully covered (v1 + v2)</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" style="color:var(--purple)">3</div>
-        <div class="stat-lbl">PoliMi courses<br>NAML · AppStat · AMSC</div>
+        <div class="stat-num" style="color:var(--purple)">7</div>
+        <div class="stat-lbl">NAML methods<br>in v2 pipeline</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ DANCE DEMO ═══ -->
+<section class="section" id="dance">
+  <div class="container">
+    <span class="slabel">v2.0.0 — Live demo</span>
+    <h2>The Worm Dances to Chopin</h2>
+    <p class="lead">
+      Chopin's Nocturne in C# minor is decomposed into <strong>K*=8 recurring patterns</strong>
+      via RSVD (Eckart-Young) + K-means (silhouette criterion), ranked by biological
+      Pearson excitability, and mapped to 96 body-wall muscles via least-squares regression.
+      Body wave, neural circuit panel, locomotion trail, and pattern timeline — all live.
+    </p>
+    <div class="dance-split">
+      <div class="pipeline-row">
+        <div class="pipe-step">
+          <div class="ps-label">Step 1 · L06–L09</div>
+          <div class="ps-title">RSVD — Eckart-Young</div>
+          <div class="ps-meta">M ∈ ℝ^{56×11711} → U_k Σ_k V_k^T, k=12 (90% variance)</div>
+        </div>
+        <div class="pipe-step km">
+          <div class="ps-label">Step 2–3 · L10 · Lab02</div>
+          <div class="ps-title">K-means + Silhouette</div>
+          <div class="ps-meta">Cluster V_k time frames → K*=8 musical states</div>
+        </div>
+        <div class="pipe-step pearson">
+          <div class="ps-label">Step 4 · AppStat</div>
+          <div class="ps-title">Pearson Excitability</div>
+          <div class="ps-meta">max|r(V_p[:,i], Z_worm[:,j])| ranks patterns by biological resonance</div>
+        </div>
+        <div class="pipe-step ls">
+          <div class="ps-label">Step 5 · L07/L09 · Lab03</div>
+          <div class="ps-title">Least Squares W_nm</div>
+          <div class="ps-meta">lstsq(Z_worm, V_mus) → neural→96-muscle map</div>
+        </div>
+        <div class="pipe-step" style="border-color:var(--accent2)">
+          <div class="ps-label">Step 6</div>
+          <div class="ps-title">Synthetic body wave</div>
+          <div class="ps-meta">4 piano modes → synthMusFromVp → locomotion (FORWARD/TURN/HALT)</div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+          <a class="lbtn pres" href="PyANNOW/presentation/index_v2.html">📊 Full NAML presentation</a>
+          <a class="lbtn nb" href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/06_chopin_patterns_worm_dance_v2.ipynb" target="_blank">📓 Notebook 06</a>
+          <a class="lbtn gh" href="PyANNOW/worm_dance/worm_dance.html" target="_blank">↗ Full-screen demo</a>
+        </div>
+      </div>
+      <div class="dance-frame-wrap">
+        <iframe
+          src="PyANNOW/worm_dance/worm_dance.html?embedded=1&autoplay=1"
+          title="PyANNOW v2 — Worm Dance Live"
+          allow="autoplay"
+        ></iframe>
       </div>
     </div>
   </div>
@@ -385,24 +476,29 @@ footer {
         <span class="mod-tag t-naml">NAML 2025-26 · Prof. Miglio</span>
         <h3>PyANNOW</h3>
         <p>
-          10-step journey from noise to Chopin:<br>
-          SVD → Procrustes → K-means → Ridge → MLP → Adam → L-BFGS →
-          Random Forest → ODE/PDE PINN → Worm+Time hybrid MLP (F1=0.933) →
-          full-piece NB04+Step9b generalization (229s WAV).<br><br>
-          Boyle 4×24 model · 96-cell simulation ·
-          Fourier time encoding · modal piano synthesis (40 modes, 22050 Hz).
+          <strong>v2.0.0 (inverse):</strong> Chopin → RSVD (Eckart-Young, k=12) →
+          K-means (K*=8) → Pearson excitability → lstsq → 96-muscle worm dance.
+          Live browser demo above ↑<br><br>
+          <strong>v1.x (forward):</strong> 10-step Worm→Music journey:
+          SVD → K-means → Ridge → MLP → Adam → L-BFGS → RF → PINN →
+          Worm+Time hybrid MLP (F1=0.933) → full-piece 229 s WAV.<br><br>
+          Boyle 4×24 model · 96-cell simulation · Karplus-Strong piano synthesis.
         </p>
         <div class="mod-links">
-          <a class="lbtn pres" href="PyANNOW/presentation/">📊 NAML Presentation</a>
+          <a class="lbtn pres" href="PyANNOW/presentation/index_v2.html">📊 Presentation v2 (live dance)</a>
+          <a class="lbtn pres" href="PyANNOW/presentation/">📊 Presentation v1</a>
+          <a class="lbtn nb"
+             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/06_chopin_patterns_worm_dance_v2.ipynb"
+             target="_blank">📓 NB06 — v2 inverse pipeline</a>
           <a class="lbtn nb"
              href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/03_pyannow_naml_progression.ipynb"
-             target="_blank">📓 NB03 — Full progression</a>
+             target="_blank">📓 NB03 — v1 full progression</a>
+          <a class="lbtn nb"
+             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/05_pyannow_step9b_audio.ipynb"
+             target="_blank">📓 NB05 — Step 9b audio</a>
           <a class="lbtn nb"
              href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/04_chopin_score_net.ipynb"
              target="_blank">📓 NB04 — Chopin score net</a>
-          <a class="lbtn nb"
-             href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/02_chopin_worm_optimizer.ipynb"
-             target="_blank">📓 NB02 — Optimizer</a>
           <a class="lbtn gh"
              href="https://github.com/VahidGh/wormuse/tree/main/PyANNOW"
              target="_blank">⬡ Source</a>
@@ -547,7 +643,7 @@ footer {
 <section class="section" id="notebooks">
   <div class="container">
     <span class="slabel">All notebooks</span>
-    <h2>Jupyter Notebooks</h2>
+    <h2>Jupyter Notebooks <span style="font-size:.65em;color:var(--muted);font-weight:400">— v1.x forward + v2.0 inverse</span></h2>
     <p class="lead">
       Open in <strong>nbviewer</strong> (rendered, no install needed) or
       view directly on <strong>GitHub</strong> (native .ipynb rendering).
@@ -568,6 +664,29 @@ footer {
 
         <tr>
           <td>
+            <strong>06_chopin_patterns_worm_dance_v2</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">v2.0.0 inverse pipeline · Chopin → worm dance · fully executed</span>
+          </td>
+          <td><span class="ntag t-naml">NAML</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            Piano-roll M∈ℝ^{56×11711} · RSVD (Eckart-Young, k=12) ·
+            K-means K*=8 · Pearson excitability · lstsq W_nm ·
+            synthetic body wave · worm dance JS viz
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/06_chopin_patterns_worm_dance_v2.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/PyANNOW/notebooks/06_chopin_patterns_worm_dance_v2.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
             <strong>03_pyannow_naml_progression</strong><br>
             <span style="font-size:.78em;color:var(--muted)">Main PyANNOW notebook · Steps 0-10 · fully executed</span>
           </td>
@@ -584,6 +703,28 @@ footer {
                  target="_blank">nbviewer</a>
               <a class="open-btn gh"
                  href="https://github.com/VahidGh/wormuse/blob/main/PyANNOW/notebooks/03_pyannow_naml_progression.ipynb"
+                 target="_blank">GitHub</a>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <strong>05_pyannow_step9b_audio</strong><br>
+            <span style="font-size:.78em;color:var(--muted)">Step 9b · full 229s Chopin piece · Karplus-Strong piano synthesis</span>
+          </td>
+          <td><span class="ntag t-naml">NAML</span></td>
+          <td style="font-size:.8em;color:var(--muted)">
+            Step 9b · full-piece (229 s) · Karplus-Strong piano ·
+            physics-residual MLP · audio render pipeline · F1=0.933
+          </td>
+          <td>
+            <div class="open-btns">
+              <a class="open-btn nb"
+                 href="https://nbviewer.org/github/VahidGh/wormuse/blob/main/PyANNOW/notebooks/05_pyannow_step9b_audio.ipynb"
+                 target="_blank">nbviewer</a>
+              <a class="open-btn gh"
+                 href="https://github.com/VahidGh/wormuse/blob/main/PyANNOW/notebooks/05_pyannow_step9b_audio.ipynb"
                  target="_blank">GitHub</a>
             </div>
           </td>
@@ -700,7 +841,7 @@ footer {
       <strong style="color:var(--green)">AppStat 2026</strong> (Profs. Beraha &amp; Andre) ·
       <strong style="color:var(--purple)">AMSC</strong> (Prof. Formaggia)<br>
       Built with <a href="https://claude.ai/code" target="_blank">Claude Code</a> ·
-      wormuse v1.0.0 · MIT License · 2026
+      wormuse v2.0.0 · MIT License · 2026
     </p>
   </div>
 </footer>
