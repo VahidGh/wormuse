@@ -1184,6 +1184,41 @@ scale → int16 × 28000 → WAV
       <td style="padding:5px 10px;color:var(--output);">Binary onset predictor</td>
       <td style="padding:5px 10px;color:var(--muted);">ReLU activations · Adam · early stopping · probability → calibrated_onset_detect</td>
     </tr>
+    <tr style="border-top:2px solid #e84393;background:#0e1117;">
+      <td colspan="4" style="padding:6px 10px;color:#e84393;font-weight:700;font-size:11px;">
+        ── Worm–Piano Biophysics Analogy (v1.1.0 Karplus-Strong path) ──
+      </td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">EGL-19 Ca²⁺ upswing V(t)</td>
+      <td style="padding:5px 10px;color:var(--muted);">96 spikes/cycle</td>
+      <td style="padding:5px 10px;color:var(--output);">KS hammer impulse (excitation)</td>
+      <td style="padding:5px 10px;color:var(--muted);"><code>synthesise_from_hh</code>: upward V crossing −20 mV → one KS string strike per spike</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">|dV/dt| at Ca²⁺ spike peak</td>
+      <td style="padding:5px 10px;color:var(--muted);">mV/s per cell</td>
+      <td style="padding:5px 10px;color:var(--output);">KS hammer velocity → brightness</td>
+      <td style="padding:5px 10px;color:var(--muted);">Fast/strong spike → high velocity → LP cutoff α=0.90 (ff, bright); slow → α=0.25 (pp, warm)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">EXP-2 K⁺ recovery (repolarisation)</td>
+      <td style="padding:5px 10px;color:var(--muted);">τ_K per cell</td>
+      <td style="padding:5px 10px;color:var(--output);">KS feedback decay g</td>
+      <td style="padding:5px 10px;color:var(--muted);">g = exp(−1/(2·T_decay·f₀)); auto T_decay = 5 s×(440/f₀)^0.6 — bass rings longer</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);">
+      <td style="padding:5px 10px;color:var(--hh);font-weight:600;">NCA-1/2 Na⁺ leak (tonic depol.)</td>
+      <td style="padding:5px 10px;color:var(--muted);">constant per cell</td>
+      <td style="padding:5px 10px;color:var(--output);">LP loss per KS cycle (warmth)</td>
+      <td style="padding:5px 10px;color:var(--muted);">Bridge admittance analogue; excitation LP filter α sets spectral tilt (tonic current ≡ baseline loss)</td>
+    </tr>
+    <tr style="border-top:1px solid var(--border);background:#13182a;">
+      <td style="padding:5px 10px;color:#e84393;font-weight:600;">synthesise_from_hh() path</td>
+      <td style="padding:5px 10px;color:var(--muted);">96×T → audio</td>
+      <td style="padding:5px 10px;color:var(--output);">Direct biophysics synthesis</td>
+      <td style="padding:5px 10px;color:var(--muted);">Bypasses NAML onset classifier — Ca²⁺ spikes drive KS strings directly. Compare vs NAML path (F1=0.879)</td>
+    </tr>
   </table>
 </div>
 </div>
@@ -1212,7 +1247,7 @@ scale → int16 × 28000 → WAV
     Reference: Boyle, Berri &amp; Cohen (2012) <em>"Gait modulation in C. elegans: an integrated neuromechanical model"</em> PLOS Comput. Biol. 8(11) e1002890.
     &nbsp;·&nbsp; White et al. (1986) <em>"The structure of the nervous system of the nematode C. elegans"</em>
     &nbsp;·&nbsp; Jospin et al. (2002) EGL-19 / EXP-2 kinetics.
-    &nbsp;·&nbsp; PyANNOW v1.0.0 · <code>src/pyannow/composer/worm_optimizer.py</code> · <code>worm_optimizer_fast.py</code>
+    &nbsp;·&nbsp; PyANNOW v1.1.0 · <code>src/pyannow/composer/piano_synth.py</code> (<code>render_ks</code>, <code>synthesise_from_hh</code>) · <code>worm_optimizer.py</code>
   </div>
 </footer>
 

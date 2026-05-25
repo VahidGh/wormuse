@@ -1,7 +1,7 @@
 # PyANNOW — NAML Progression
 
 **Living document.** Updated as each step is implemented.  
-*Last updated: v1.0.0 — realistic v2 piano synth (ISSUE-003), full-piece `duration_s=None` fix (ISSUE-004), Step 9b focused notebook `05_pyannow_step9b_audio.ipynb` (2026-05-25).*
+*Last updated: v1.1.0 — Karplus-Strong piano engine (`render_ks`), direct HH biophysics synthesis path (`synthesise_from_hh`), worm–piano analogy formalised (2026-05-25).*
 
 ---
 
@@ -559,6 +559,73 @@ PyANNOW/
 └── presentation/
     └── index.html                     ← Reveal.js presentation
 ```
+
+---
+
+## v1.1.0 — Karplus-Strong engine + HH biophysics synthesis path (2026-05-25)
+
+### Why the modal synth sounded like drums
+
+The v1.0.0 modal synthesiser (`render_string_v2`) had three physics errors:
+
+| Problem | v1.0.0 cause | v1.1.0 fix |
+|---|---|---|
+| Too-fast decay | `σ₀=1.5` → τ = 0.67 s (drum territory) | KS decay auto-scales: ~5 s at A4, ~10 s at A2 |
+| All modes decay equally | `σ₁=5×10⁻⁵` — barely frequency-dependent | KS feedback LP filter naturally kills high partials first |
+| Dominant noise transient | 4 ms random burst dominates the attack | KS LP filter on excitation: velocity shapes brightness not click |
+
+### Karplus-Strong design (`render_ks`)
+
+The KS recurrence `y[n] = g/2 · y[n-N] + g/2 · y[n-N-1]` is equivalent to an
+IIR comb filter and is computed via `scipy.signal.lfilter` — fast, no Python loop.
+
+| Parameter | Formula | Effect |
+|---|---|---|
+| Delay line length | `N = round(fs / f0)` | Sets fundamental pitch |
+| Decay factor | `g = exp(−1 / (2 · T_decay · f0))` | Energy halves in `T_decay · f0` cycles |
+| Auto decay time | `T_decay = 5 s × (440/f0)^0.6` | Bass rings longer; treble shorter |
+| Excitation brightness | `α = 0.25 + 0.65 × vel/127` | pp warm, ff bright (LP cutoff on noise) |
+| Detuning | 0, +5, −5 cents × 3 strings | Piano choir / beating |
+
+### Worm–piano biophysics analogy (formalised in v1.1.0)
+
+This is the key conceptual contribution of v1.1.0: every component of the KS
+piano model has a direct biological counterpart in the C. elegans HH muscle model.
+
+| Worm biophysics | Piano / Karplus-Strong | Code location |
+|---|---|---|
+| **EGL-19 Ca²⁺ upswing** (fast V spike) | Hammer strikes string | `synthesise_from_hh`: upward V crossing v_thresh |
+| **\|dV/dt\| at spike peak** (Ca²⁺ slope) | Hammer velocity → loudness + brightness | `vel_scale * dvdt` → MIDI velocity 1-127 |
+| **EXP-2 K⁺ recovery** (repolarisation) | Feedback decay `g` → sustain length | `g = exp(-1/(2·T_decay·f0))` |
+| **NCA-1/2 Na⁺ leak** (tonic depolarisation) | LP loss per cycle → spectral warmth | `α` in excitation LP filter |
+| **HH muscle voltage V(t)** | String displacement (output tap) | KS output `y[n]` |
+| **24 muscles per quadrant** | 24 strings in one octave band | 4 × 24 = 96 pitch assignments |
+| **4 quadrants DL/VL/DR/VR** | 4 octave voices bass→treble | MIDI 24-47 / 48-71 / 72-95 / 96-119 |
+| **Locomotion body wave (ω=2.5 rad/s)** | Musical phrase rhythm | ~4.5 notes/s → quasi-periodic melody |
+| **Worm PCA scores Z_worm** | Onset timing features (NAML path) | Step 9 / 9b: MLP input |
+| **Ca²⁺ spike train (HH path)** | Onset timing (biophysics path) | `synthesise_from_hh` — no MLP needed |
+
+### Two synthesis paths
+
+```
+                    ┌─────────────────────────┐
+   neural activity  │  NAML path (Step 9b)    │  onset labels → calibrated_onset_detect
+   X ∈ ℝ^{302×T}  →│  RSVD → MLP classifier  │──→ synthesise_melody(engine="ks")
+                    └─────────────────────────┘                 │
+                                                                 ▼
+                                                          render_ks()  ──→  WAV
+                                                                 ▲
+                    ┌─────────────────────────┐                 │
+   HH voltages      │  Biophysics path         │  Ca²⁺ spikes  │
+   V ∈ ℝ^{96×T}  →│  synthesise_from_hh()   │──────────────────┘
+                    └─────────────────────────┘
+```
+
+The NAML path **learns** Chopin's note timing from labels (F1 = 0.879).
+The biophysics path **plays what the muscles actually do** — no training,
+no labels, pure C. elegans spike physiology driving KS strings.
+Comparing the two WAV outputs is itself an experiment: how much musical
+structure is already in the raw biophysics vs how much the NAML learning adds.
 
 ---
 

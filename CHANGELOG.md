@@ -14,7 +14,39 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`.
 
 ---
 
-## [1.0.0] — 2026-05-25  *(current)*
+## [1.1.0] — 2026-05-25  *(current)*
+
+### Karplus-Strong piano engine + direct HH biophysics synthesis path
+
+Replaces the modal synthesiser with a physical wave-guide model and adds a
+second synthesis route that bypasses the NAML onset classifier entirely — worm
+muscle voltage spikes directly drive KS strings.
+
+### Added
+- **`render_ks()`** in `piano_synth.py` — Karplus-Strong IIR synthesiser:
+  correct pitch-dependent decay (~5 s at A4), velocity→brightness mapping via
+  LP-filtered noise excitation, 3 detuned strings.  No more drum-like σ₀=1.5.
+- **`synthesise_from_hh()`** — direct biophysics path: HH muscle voltage
+  traces → upward threshold crossings (Ca²⁺ spikes) → hammer-velocity events →
+  KS strings.  No onset classifier needed.  Enables side-by-side comparison of
+  NAML-learned vs biophysics-driven synthesis.
+- **`engine` parameter** in `synthesise_melody()` — `"ks"` | `"v2"` | `"modal"`.
+  `use_v2=True` default preserved for backward compat; pass `engine="ks"` for
+  the new physical model.
+- **`note_sustain_s=None`** default in `synthesise_melody()` — auto-picks 3.0 s
+  for KS (natural piano decay window), 0.7 s for modal/v2 (original behaviour).
+
+### Changed
+- Module docstring: v1.1.0 description + worm–piano biophysics analogy table.
+- `pyproject.toml` version → `1.1.0`.
+- `docs/PyANNOW_NAML_progression.md` — v1.1.0 section: KS design rationale,
+  full worm–piano biophysics mapping table, two-path architecture summary.
+- `docs/boyle_architecture_map.html` — biology→NN table extended with four KS
+  rows: Ca²⁺ spike, K⁺ recovery, NCA leak, and `synthesise_from_hh` path.
+
+---
+
+## [1.0.0] — 2026-05-25
 
 ### Realistic piano audio + Step 9b full-piece notebook (ISSUE-003 + ISSUE-004)
 
