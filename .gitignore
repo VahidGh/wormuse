@@ -57,6 +57,9 @@ docs/demo_outputs/
 *.hdf5
 *.npy
 !shared/examples/small_*.npy
+# Large simulation caches — too big for GitHub (>100 MB)
+*_cache.npz
+PyANNOW/worm_dance/data/worm_forward_v2_cache.npz
 
 # Logs
 *.log

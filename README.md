@@ -5,6 +5,8 @@
 ![python](https://img.shields.io/badge/python-3.10--3.13-blue)
 ![built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-blueviolet?logo=anthropic)
 
+**🌐 Live demo / project page → [vahidgh.github.io/wormuse](https://vahidgh.github.io/wormuse)**
+
 > **A *C. elegans*–driven musical simulator — and its inverse.**
 >
 > **v1.x (Worm → Music):** The 302-neuron nervous system, simulated by OpenWorm (Sibernetic + C302), is wired into a physical piano model. Each neuron firing triggers a hammer; muscle contractions modulate timing and dynamics. **Ion channels are the tuning fork** — a physics-informed neural network learns the kinetics that make the worm's activity musically coherent.
