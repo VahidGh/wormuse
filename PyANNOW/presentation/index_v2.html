@@ -1151,7 +1151,76 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
   </div>
 </section>
 
-<!-- ══════════════════════════════ SLIDE 14: L/R PROBLEM ═════════════════ -->
+<!-- ══════════════════════════ SLIDE 14: HH SIMULATOR ════════════════════ -->
+<section data-background-color="#030d1a" class="dense">
+  <span class="section-label">Part V — C. elegans HH Simulator</span>
+  <h3>The forward model: <span class="hl">ion channels → muscles → music</span></h3>
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
+    <div>
+      <div class="eq-box" style="font-size:.74em;text-align:left;padding:7px 10px;margin-bottom:5px">
+        <strong>C. elegans ion channel ODE</strong> (not standard squid HH):<br>
+        $$C_m \frac{dV}{dt} = -I_{\text{Ca}} - I_{\text{K}} - I_{\text{NCA}} - I_L + I_{\text{syn}}$$
+        <table style="width:100%;border-collapse:collapse;margin-top:4px;font-size:.88em">
+          <tr><td style="color:var(--accent);padding:1px 4px"><strong>EGL-19</strong></td>
+              <td>Ca²⁺ L-type — muscle action potentials</td></tr>
+          <tr><td style="color:var(--accent3);padding:1px 4px"><strong>EXP-2</strong></td>
+              <td>K⁺ delayed rectifier — repolarises muscle</td></tr>
+          <tr><td style="color:var(--green);padding:1px 4px"><strong>SHK-1</strong></td>
+              <td>K⁺ Shaw-type — repolarises motor neurons</td></tr>
+          <tr><td style="color:var(--accent2);padding:1px 4px"><strong>NCA-1/2</strong></td>
+              <td>Na⁺ leak (NALCN family) — background excitability</td></tr>
+          <tr><td style="color:rgba(255,255,255,.5);padding:1px 4px"><em>I_syn</em></td>
+              <td>ACh (excitatory) / GABA (inhibitory) from motor neurons</td></tr>
+        </table>
+      </div>
+      <div class="eq-box" style="font-size:.72em;padding:6px 10px">
+        <strong>Worm–piano biophysical analogy (Karplus-Strong, 1983):</strong><br>
+        <table style="width:100%;border-collapse:collapse;margin-top:3px">
+          <tr style="opacity:.7"><th style="text-align:left;font-weight:500">C. elegans</th>
+                                  <th style="text-align:left;font-weight:500">KS piano model</th></tr>
+          <tr><td>Ca²⁺ influx via EGL-19</td><td>Hammer excitation</td></tr>
+          <tr><td>Membrane capacitance C_m</td><td>String inertia</td></tr>
+          <tr><td>K⁺ EXP-2 decay</td><td>String damping</td></tr>
+          <tr><td>dV/dt at spike → velocity</td><td>Hammer force → brightness</td></tr>
+          <tr><td style="color:var(--accent)">24 muscles / quadrant</td>
+              <td style="color:var(--accent)">24 piano strings / octave</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="step-card done" style="margin-bottom:5px">
+        <div class="step-label">v1 — Worm → Music</div>
+        <div class="step-title">HH simulation → note onsets → Karplus-Strong audio</div>
+        <div class="step-meta">
+          302 neurons → motor neurons (ACh/GABA) → 95 BWMs.<br>
+          Body-wave drive at 1.5 Hz fires muscles sequentially head→tail.<br>
+          Ca²⁺ peak threshold → note onset; muscle index → MIDI pitch.<br>
+          <span class="hl">Karplus-Strong v3</span>: pitch-dependent decay, 3-string
+          detuning, velocity brightness — piano-grade timbre.
+        </div>
+      </div>
+      <div class="step-card active" style="margin-bottom:5px">
+        <div class="step-label">v2 — Music → Worm Dance</div>
+        <div class="step-title">HH output = Z_worm for Pearson excitability</div>
+        <div class="step-meta">
+          Same forward sim (229 s, dt=0.5 ms → 472 400 steps).<br>
+          RSVD on 302-neuron activity → <span class="hl">k_w neural modes Z_worm</span>.<br>
+          Pearson r(V_p[:,i], Z_worm[:,j]) links music to worm dynamics.<br>
+          <em>Visualization uses synthetic body wave — not raw HH output.</em>
+        </div>
+      </div>
+      <div class="eq-box" style="font-size:.72em;border-color:rgba(255,107,107,.35)">
+        <strong style="color:var(--accent2)">Why not use raw HH output for viz?</strong><br>
+        Without external variation the simulator locks to a
+        <span class="hl5">periodic attractor</span> — every musical pattern drives
+        the same steady muscle state. Synthetic body waves from piano modes
+        give pattern-specific, musically-responsive motion instead.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ SLIDE 15: L/R PROBLEM ═════════════════ -->
 <section data-background-color="#030d1a">
   <span class="section-label">Part V — An Interesting Anti-Phase Problem</span>
   <h3>DL + VL cancels <span class="hl5">in the model</span> — but not in biology</h3>
