@@ -240,7 +240,7 @@
   <input type="file" id="wav-input" accept=".wav,.mp3,.ogg" style="display:none">
   <p class="hint">File → <code>worm_dance/data/worm_dance_data.json</code></p>
 </div>
-<audio id="audio-player" preload="auto"></audio>
+<audio id="audio-player" preload="auto" loop></audio>
 
 <h1>PyANNOW v2.0.0 <span>— C. elegans Worm Dance · Chopin Nocturne in C# minor</span></h1>
 
@@ -1245,6 +1245,7 @@ function animLoop(ts) {
   if (frame >= D.n_frames) {
     frame = 0;
     frameAccum = 0;
+    audioSeek(0);   // resync audio to frame 0 on loop
   }
 
   drawFrame(frame);
