@@ -704,7 +704,7 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
           In Lab01 we compressed images by keeping the top-k singular values.
           Here we compress a <em>musical score</em> the same way.<br><br>
           The <span class="hl">k=12</span> most energetic patterns
-          explain <span class="hl2">90%</span> of the piano-roll's Frobenius energy.<br><br>
+          explain <span class="hl2">~64%</span> of the piano-roll's Frobenius energy.<br><br>
           Each pattern $U_k[:,i]$ is a <em>pitch chord</em>;
           $V_k[:,i]$ is its <em>rhythmic envelope</em>.
         </p>
@@ -744,7 +744,7 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
       <div class="step-card done">
         <div class="step-label">Result</div>
         <div class="step-title">k=12, p=10 oversampling, q=2 power iters</div>
-        <div class="step-meta">~90% variance in &lt;0.5 s · same as Lab01 image compression</div>
+        <div class="step-meta">~64% variance in &lt;0.5 s · scree elbow, 8 musical states</div>
       </div>
     </div>
     <div>
@@ -779,10 +779,10 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
         <line x1="196" y1="22" x2="196" y2="130" stroke="crimson" stroke-width="1.5"
           stroke-dasharray="3,2"/>
         <text x="198" y="35" fill="crimson" font-size="7">k=12</text>
-        <!-- 90% label -->
-        <line x1="28" y1="45" x2="210" y2="45" stroke="rgba(255,255,255,.2)"
+        <!-- 64% label (actual variance at k=12) -->
+        <line x1="28" y1="72" x2="210" y2="72" stroke="rgba(255,255,255,.2)"
           stroke-width="1" stroke-dasharray="2,2"/>
-        <text x="200" y="43" fill="rgba(255,255,255,.4)" font-size="6">90%</text>
+        <text x="200" y="70" fill="rgba(255,255,255,.4)" font-size="6">64%</text>
         <!-- k-axis labels -->
         <text x="37"  y="140" fill="rgba(255,255,255,.4)" font-size="6">1</text>
         <text x="93"  y="140" fill="rgba(255,255,255,.4)" font-size="6">5</text>
@@ -790,7 +790,7 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
         <text x="187" y="140" fill="rgba(255,255,255,.4)" font-size="6">12</text>
       </svg>
       <p style="font-size:.65em;text-align:center;opacity:.6;margin-top:3px">
-        k=12 chosen by 90% cumulative variance threshold
+        k=12 at scree elbow — ~64% Frobenius energy, sufficient for 8 musical states
       </p>
     </div>
   </div>
