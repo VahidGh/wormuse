@@ -379,9 +379,9 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
 <!-- ═══════════════════════════════════════ SLIDE 2: PRESENTER ════════════ -->
 <section data-background-gradient="radial-gradient(circle at 60% 20%, #0d1f3c 0%, #050a15 100%)">
   <span class="section-label">About the Presenter</span>
-  <h3 style="margin-bottom:8px">Seyed Vahid <span class="hl">Ghayoomie</span></h3>
+  <h3 style="margin-bottom:4px">Seyed Vahid <span class="hl">Ghayoomie</span></h3>
 
-  <div class="profile-grid">
+  <div class="profile-grid" style="margin:1px 0">
     <!-- Avatar column -->
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
       <div class="profile-avatar">🐛</div>
@@ -391,9 +391,9 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
       </div>
     </div>
     <!-- Info column -->
-    <div>
+    <div style="font-size:.97em">
       <!-- Research highlight -->
-      <div class="card" style="margin-bottom:6px;border-color:rgba(0,217,255,.35)">
+      <div class="card" style="margin-bottom:3px;border-color:rgba(0,217,255,.35)">
         <h4>🔬 Research — C. elegans Systems Neuroscience</h4>
         <p style="font-size:.8em">
           <strong class="hl">OpenWorm Foundation</strong>
@@ -409,7 +409,7 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
         </p>
       </div>
       <!-- Publications + talk -->
-      <div style="margin-bottom:5px">
+      <div style="margin-bottom:2px">
         <span class="pub-badge">Phil. Trans. R. Soc. B 2018</span>
         <span class="pub-badge">F1000Research 2016</span>
         <span class="royal-badge">★ Invited Speaker — The Royal Society, London 2018</span>
@@ -426,7 +426,7 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
       </div>
     </div>
   </div>
-  <p style="font-size:.6em;opacity:.45;margin-top:4px">
+  <p style="font-size:.6em;opacity:.45;margin-top:1px">
     vahidghayoomi@gmail.com · github.com/vahidgh · github.com/VahidGh
   </p>
 </section>
@@ -608,16 +608,18 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
   <h3>95 body-wall muscles — mapped to 96 piano keys</h3>
   <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
     <div>
-      <div class="eq-box" style="font-size:.78em;text-align:left;padding:7px 10px">
-        <strong>Boyle et al. 2012</strong> — 4 quadrants × 24 segments (model):<br>
-        <span class="hl">DL</span> (dorsal-left) ≡ MIDI 24–47 (C1–B2, bass)<br>
-        <span class="hl3">VL</span> (ventral-left) ≡ MIDI 48–71 (C3–B4, tenor)<br>
-        <span class="hl4">DR</span> (dorsal-right) ≡ MIDI 72–95 (C5–B6, alto)<br>
-        <span class="hl2">VR</span> (ventral-right) ≡ MIDI 96–119 (C7–B8, treble)<br>
-        <span style="color:var(--accent3);font-size:.9em">
-          ★ Real anatomy: DL=24, DR=24, VR=24, <strong>VL=23</strong> → 95 total.<br>
-          &nbsp;&nbsp;Model adds one phantom VL cell for symmetry (Lipson et al. 2018).
-        </span>
+      <div class="eq-box" style="font-size:.75em;text-align:left;padding:5px 8px">
+        <strong>Boyle et al. 2012</strong> — 4 quadrants × 24 segments (model):
+        <table style="width:100%;border-collapse:collapse;margin-top:3px;line-height:1.4">
+          <tr><td><span class="hl">DL</span></td><td>dorsal-left</td><td style="opacity:.7">MIDI 24–47 · bass</td></tr>
+          <tr><td><span class="hl3">VL</span></td><td>ventral-left</td><td style="opacity:.7">MIDI 48–71 · tenor</td></tr>
+          <tr><td><span class="hl4">DR</span></td><td>dorsal-right</td><td style="opacity:.7">MIDI 72–95 · alto</td></tr>
+          <tr><td><span class="hl2">VR</span></td><td>ventral-right</td><td style="opacity:.7">MIDI 96–119 · treble</td></tr>
+        </table>
+        <div style="margin-top:4px;color:var(--accent3);font-size:.9em">
+          ★ Real anatomy: DL=24, DR=24, VR=24, <strong>VL=23</strong> → 95 total.
+          Model adds one phantom VL cell for symmetry (Lipson et al. 2018).
+        </div>
       </div>
       <div class="card" style="margin-top:5px">
         <h4>Phase structure</h4>
@@ -683,19 +685,19 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
 <section data-background-color="#030d1a">
   <span class="section-label">Part II — Eckart-Young Theorem (L06)</span>
   <h3>The best rank-<em>k</em> approximation</h3>
-  <div class="eq-box" style="margin:6px 0">
+  <div class="eq-box" style="margin:3px 0">
     $$M = U \Sigma V^T, \quad
       \hat{M}_k = U_k \Sigma_k V_k^T \;\;\text{minimises}\;\; \|M - \hat{M}_k\|_F$$
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:3px">
     <div>
       <div class="card">
         <h4>Components (piano-roll M)</h4>
         <p>
           <span class="hl">$U_k \in \mathbb{R}^{56 \times k}$</span> — pitch profiles:
-          which pitches co-activate in each pattern<br><br>
+          which pitches co-activate in each pattern<br>
           <span class="hl2">$\sigma_i$</span> — pattern energy:
-          $\sigma_i^2 / \|\sigma\|^2$ = fraction of musical variance<br><br>
+          $\sigma_i^2 / \|\sigma\|^2$ = fraction of musical variance<br>
           <span class="hl3">$V_k \in \mathbb{R}^{T \times k}$</span> — temporal envelopes:
           <em>when</em> each pattern is active
         </p>
@@ -706,9 +708,9 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
         <h4>Course connection (Lab01)</h4>
         <p>
           In Lab01 we compressed images by keeping the top-k singular values.
-          Here we compress a <em>musical score</em> the same way.<br><br>
+          Here we compress a <em>musical score</em> the same way.<br>
           The <span class="hl">k=12</span> most energetic patterns
-          explain <span class="hl2">~64%</span> of the piano-roll's Frobenius energy.<br><br>
+          explain <span class="hl2">~64%</span> of the piano-roll's Frobenius energy.<br>
           Each pattern $U_k[:,i]$ is a <em>pitch chord</em>;
           $V_k[:,i]$ is its <em>rhythmic envelope</em>.
         </p>
@@ -1077,12 +1079,9 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
         <div class="step-meta">Each of the K*=8 musical patterns maps to
           a 96-muscle activation pose — the worm's dance.</div>
       </div>
-      <pre><code class="language-python">
-# step2_clustering/motor_primitives.py
+      <pre style="font-size:.68em;margin-top:4px;padding:5px 8px"><code class="language-python"># motor_primitives.py
 W_nm = np.linalg.lstsq(Z_worm_p, V_mus_p, rcond=None)[0]
-pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
-        for j in range(K)}
-      </code></pre>
+pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm) for j in range(K)}</code></pre>
     </div>
   </div>
 </section>
@@ -1155,66 +1154,60 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
 <section data-background-color="#030d1a" class="dense">
   <span class="section-label">Part V — C. elegans HH Simulator</span>
   <h3>The forward model: <span class="hl">ion channels → muscles → music</span></h3>
-  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:4px;font-size:.95em">
     <div>
-      <div class="eq-box" style="font-size:.74em;text-align:left;padding:7px 10px;margin-bottom:5px">
-        <strong>C. elegans ion channel ODE</strong> (not standard squid HH):<br>
-        $$C_m \frac{dV}{dt} = -I_{\text{Ca}} - I_{\text{K}} - I_{\text{NCA}} - I_L + I_{\text{syn}}$$
-        <table style="width:100%;border-collapse:collapse;margin-top:4px;font-size:.88em">
-          <tr><td style="color:var(--accent);padding:1px 4px"><strong>EGL-19</strong></td>
-              <td>Ca²⁺ L-type — muscle action potentials</td></tr>
-          <tr><td style="color:var(--accent3);padding:1px 4px"><strong>EXP-2</strong></td>
+      <div class="eq-box" style="font-size:.71em;text-align:left;padding:3px 6px;margin-bottom:2px">
+        <strong>C. elegans ion channel ODE</strong> (not standard squid HH):
+        <p style="margin:2px 0">$C_m \tfrac{dV}{dt} = -I_{\text{Ca}} - I_{\text{K}} - I_{\text{NCA}} - I_L + I_{\text{syn}}$</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:2px;font-size:.9em;line-height:1.2">
+          <tr><td style="color:var(--accent);padding:0 3px;white-space:nowrap"><strong>EGL-19</strong></td>
+              <td>Ca²⁺ L-type — muscle APs</td></tr>
+          <tr><td style="color:var(--accent3);padding:0 3px;white-space:nowrap"><strong>EXP-2</strong></td>
               <td>K⁺ delayed rectifier — repolarises muscle</td></tr>
-          <tr><td style="color:var(--green);padding:1px 4px"><strong>SHK-1</strong></td>
+          <tr><td style="color:var(--green);padding:0 3px;white-space:nowrap"><strong>SHK-1</strong></td>
               <td>K⁺ Shaw-type — repolarises motor neurons</td></tr>
-          <tr><td style="color:var(--accent2);padding:1px 4px"><strong>NCA-1/2</strong></td>
-              <td>Na⁺ leak (NALCN family) — background excitability</td></tr>
-          <tr><td style="color:rgba(255,255,255,.5);padding:1px 4px"><em>I_syn</em></td>
-              <td>ACh (excitatory) / GABA (inhibitory) from motor neurons</td></tr>
+          <tr><td style="color:var(--accent2);padding:0 3px;white-space:nowrap"><strong>NCA-1/2</strong></td>
+              <td>Na⁺ leak (NALCN) — background excitability</td></tr>
+          <tr><td style="color:rgba(255,255,255,.5);padding:0 3px;white-space:nowrap"><em>I_syn</em></td>
+              <td>ACh (excitatory) / GABA (inhibitory)</td></tr>
         </table>
       </div>
-      <div class="eq-box" style="font-size:.72em;padding:6px 10px">
-        <strong>Worm–piano biophysical analogy (Karplus-Strong, 1983):</strong><br>
-        <table style="width:100%;border-collapse:collapse;margin-top:3px">
-          <tr style="opacity:.7"><th style="text-align:left;font-weight:500">C. elegans</th>
-                                  <th style="text-align:left;font-weight:500">KS piano model</th></tr>
-          <tr><td>Ca²⁺ influx via EGL-19</td><td>Hammer excitation</td></tr>
-          <tr><td>Membrane capacitance C_m</td><td>String inertia</td></tr>
-          <tr><td>K⁺ EXP-2 decay</td><td>String damping</td></tr>
-          <tr><td>dV/dt at spike → velocity</td><td>Hammer force → brightness</td></tr>
-          <tr><td style="color:var(--accent)">24 muscles / quadrant</td>
-              <td style="color:var(--accent)">24 piano strings / octave</td></tr>
+      <div class="eq-box" style="font-size:.69em;padding:3px 6px">
+        <strong>Worm–piano analogy (Karplus-Strong 1983):</strong>
+        <table style="width:100%;border-collapse:collapse;margin-top:2px;line-height:1.2">
+          <tr style="opacity:.6"><th style="text-align:left;font-weight:500;padding:0 3px">C. elegans</th>
+                                  <th style="text-align:left;font-weight:500">KS piano</th></tr>
+          <tr><td style="padding:0 3px">Ca²⁺ influx (EGL-19)</td><td>Hammer excitation</td></tr>
+          <tr><td style="padding:0 3px">Capacitance C_m</td><td>String inertia</td></tr>
+          <tr><td style="padding:0 3px">K⁺ EXP-2 decay</td><td>String damping</td></tr>
+          <tr><td style="padding:0 3px;color:var(--accent)">24 muscles/quadrant</td>
+              <td style="color:var(--accent)">24 strings/octave</td></tr>
         </table>
       </div>
     </div>
     <div>
-      <div class="step-card done" style="margin-bottom:5px">
+      <div class="step-card done" style="margin-bottom:0px">
         <div class="step-label">v1 — Worm → Music</div>
-        <div class="step-title">HH simulation → note onsets → Karplus-Strong audio</div>
-        <div class="step-meta">
-          302 neurons → motor neurons (ACh/GABA) → 95 BWMs.<br>
-          Body-wave drive at 1.5 Hz fires muscles sequentially head→tail.<br>
-          Ca²⁺ peak threshold → note onset; muscle index → MIDI pitch.<br>
-          <span class="hl">Karplus-Strong v3</span>: pitch-dependent decay, 3-string
-          detuning, velocity brightness — piano-grade timbre.
+        <div class="step-title">HH → note onsets → Karplus-Strong audio</div>
+        <div class="step-meta" style="font-size:.72em">
+          302 neurons → motor neurons → 95 BWMs · body-wave at 1.5 Hz.<br>
+          Ca²⁺ peak → note onset · muscle idx → MIDI pitch.
         </div>
       </div>
-      <div class="step-card active" style="margin-bottom:5px">
+      <div class="step-card active" style="margin-bottom:0px">
         <div class="step-label">v2 — Music → Worm Dance</div>
-        <div class="step-title">HH output = Z_worm for Pearson excitability</div>
-        <div class="step-meta">
-          Same forward sim (229 s, dt=0.5 ms → 472 400 steps).<br>
-          RSVD on 302-neuron activity → <span class="hl">k_w neural modes Z_worm</span>.<br>
-          Pearson r(V_p[:,i], Z_worm[:,j]) links music to worm dynamics.<br>
-          <em>Visualization uses synthetic body wave — not raw HH output.</em>
+        <div class="step-title">HH output = Z_worm for Pearson</div>
+        <div class="step-meta" style="font-size:.72em">
+          RSVD on 302-neuron activity → k_w modes Z_worm.<br>
+          r(V_p[:,i], Z_worm[:,j]) links music ↔ worm dynamics.<br>
+          <em>Viz uses synthetic body wave, not raw HH output.</em>
         </div>
       </div>
-      <div class="eq-box" style="font-size:.72em;border-color:rgba(255,107,107,.35)">
-        <strong style="color:var(--accent2)">Why not use raw HH output for viz?</strong><br>
-        Without external variation the simulator locks to a
-        <span class="hl5">periodic attractor</span> — every musical pattern drives
-        the same steady muscle state. Synthetic body waves from piano modes
-        give pattern-specific, musically-responsive motion instead.
+      <div class="eq-box" style="font-size:.70em;border-color:rgba(255,107,107,.35);padding:3px 6px">
+        <strong style="color:var(--accent2)">Why not raw HH for viz?</strong>
+        Without input variation the sim locks to a
+        <span class="hl5">periodic attractor</span> — all patterns → same muscle state.
+        Synthetic waves from piano modes give pattern-specific motion.
       </div>
     </div>
   </div>
@@ -1224,40 +1217,37 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
 <section data-background-color="#030d1a">
   <span class="section-label">Part V — An Interesting Anti-Phase Problem</span>
   <h3>DL + VL cancels <span class="hl5">in the model</span> — but not in biology</h3>
-  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:5px;font-size:.95em">
     <div>
-      <div class="eq-box" style="margin-bottom:6px;text-align:left;font-size:.78em;padding:8px 11px">
-        <strong>Model proof (4×24 symmetric):</strong><br><br>
-        DL body wave: $A \cdot \tfrac{1}{2}(1 + \sin\theta)$ where $\theta = \phi_0 + s\omega$<br>
-        VL body wave: $A \cdot \tfrac{1}{2}(1 + \sin(\theta + \pi))
-                     = A \cdot \tfrac{1}{2}(1 - \sin\theta)$<br><br>
-        $\text{leftM} = \frac{\text{DL} + \text{VL}}{2}
-        = \frac{A}{2}\left[\frac{1+\sin\theta}{2} + \frac{1-\sin\theta}{2}\right]
-        = \frac{A}{4}$ <span class="hl5">← constant!</span><br><br>
-        Requires equal lengths (24 vs 24). <strong>Real VL has only 23 cells.</strong>
+      <div class="eq-box" style="margin-bottom:3px;text-align:left;font-size:.76em;padding:4px 8px">
+        <strong>Model proof (4×24 symmetric):</strong><br>
+        DL: $A \cdot \tfrac{1}{2}(1 + \sin\theta)$, $\theta = \phi_0 + s\omega$<br>
+        VL: $A \cdot \tfrac{1}{2}(1 - \sin\theta)$ (180° shift)<br>
+        $\text{leftM} = \tfrac{A}{2}\!\left[\tfrac{1+\sin\theta}{2} + \tfrac{1-\sin\theta}{2}\right]
+        = \tfrac{A}{4}$ <span class="hl5">← constant!</span><br>
+        <span style="font-size:.9em">Requires equal lengths (24 vs 24). <strong>Real VL = 23.</strong></span>
       </div>
       <div class="card">
         <h4>Fix: use same-side quadrants</h4>
         <p>
           <span class="hl">headDL</span> = mean(DL[s=0..7]) — dorsal-left head<br>
-          <span class="hl4">headDR</span> = mean(DR[s=0..7]) — dorsal-right head<br><br>
+          <span class="hl4">headDR</span> = mean(DR[s=0..7]) — dorsal-right head<br>
           Both dorsal → no D/V cancellation.<br>
           Bilateral offset $\varepsilon=0.05$ rad preserved → <span class="hl3">real L/R signal</span>.
         </p>
       </div>
     </div>
     <div>
-      <div class="eq-box" style="margin-bottom:6px;font-size:.73em;text-align:left;padding:7px 10px;border-color:rgba(255,165,0,.4)">
-        <strong style="color:var(--accent3)">Biology: VL=23 breaks the cancellation</strong><br><br>
-        Real anatomy (WormBook/WormAtlas):<br>
-        DL=24 · DR=24 · VR=24 · <strong style="color:var(--accent3)">VL=23</strong> → <strong>95 total</strong><br><br>
-        With VL=23, segment $s$=23 of DL has <em>no VL counterpart</em>:<br>
-        $\sum_s(\text{DL}_s + \text{VL}_s) = \underbrace{23 \cdot \tfrac{A}{2}}_{\text{cancel}} +
-        \underbrace{\tfrac{A}{2}(1+\sin\theta_{23})}_{\text{survives!}}$<br><br>
-        The real worm's structural asymmetry <strong>preserves locomotion signal</strong>.<br>
-        <span style="opacity:.7">Model adds one phantom VL cell "for symmetry" — Lipson et al. 2018.</span>
+      <div class="eq-box" style="margin-bottom:3px;font-size:.71em;text-align:left;padding:3px 7px;border-color:rgba(255,165,0,.4)">
+        <strong style="color:var(--accent3)">Biology: VL=23 breaks the cancellation</strong><br>
+        DL=24 · DR=24 · VR=24 · <strong style="color:var(--accent3)">VL=23</strong> → <strong>95 total</strong> (WormBook)<br>
+        Segment $s$=23 of DL has <em>no VL counterpart</em>:<br>
+        $\sum(\text{DL}+\text{VL}) = \underbrace{23\tfrac{A}{2}}_{\text{cancel}} +
+        \underbrace{\tfrac{A}{2}(1{+}\sin\theta_{23})}_{\text{survives!}}$<br>
+        <strong>Structural asymmetry preserves locomotion signal.</strong><br>
+        <span style="opacity:.65">Phantom VL cell added "for symmetry" — Lipson et al. 2018.</span>
       </div>
-      <div style="margin-top:4px">
+      <div style="margin-top:2px">
         <div class="bar-row">
           <div class="bar-lbl">HALT</div>
           <div class="bar-track"><div class="bar-fill" style="width:51%;background:rgba(255,255,255,.4)"></div></div>
@@ -1279,7 +1269,7 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
           <div class="bar-val">8%</div>
         </div>
       </div>
-      <div class="eq-box" style="margin-top:5px;font-size:.72em">
+      <div class="eq-box" style="margin-top:3px;font-size:.72em;padding:4px 8px">
         <strong>Key insight:</strong> The exact cancellation is a <em>symmetry artifact</em>
         of the 4×24 model abstraction, not a biological property.
         Real C. elegans exploits VL=23 to let locomotion signal through.
@@ -1390,10 +1380,10 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
 </section>
 
 <!-- ══════════════════════════════ SLIDE: KEY INSIGHTS ══════════════════ -->
-<section data-background-color="#030d1a">
+<section data-background-color="#030d1a" class="dense">
   <span class="section-label">Discussion — What We Learned</span>
   <h3>Insights from building <span class="hl">PyANNOW v2</span></h3>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
     <div>
       <div class="step-card active">
         <div class="step-label">Eckart-Young in practice</div>
@@ -1429,11 +1419,10 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
         <div class="step-label">Anti-phase cancellation</div>
         <div class="step-title">Model symmetry ≠ biological reality</div>
         <div class="step-meta">
-          DL + VL = const is a 4×24 <em>model artifact</em>.
-          Real anatomy has VL=23 cells (not 24) — the unpaired DL
-          segment lets locomotion signal through.
-          Biology's structural asymmetry (95 cells, not 96) is not a
-          rounding error; it is what prevents exact cancellation.
+          DL + VL ≡ const is a 4×24 <em>model artifact</em>.
+          Real anatomy: VL=23 (not 24) → unpaired DL segment carries
+          locomotion signal. Biology's 95-cell asymmetry prevents
+          exact cancellation — not a rounding error.
         </div>
       </div>
       <div class="step-card purple">
