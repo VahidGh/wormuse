@@ -605,15 +605,19 @@ section.dense .eq-box { padding: 6px 9px; margin: 4px 0; }
 <!-- ═══════════════════════════════ SLIDE 6: 96-MUSCLE ARCH ══════════════ -->
 <section data-background-color="#030d1a" class="dense">
   <span class="section-label">Part I — C. elegans Architecture</span>
-  <h3>96 body-wall muscles = 96 piano keys</h3>
+  <h3>95 body-wall muscles — mapped to 96 piano keys</h3>
   <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
     <div>
       <div class="eq-box" style="font-size:.78em;text-align:left;padding:7px 10px">
-        <strong>Boyle et al. 2012</strong> — 4 quadrants × 24 segments:<br>
+        <strong>Boyle et al. 2012</strong> — 4 quadrants × 24 segments (model):<br>
         <span class="hl">DL</span> (dorsal-left) ≡ MIDI 24–47 (C1–B2, bass)<br>
         <span class="hl3">VL</span> (ventral-left) ≡ MIDI 48–71 (C3–B4, tenor)<br>
         <span class="hl4">DR</span> (dorsal-right) ≡ MIDI 72–95 (C5–B6, alto)<br>
-        <span class="hl2">VR</span> (ventral-right) ≡ MIDI 96–119 (C7–B8, treble)
+        <span class="hl2">VR</span> (ventral-right) ≡ MIDI 96–119 (C7–B8, treble)<br>
+        <span style="color:var(--accent3);font-size:.9em">
+          ★ Real anatomy: DL=24, DR=24, VR=24, <strong>VL=23</strong> → 95 total.<br>
+          &nbsp;&nbsp;Model adds one phantom VL cell for symmetry (Lipson et al. 2018).
+        </span>
       </div>
       <div class="card" style="margin-top:5px">
         <h4>Phase structure</h4>
@@ -1150,20 +1154,18 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
 <!-- ══════════════════════════════ SLIDE 14: L/R PROBLEM ═════════════════ -->
 <section data-background-color="#030d1a">
   <span class="section-label">Part V — An Interesting Anti-Phase Problem</span>
-  <h3>Why <span class="hl5">DL + VL never gives L/R signal</span></h3>
+  <h3>DL + VL cancels <span class="hl5">in the model</span> — but not in biology</h3>
   <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:8px">
     <div>
       <div class="eq-box" style="margin-bottom:6px;text-align:left;font-size:.78em;padding:8px 11px">
-        <strong>Mathematical proof:</strong><br><br>
+        <strong>Model proof (4×24 symmetric):</strong><br><br>
         DL body wave: $A \cdot \tfrac{1}{2}(1 + \sin\theta)$ where $\theta = \phi_0 + s\omega$<br>
         VL body wave: $A \cdot \tfrac{1}{2}(1 + \sin(\theta + \pi))
                      = A \cdot \tfrac{1}{2}(1 - \sin\theta)$<br><br>
         $\text{leftM} = \frac{\text{DL} + \text{VL}}{2}
         = \frac{A}{2}\left[\frac{1+\sin\theta}{2} + \frac{1-\sin\theta}{2}\right]
         = \frac{A}{4}$ <span class="hl5">← constant!</span><br><br>
-        <strong>The $\sin\theta$ terms cancel exactly.</strong>
-        DL+VL is always $A/4$, regardless of body wave phase.
-        No L/R information survives the averaging.
+        Requires equal lengths (24 vs 24). <strong>Real VL has only 23 cells.</strong>
       </div>
       <div class="card">
         <h4>Fix: use same-side quadrants</h4>
@@ -1176,12 +1178,17 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
       </div>
     </div>
     <div>
-      <div class="step-card done">
-        <div class="step-label">Behavior distribution (verified)</div>
-        <div class="step-title">After fix — 800 patterns sampled</div>
-        <div class="step-meta"></div>
+      <div class="eq-box" style="margin-bottom:6px;font-size:.73em;text-align:left;padding:7px 10px;border-color:rgba(255,165,0,.4)">
+        <strong style="color:var(--accent3)">Biology: VL=23 breaks the cancellation</strong><br><br>
+        Real anatomy (WormBook/WormAtlas):<br>
+        DL=24 · DR=24 · VR=24 · <strong style="color:var(--accent3)">VL=23</strong> → <strong>95 total</strong><br><br>
+        With VL=23, segment $s$=23 of DL has <em>no VL counterpart</em>:<br>
+        $\sum_s(\text{DL}_s + \text{VL}_s) = \underbrace{23 \cdot \tfrac{A}{2}}_{\text{cancel}} +
+        \underbrace{\tfrac{A}{2}(1+\sin\theta_{23})}_{\text{survives!}}$<br><br>
+        The real worm's structural asymmetry <strong>preserves locomotion signal</strong>.<br>
+        <span style="opacity:.7">Model adds one phantom VL cell "for symmetry" — Lipson et al. 2018.</span>
       </div>
-      <div style="margin-top:6px">
+      <div style="margin-top:4px">
         <div class="bar-row">
           <div class="bar-lbl">HALT</div>
           <div class="bar-track"><div class="bar-fill" style="width:51%;background:rgba(255,255,255,.4)"></div></div>
@@ -1203,10 +1210,10 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
           <div class="bar-val">8%</div>
         </div>
       </div>
-      <div class="eq-box" style="margin-top:7px;font-size:.72em">
-        <strong>Key insight:</strong> Anti-phase is not a bug — it is how
-        C. elegans generates propulsive thrust.
-        We must measure it <em>on one side only</em>.
+      <div class="eq-box" style="margin-top:5px;font-size:.72em">
+        <strong>Key insight:</strong> The exact cancellation is a <em>symmetry artifact</em>
+        of the 4×24 model abstraction, not a biological property.
+        Real C. elegans exploits VL=23 to let locomotion signal through.
       </div>
     </div>
   </div>
@@ -1351,12 +1358,13 @@ pose = {j: (Z_worm_p[labels==j].mean(0) @ W_nm)
     <div>
       <div class="step-card purple">
         <div class="step-label">Anti-phase cancellation</div>
-        <div class="step-title">Biology breaks naive signal processing</div>
+        <div class="step-title">Model symmetry ≠ biological reality</div>
         <div class="step-meta">
-          DL + VL is identically constant — the biological anti-phase
-          design cancels the locomotion signal.
-          You must understand the data-generating process before
-          computing a mean.
+          DL + VL = const is a 4×24 <em>model artifact</em>.
+          Real anatomy has VL=23 cells (not 24) — the unpaired DL
+          segment lets locomotion signal through.
+          Biology's structural asymmetry (95 cells, not 96) is not a
+          rounding error; it is what prevents exact cancellation.
         </div>
       </div>
       <div class="step-card purple">
